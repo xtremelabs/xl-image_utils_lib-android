@@ -6,6 +6,6 @@ public interface ImageRequestListener {
 
 	void onImageAvailable(Bitmap bitmap);
 	
-	void onFailure();
+	void onFailure(String message);
 	
 }

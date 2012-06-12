@@ -19,7 +19,7 @@ public class ImageCacher {
 		diskCache = new DefaultImageDiskCacher(appContext);
 		networkInterface = new DefaultImageDownloader(diskCache);
 	}
-	
+
 	public static synchronized ImageCacher getInstance(Context appContext) {
 		if (imageCacher == null) {
 			imageCacher = new ImageCacher(appContext);
@@ -89,13 +89,13 @@ public class ImageCacher {
 					}
 				} catch (FileNotFoundException e) {
 					e.printStackTrace();
-					listener.onFailure();
+					listener.onFailure(null);
 				}
 			}
 
 			@Override
 			public void onFailure() {
-				listener.onFailure();
+				listener.onFailure(null);
 			}
 		});
 		return null;
@@ -117,19 +117,38 @@ public class ImageCacher {
 	public synchronized Bitmap getBitmapWithScale(final String url, final ImageRequestListener listener, final int sampleSize) {
 		validateUrl(url);
 
+		Bitmap bitmap = null;
+		try {
+			bitmap = getBitmapFromMemoryOrDisk(url, listener, sampleSize);
+		} catch (FileNotFoundException e) {
+			// We get to ignore this exception safely.
+		} catch (FileFormatException e) {
+			// We get to ignore this exception safely.
+		}
+		if (bitmap != null) {
+			return bitmap;
+		} else {
+			loadImageFromNetwork(url, listener, sampleSize);
+			return null;
+		}
+	}
+
+	private synchronized Bitmap getBitmapFromMemoryOrDisk(String url, ImageRequestListener listener, int sampleSize) throws FileNotFoundException, FileFormatException {
 		if (memoryCache.isCached(url, sampleSize)) {
 			diskCache.bump(url);
 			return memoryCache.getBitmap(url, sampleSize);
 		} else if (diskCache.isCached(url)) {
 			try {
 				return loadImageFromDisk(url, listener, sampleSize);
-			} catch (Exception e) {
-				loadImageFromNetwork(url, listener, sampleSize);
-				return null;
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+				throw e;
+			} catch (FileFormatException e) {
+				e.printStackTrace();
+				throw e;
 			}
 		} else {
-			loadImageFromNetwork(url, listener, sampleSize);
-			return null;
+			throw new FileNotFoundException();
 		}
 	}
 
@@ -170,7 +189,7 @@ public class ImageCacher {
 			diskCache.bump(url);
 		}
 	}
-	
+
 	public ImageMemoryCacherInterface getMemCacher() {
 		return memoryCache;
 	}
@@ -196,7 +215,16 @@ public class ImageCacher {
 		networkInterface.loadImageToDisk(url, new NetworkImageRequestListener() {
 			@Override
 			public void onSuccess() {
-				Bitmap bitmap = getBitmapWithScale(url, listener, sampleSize);
+				Bitmap bitmap = null;
+				try {
+					bitmap = getBitmapFromMemoryOrDisk(url, listener, sampleSize);
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+					listener.onFailure("File not found after it was downloaded!");
+				} catch (FileFormatException e) {
+					e.printStackTrace();
+					listener.onFailure("File format exception after the file was downloaded!");
+				}
 				if (bitmap != null) {
 					listener.onImageAvailable(bitmap);
 				}
@@ -204,7 +232,7 @@ public class ImageCacher {
 
 			@Override
 			public void onFailure() {
-				listener.onFailure();
+				listener.onFailure("Failed to get image from the network!");
 			}
 		});
 	}

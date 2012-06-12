@@ -56,11 +56,18 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 	@Override
 	public synchronized Bitmap getBitmapSynchronouslyFromDisk(String url, int sampleSize) throws FileNotFoundException, FileFormatException {
 		File file = getFile(url);
-		FileInputStream fileInputStream;
+		FileInputStream fileInputStream = null;
 		fileInputStream = new FileInputStream(file);
 		BitmapFactory.Options opts = new BitmapFactory.Options();
 		opts.inSampleSize = sampleSize;
 		Bitmap bitmap = BitmapFactory.decodeStream(fileInputStream, null, opts);
+		if(fileInputStream != null) {
+			try {
+				fileInputStream.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 		if (bitmap == null) {
 			file.delete();
 			throw new FileFormatException();

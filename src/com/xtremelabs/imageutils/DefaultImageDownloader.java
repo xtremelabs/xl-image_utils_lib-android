@@ -2,16 +2,12 @@ package com.xtremelabs.imageutils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 
 public class DefaultImageDownloader implements ImageNetworkInterface {
 	private final HashMap<String, List<NetworkImageRequestListener>> urlToListenersMap = new HashMap<String, List<NetworkImageRequestListener>>();
@@ -124,18 +120,12 @@ public class DefaultImageDownloader implements ImageNetworkInterface {
 		}
 
 		public void executeNetworkRequest() throws ClientProtocolException, IOException {
-			HttpGet request = new HttpGet(url);
-			HttpClient client = new DefaultHttpClient();
-			HttpResponse response;
-			response = client.execute(request);
-			HttpEntity entity = response.getEntity();
-
 			synchronized (this) {
 				if (cancelled) {
 					removeAllListenersForRequest(url);
 					return;
 				}
-				inputStream = entity.getContent();
+				inputStream = new URL(url).openStream();
 			}
 		}
 

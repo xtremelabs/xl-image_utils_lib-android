@@ -47,8 +47,9 @@ public class DiskManager {
 			}
 			fileOutputStream = new FileOutputStream(file);
 			byte[] buffer = new byte[1024];
-			while (inputStream.read(buffer) > 0) {
-				fileOutputStream.write(buffer);
+			int bytesRead;
+			while ((bytesRead = inputStream.read(buffer)) > 0) {
+				fileOutputStream.write(buffer, 0, bytesRead);
 			}
 			directorySize += file.length();
 		} catch (IOException e) {
@@ -57,12 +58,16 @@ public class DiskManager {
 			file.delete();
 		} finally {
 			try {
-				if (inputStream != null) {
-					inputStream.close();
-				}
-
 				if (fileOutputStream != null) {
 					fileOutputStream.close();
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+			try {
+				if (inputStream != null) {
+					inputStream.close();
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
