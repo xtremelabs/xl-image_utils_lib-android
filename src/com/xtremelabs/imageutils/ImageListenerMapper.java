@@ -5,26 +5,23 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import android.app.Activity;
-
-import com.functionx.viggle.interfaces.ImageReceivedListener;
-import com.xtremelabs.utilities.cache.ImageManager.CustomImageListener;
+import com.xtremelabs.imageutils.ImageManager.CustomImageListener;
 
 public class ImageListenerMapper {
 	private HashMap<String, List<ImageReceivedListener>> urlToListenersMap = new HashMap<String, List<ImageReceivedListener>>();
-	private HashMap<Activity, List<ImageReceivedListener>> activityToListenersMap = new HashMap<Activity, List<ImageReceivedListener>>();
+	private HashMap<Object, List<ImageReceivedListener>> objectToListenersMap = new HashMap<Object, List<ImageReceivedListener>>();
 	private HashMap<ImageReceivedListener, ListenerInfo> listenerToInfoMap = new HashMap<ImageReceivedListener, ListenerInfo>();
 
-	public synchronized void registerNewListener(ImageReceivedListener listener, Activity activity) {
-		List<ImageReceivedListener> list = activityToListenersMap.get(activity);
+	public synchronized void registerNewListener(ImageReceivedListener listener, Object object) {
+		List<ImageReceivedListener> list = objectToListenersMap.get(object);
 		if (list == null) {
 			list = new ArrayList<ImageReceivedListener>();
-			activityToListenersMap.put(activity, list);
+			objectToListenersMap.put(object, list);
 		}
 
 		ListenerInfo info = new ListenerInfo();
 		info.urlsToCustomImageListenersMap = new HashMap<String, HashSet<CustomImageListener>>();
-		info.activity = activity;
+		info.object = object;
 		listenerToInfoMap.put(listener, info);
 	}
 
@@ -66,13 +63,13 @@ public class ImageListenerMapper {
 
 		for (ImageReceivedListener listener : listenersToRemove) {
 			ListenerInfo info = listenerToInfoMap.get(listener);
-			Activity activity = info.activity;
-			List<ImageReceivedListener> activityListeners = activityToListenersMap.get(activity);
+			Object object = info.object;
+			List<ImageReceivedListener> objectListeners = objectToListenersMap.get(object);
 
-			if (activityListeners != null) {
-				activityListeners.remove(listener);
-				if (activityListeners.isEmpty()) {
-					activityToListenersMap.remove(activity);
+			if (objectListeners != null) {
+				objectListeners.remove(listener);
+				if (objectListeners.isEmpty()) {
+					objectToListenersMap.remove(object);
 				}
 
 			}
@@ -82,8 +79,8 @@ public class ImageListenerMapper {
 		return list;
 	}
 
-	public synchronized void removeAllEntriesForActivity(Activity activity) {
-		List<ImageReceivedListener> listeners = activityToListenersMap.remove(activity);
+	public synchronized void removeAllEntriesForObject(Object object) {
+		List<ImageReceivedListener> listeners = objectToListenersMap.remove(object);
 		if (listeners != null) {
 			for (ImageReceivedListener listener : listeners) {
 				removeReferencesForListener(listener);
@@ -118,7 +115,7 @@ public class ImageListenerMapper {
 	}
 
 	private class ListenerInfo {
-		private Activity activity;
+		private Object object;
 		private HashMap<String, HashSet<CustomImageListener>> urlsToCustomImageListenersMap;
 	}
 }

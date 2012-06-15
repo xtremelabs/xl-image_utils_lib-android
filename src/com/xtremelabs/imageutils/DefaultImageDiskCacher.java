@@ -8,6 +8,8 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
+import com.xtremelabs.imageutils.ImageCacher.ImageRequestListener;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -17,9 +19,11 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 	private long maximumCacheSizeInBytes = 31457280; // 30MB
 	private boolean synchronousDiskAccess = true;
 	private DiskManager diskManager;
+	private DiskCacheDatabaseHelper databaseHelper;
 
 	public DefaultImageDiskCacher(Context appContext) {
 		diskManager = new DiskManager("img", appContext);
+		databaseHelper = new DiskCacheDatabaseHelper(appContext);
 	}
 
 	@Override
@@ -91,12 +95,16 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 	@Override
 	public void loadImageFromInputStream(String url, InputStream inputStream) throws IOException {
 		diskManager.loadStreamToFile(inputStream, encode(url));
+		File file = diskManager.getFile(encode(url));
+		if (!databaseHelper.addFile(url, file.length(), System.currentTimeMillis())) {
+			databaseHelper.updateFile(url, System.currentTimeMillis());
+		}
 		clearLeastUsedFilesInCache();
 	}
 
 	@Override
-	public void bump(String url) {
-		diskManager.touchIfExists(encode(url));
+	public boolean bump(String url) {
+		return databaseHelper.updateFile(url, System.currentTimeMillis());
 	}
 
 	@Override
@@ -130,8 +138,10 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 	}
 
 	private synchronized void clearLeastUsedFilesInCache() {
-		while (diskManager.getDirectorySize() > maximumCacheSizeInBytes) {
-			diskManager.deleteLeastRecentlyUsedFile();
+		while (databaseHelper.getTotalSizeOnDisk() > maximumCacheSizeInBytes) {
+			String url = databaseHelper.getLRU().getUrl();
+			diskManager.deleteFile(encode(url));
+			databaseHelper.removeFile(url);
 		}
 	}
 

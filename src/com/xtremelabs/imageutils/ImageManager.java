@@ -2,59 +2,69 @@ package com.xtremelabs.imageutils;
 
 import java.util.List;
 
-import org.apache.commons.lang3.StringUtils;
-
 import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Handler;
-import android.os.Looper;
+import android.support.v4.app.Fragment;
 
-import com.functionx.viggle.interfaces.ImageReceivedListener;
-import com.xtremelabs.utilities.network.ApiException;
-import com.xtremelabs.utilities.network.ApiListener;
-import com.xtremelabs.utilities.network.RequestException;
+import com.xtremelabs.imageutils.ImageCacher.ImageRequestListener;
 
 public class ImageManager {
 	private ImageListenerMapper listenerHelper = new ImageListenerMapper();
 	private Handler handler;
 	private static ImageManager imageManager;
+	private ImageCacher imageCacher;
 
-	private ImageManager(Looper mainLooper) {
-		handler = new Handler(mainLooper);
+	private ImageManager(Context context) {
+		imageCacher = ImageCacher.getInstance(context);
+		handler = new Handler(context.getMainLooper());
 	}
 
 	// TODO: Change from the "context" being passed in to the "mainLooper" being passed in.
 	public synchronized static ImageManager getInstance(Context context) {
+		if (!(context instanceof Application)) {
+			throw new IllegalArgumentException("The context passed in must be an application context!");
+		}
+		
 		if (imageManager == null) {
-			imageManager = new ImageManager(context.getMainLooper());
+			imageManager = new ImageManager(context);
 		}
 		return imageManager;
 	}
-
+	
 	public void getBitmap(Activity activity, final String url, ImageReceivedListener listener) {
-		if (StringUtils.isBlank(url)) {
+		getBitmap((Object) activity, url, listener);
+	}
+	
+	public void getBitmap(Fragment fragment, final String url, ImageReceivedListener listener) {
+		getBitmap((Object) fragment, url, listener);
+	}
+
+	public void getBitmap(Object key, final String url, ImageReceivedListener listener) {
+		if (GeneralUtils.isStringBlank(url)) {
 			listener.onLoadImageFailed();
 			return;
 		}
-		
+
 		CustomImageListener customImageListener = new CustomImageListener(url);
-		
+
 		synchronized (this) {
 			if (!listenerHelper.isListenerRegistered(listener)) {
-				listenerHelper.registerNewListener(listener, activity);
+				listenerHelper.registerNewListener(listener, key);
 			}
 			listenerHelper.linkUrlToListener(url, customImageListener, listener);
 		}
-		
-		Bitmap bitmap = ImageCache.getBitmap(activity.getApplicationContext(), url, customImageListener);
+
+		Bitmap bitmap = imageCacher.getBitmap(url, customImageListener);
 		if (bitmap != null) {
 			replyToAllListenersForUrl(bitmap, url);
 		}
 	}
-	
-	public synchronized void removeListenersForActivity(Activity activity) {
-		listenerHelper.removeAllEntriesForActivity(activity);
+
+	public synchronized void removeListenersForKey(Object key) {
+		listenerHelper.removeAllEntriesForObject(key);
 	}
 
 	private void onBitmapAvailableForUrl(final Bitmap bitmap, final String url) {
@@ -65,7 +75,7 @@ public class ImageManager {
 			}
 		});
 	}
-	
+
 	private void onFailureForUrl(final String url) {
 		handler.post(new Runnable() {
 			@Override
@@ -83,7 +93,7 @@ public class ImageManager {
 			}
 		}
 	}
-	
+
 	private void replyToAllListenersWithFailureForUrl(String url) {
 		List<ImageReceivedListener> list = listenerHelper.getAndRemoveListenersForUrl(url);
 		if (list != null) {
@@ -92,45 +102,28 @@ public class ImageManager {
 			}
 		}
 	}
-
-	public synchronized Bitmap getCachedImage(String url) {
-		if (StringUtils.isBlank(url)) {
-			return null;
-		} else {
-			return ImageCache.getBitmapDirectlyFromCache(url.trim());
-		}
-	}
-
-	public class CustomImageListener implements ApiListener<Bitmap> {
+	
+	public class CustomImageListener extends ImageRequestListener {
 		private String url;
-		private boolean cancelled = false;
-
+		
 		public CustomImageListener(String url) {
 			this.url = url;
 		}
-
+		
 		@Override
-		public void onSuccess(Bitmap bitmap) {
+		public void onImageAvailable(Bitmap bitmap) {
 			onBitmapAvailableForUrl(bitmap, url);
 		}
 
 		@Override
-		public boolean isCancelled() {
-			return cancelled;
-		}
-
-		@Override
-		public void onFailure(RequestException e) {
-			onFailureForUrl(url);
-		}
-
-		@Override
-		public void onFailure(ApiException e) {
+		public void onFailure(String message) {
 			onFailureForUrl(url);
 		}
 		
 		public void setCancelled(boolean cancelled) {
-			this.cancelled = cancelled;
+			if (cancelled) {
+				imageCacher.cancelRequestForBitmap(url, this);
+			}
 		}
 	}
 }

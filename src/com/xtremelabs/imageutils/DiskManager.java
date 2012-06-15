@@ -88,10 +88,20 @@ public class DiskManager {
 		}
 	}
 
-	public void touchIfExists(String filename) {
+	public boolean touchIfExists(String filename) {
 		File file = new File(cacheDir, filename);
 		if (file != null && file.exists()) {
-			file.setLastModified(System.currentTimeMillis());
+			return file.setLastModified(System.currentTimeMillis());
+		}
+		return false;
+	}
+	
+	public long getLastModifiedTime(String filename) {
+		File file = new File(cacheDir, filename);
+		if (file != null && file.exists()) {
+			return file.lastModified();
+		} else {
+			throw new IllegalArgumentException("File does not exist!");
 		}
 	}
 
@@ -101,13 +111,13 @@ public class DiskManager {
 
 	public void deleteLeastRecentlyUsedFile() {
 		File[] files = getCacheDir().listFiles();
-
-		File leastUsed = null;
-		long lastModifiedTime = System.currentTimeMillis();
-		long currentFileLastModified;
-		for (int i = 0; i < files.length; i++) {
-			currentFileLastModified = files[i].lastModified();
-			if (currentFileLastModified > 0 && currentFileLastModified < lastModifiedTime) {
+//		if (files.length == 0) {
+//			return;
+//		} // we load the file to disk before clearing, should never be length 0
+		
+		File leastUsed = files[0];
+		for (int i = 1; i < files.length; i++) {
+			if (files[i].lastModified() < leastUsed.lastModified()) {
 				leastUsed = files[i];
 			}
 		}
@@ -134,7 +144,6 @@ public class DiskManager {
 					throw new RuntimeException("Was unable to create the directory!");
 				}
 			}
-
 			calculateSizeOnDisk();
 		}
 		return cacheDir;

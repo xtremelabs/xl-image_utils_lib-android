@@ -79,23 +79,15 @@ public class ImageCacher {
 			}
 		}
 
-		networkInterface.loadImageToDisk(url, new NetworkImageRequestListener() {
+		loadImageFromNetwork(url, listener, new SampleSizeFetcher() {
 			@Override
-			public void onSuccess() {
+			public int onSampleSizeRequired() {
 				try {
-					Bitmap bitmap = getBitmapWithScale(url, listener, diskCache.getSampleSize(url, width, height));
-					if (bitmap != null) {
-						listener.onImageAvailable(bitmap);
-					}
+					return diskCache.getSampleSize(url, width, height);
 				} catch (FileNotFoundException e) {
 					e.printStackTrace();
-					listener.onFailure(null);
+					return 1;
 				}
-			}
-
-			@Override
-			public void onFailure() {
-				listener.onFailure(null);
 			}
 		});
 		return null;
@@ -128,7 +120,12 @@ public class ImageCacher {
 		if (bitmap != null) {
 			return bitmap;
 		} else {
-			loadImageFromNetwork(url, listener, sampleSize);
+			loadImageFromNetwork(url, listener, new SampleSizeFetcher() {
+				@Override
+				public int onSampleSizeRequired() {
+					return sampleSize;
+				}
+			});
 			return null;
 		}
 	}
@@ -162,8 +159,10 @@ public class ImageCacher {
 		validateUrl(url);
 
 		// TODO: Actually cancel the network call.
-		// networkInterface.cancelRequest(url, listener);
-		diskCache.cancelRequest(url, listener);
+		if (listener.networkRequestListener != null) {
+			networkInterface.cancelRequest(url, listener.networkRequestListener);
+		}
+		// diskCache.cancelRequest(url, listener);
 	}
 
 	/**
@@ -211,13 +210,19 @@ public class ImageCacher {
 		}
 	}
 
-	private void loadImageFromNetwork(final String url, final ImageRequestListener listener, final int sampleSize) {
-		networkInterface.loadImageToDisk(url, new NetworkImageRequestListener() {
+	private void loadImageFromNetwork(String url, ImageRequestListener listener, SampleSizeFetcher sampleSizeFetcher) {
+		NetworkImageRequestListener networkListener = getNewNetworkImageRequestListener(url, listener, sampleSizeFetcher);
+		listener.networkRequestListener = networkListener;
+		networkInterface.loadImageToDisk(url, networkListener);
+	}
+
+	private NetworkImageRequestListener getNewNetworkImageRequestListener(final String url, final ImageRequestListener listener, final SampleSizeFetcher sampleSizeFetcher) {
+		return new NetworkImageRequestListener() {
 			@Override
 			public void onSuccess() {
 				Bitmap bitmap = null;
 				try {
-					bitmap = getBitmapFromMemoryOrDisk(url, listener, sampleSize);
+					bitmap = getBitmapFromMemoryOrDisk(url, listener, sampleSizeFetcher.onSampleSizeRequired());
 				} catch (FileNotFoundException e) {
 					e.printStackTrace();
 					listener.onFailure("File not found after it was downloaded!");
@@ -234,12 +239,24 @@ public class ImageCacher {
 			public void onFailure() {
 				listener.onFailure("Failed to get image from the network!");
 			}
-		});
+		};
 	}
 
 	private void validateUrl(String url) {
 		if (url == null || url.length() == 0) {
 			throw new IllegalArgumentException("Null URL passed into the image system.");
 		}
+	}
+
+	private interface SampleSizeFetcher {
+		public int onSampleSizeRequired();
+	}
+
+	public static abstract class ImageRequestListener {
+		private NetworkImageRequestListener networkRequestListener;
+
+		public abstract void onImageAvailable(Bitmap bitmap);
+
+		public abstract void onFailure(String message);
 	}
 }
