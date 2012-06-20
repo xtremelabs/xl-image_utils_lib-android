@@ -6,11 +6,13 @@ import java.util.LinkedList;
 import android.graphics.Bitmap;
 
 public class DefaultImageMemoryLRUCacher implements ImageMemoryCacherInterface {
+	@SuppressWarnings("unused")
+	private static final String TAG = "DefaultImageMemoryLRUCacher";
 	private int maximumCacheEntries = 3;
 
 	private HashMap<String, HashMap<Integer, Bitmap>> memcache = new HashMap<String, HashMap<Integer, Bitmap>>();
 	private LinkedList<EvictionQueueContainer> evictionQueue = new LinkedList<EvictionQueueContainer>();
-
+	
 	@Override
 	public synchronized boolean isCached(String url, int sampleSize) {
 		HashMap<Integer, Bitmap> images = memcache.get(url);
@@ -42,16 +44,15 @@ public class DefaultImageMemoryLRUCacher implements ImageMemoryCacherInterface {
 			memcache.put(url, map);
 		}
 		map.put(sampleSize, bitmap);
-
 		onEntryHit(url, sampleSize);
 	}
-	
+
 	@Override
 	public synchronized void clearCache() {
 		memcache.clear();
 		evictionQueue.clear();
 	}
-	
+
 	@Override
 	public synchronized void setMaximumCacheSize(int numImages) {
 		maximumCacheEntries = numImages;

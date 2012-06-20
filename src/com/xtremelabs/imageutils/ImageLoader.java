@@ -1,9 +1,16 @@
 package com.xtremelabs.imageutils;
 
+import java.io.FileNotFoundException;
+
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Point;
 import android.support.v4.app.Fragment;
+import android.view.Display;
+import android.view.ViewGroup;
+import android.view.ViewGroup.LayoutParams;
+import android.view.WindowManager;
 import android.widget.ImageView;
 
 /**
@@ -12,10 +19,12 @@ import android.widget.ImageView;
  * @author Jamie Halpern
  */
 public class ImageLoader {
-	private ImageViewUrlMapper imageViewUrlMapper = new ImageViewUrlMapper();
+	private ImageViewReferenceMapper viewMapper = new ImageViewReferenceMapper();
 	private ImageManager imageManager;
 	private Context applicationContext;
 	private Object key;
+
+	private int screenWidth, screenHeight;
 
 	public ImageLoader(Activity activity) {
 		if (activity == null) {
@@ -26,7 +35,7 @@ public class ImageLoader {
 
 	public ImageLoader(Fragment fragment) {
 		if (fragment == null) {
-			throw new IllegalArgumentException("Activity cannot be null!");
+			throw new IllegalArgumentException("Fragment cannot be null!");
 		}
 		initKeyAndAppContext(fragment, fragment.getActivity().getApplicationContext());
 	}
@@ -35,6 +44,9 @@ public class ImageLoader {
 		this.applicationContext = applicationContext;
 		this.key = key;
 		imageManager = ImageManager.getInstance(applicationContext);
+		Display display = ((WindowManager) applicationContext.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+		screenHeight = display.getHeight();
+		screenWidth = display.getWidth();
 	}
 
 	/**
@@ -44,106 +56,231 @@ public class ImageLoader {
 		ImageManager.getInstance(applicationContext).removeListenersForKey(key);
 	}
 
-	/**
-	 * Sets the {@link ImageView}'s bitmap to null, then fetches an image from the provided URL or from the cache and loads it to the bitmap.
-	 * 
-	 * @param imageView
-	 *            The view to which the downloading or cached image will be loaded.
-	 * @param url
-	 *            The location of the image on the web. This value is also used as the key for caching the image.
-	 */
-	public void loadImage(ImageView imageView, String url) {
-		imageView.setImageBitmap(null);
-		imageViewUrlMapper.registerImageViewToUrl(imageView, url);
-		imageManager.getBitmap(key, url, imageReceivedListener);
+	public void loadImage(ImageView imageView, String url, final Options options) {
+		ImageReceivedListener listener = getDefaultImageReceivedListener(options);
+
+		registerImageView(imageView, listener);
+
+		if (options != null) {
+			if (options.placeholderImageResourceId != null) {
+				imageView.setImageResource(options.placeholderImageResourceId);
+			} else {
+				imageView.setImageBitmap(null);
+			}
+		}
+
+		if (!tryGetBitmapWithScaling(imageView, url, options, listener)) {
+			imageManager.getBitmap(key, url, listener);
+		}
 	}
 
-	/**
-	 * Sets the {@link ImageView}'s image to the provided placeholder resource (from the drawables folder), then fetches the image from the URL and loads it to the view.
-	 * 
-	 * @param imageView
-	 *            The view to which the downloading or cached image will be loaded.
-	 * @param url
-	 *            The location of the image on the web. This value is also used as the key for caching the image.
-	 * @param placeholderImageResourceId
-	 *            The resource that will be loaded into the imageView before the image from the URL becomes available.
-	 */
-	public void loadImage(ImageView imageView, String url, int placeholderImageResourceId) {
-		imageView.setImageResource(placeholderImageResourceId);
-		imageViewUrlMapper.registerImageViewToUrl(imageView, url);
-		imageManager.getBitmap(key, url, imageReceivedListener);
+	public void loadImage(ImageView imageView, String url, final Options options, final ImageLoadingListener listener) {
+		if (listener == null) {
+			throw new IllegalArgumentException("You cannot pass in a null ImageLoadingListener.");
+		}
+		
+		ImageReceivedListener imageReceivedListener = new ImageReceivedListener() {
+			@Override
+			public void onLoadImageFailed() {
+				ImageView imageView = viewMapper.removeImageView(this);
+				if (options != null && options.unsuccessfulLoadResourceId != null) {
+					imageView.setImageResource(options.unsuccessfulLoadResourceId);
+				}
+				listener.onImageLoadError();
+			}
+
+			@Override
+			public void onImageReceived(Bitmap bitmap) {
+				ImageView imageView = viewMapper.removeImageView(this);
+				if (imageView != null) {
+					listener.onImageAvailable(imageView, bitmap);
+				}
+			}
+		};
+
+		registerImageView(imageView, imageReceivedListener);
+
+		if (options != null) {
+			if (options.placeholderImageResourceId != null) {
+				imageView.setImageResource(options.placeholderImageResourceId);
+			} else {
+				imageView.setImageBitmap(null);
+			}
+		}
+
+		if (!tryGetBitmapWithScaling(imageView, url, options, imageReceivedListener)) {
+			imageManager.getBitmap(key, url, imageReceivedListener);
+		}
 	}
 
-	/**
-	 * Sets the {@link ImageView}'s image to null, then loads in the image from the provided URL when it becomes available.
-	 * 
-	 * When the image from the URL is done loading, a call will be made to the provided {@link ImageLoadingListener}.
-	 * 
-	 * @param imageView
-	 *            The view to which the downloading or cached image will be loaded.
-	 * @param url
-	 *            The location of the image on the web. This value is also used as the key for caching the image.
-	 * @param listener
-	 *            This listener will be called after the image is loaded to the imageView.
-	 */
-	public void loadImage(ImageView imageView, String url, final ImageLoadingListener listener) {
-		imageView.setImageBitmap(null);
-		imageViewUrlMapper.registerImageViewToUrl(imageView, url);
-		imageManager.getBitmap(key, url, new ImageReceiverWithCallback(listener));
+	public Point getImageDimensions(String url) throws FileNotFoundException {
+		return ImageCacher.getInstance(applicationContext).getImageDimensions(url);
 	}
 
-	/**
-	 * Sets the {@link ImageView}'s image to the placeholder resource (from the drawables folder), then loads the image from the URL to the ImageView when it becomes available.
-	 * 
-	 * When the image from the URL is done loading, a call will be made to the provided {@link ImageLoadingListener}.
-	 * 
-	 * @param imageView
-	 *            The view to which the downloading or cached image will be loaded.
-	 * @param url
-	 *            The location of the image on the web. This value is also used as the key for caching the image.
-	 * @param placeholderImageResourceId
-	 *            The resource that will be loaded into the imageView before the image from the URL becomes available.
-	 * @param listener
-	 *            This listener will be called after the image is loaded to the imageView.
-	 */
-	public void loadImage(ImageView imageView, String url, int placeholderImageResourceId, final ImageLoadingListener listener) {
-		imageView.setImageResource(placeholderImageResourceId);
-		imageViewUrlMapper.registerImageViewToUrl(imageView, url);
-		imageManager.getBitmap(key, url, new ImageReceiverWithCallback(listener));
+	public void clearMemCache() {
+		ImageCacher.getInstance(applicationContext).clearMemCache();
 	}
 
-	// TODO: Add in a call that includes the ID of a "fail" image.
+	public void setMemCacheSize(int size) {
+		ImageCacher.getInstance(applicationContext).setMemCacheSize(size);
+	}
+	
+	public void precacheImageToMemory(String url, Context applicationContext, Integer width, Integer height) {
+		imageManager.getBitmap(applicationContext, url, getBlankImageReceivedListener(), width, height);
+	}
 
-	private ImageReceivedListener imageReceivedListener = new ImageReceivedListener() {
-		@Override
-		public void onImageReceived(Bitmap bitmap, String url) {
-			imageViewUrlMapper.drawAllImagesForBitmap(bitmap, url);
+	public static void precacheImage(String url, Context applicationContext) {
+		ImageCacher.getInstance(applicationContext).precacheImage(url);
+	}
+	
+	private boolean tryGetBitmapWithScaling(ImageView imageView, String url, final Options options, ImageReceivedListener listener) {
+		if (options == null) {
+			return false;
 		}
 
-		@Override
-		public void onLoadImageFailed() {
-			// TODO Auto-generated method stub
-
-		}
-	};
-
-	private class ImageReceiverWithCallback implements ImageReceivedListener {
-		private ImageLoadingListener listener;
-
-		public ImageReceiverWithCallback(ImageLoadingListener listener) {
-			this.listener = listener;
+		if (options.overrideSampleSize != null) {
+			imageManager.getBitmap(key, url, listener, options.overrideSampleSize);
+			return true;
 		}
 
-		@Override
-		public void onImageReceived(Bitmap bitmap, String url) {
-			imageViewUrlMapper.drawAllImagesForBitmap(bitmap, url);
-			listener.onImageLoadComplete();
+		Integer width = options.widthBounds;
+		Integer height = options.heightBounds;
+
+		if (options.useScreenSizeAsBounds) {
+			width = Math.min(screenWidth, width == null ? screenWidth : width);
+			height = Math.min(screenHeight, height == null ? screenHeight : height);
 		}
 
-		@Override
-		public void onLoadImageFailed() {
-			// TODO Auto-generated method stub
-
+		if (options.autoDetectBounds) {
+			Point imageBounds = getImageViewDimensions(imageView);
+			if (imageBounds.x != -1) {
+				if (width == null) {
+					width = imageBounds.x;
+				} else {
+					width = Math.min(width, imageBounds.x);
+				}
+			}
+			if (imageBounds.y != -1) {
+				height = imageBounds.y;
+				if (height == null) {
+					height = imageBounds.y;
+				} else {
+					height = Math.min(height, imageBounds.y);
+				}
+			}
 		}
+
+		if (width != null || height != null) {
+			imageManager.getBitmap(key, url, listener, width, height);
+			return true;
+		}
+
+		return false;
+	}
+
+	private ImageReceivedListener getDefaultImageReceivedListener(final Options options) {
+		ImageReceivedListener listener = new ImageReceivedListener() {
+			@Override
+			public void onLoadImageFailed() {
+				ImageView imageView = viewMapper.removeImageView(this);
+				if (imageView != null) {
+					if (options != null) {
+						if (options.unsuccessfulLoadResourceId != null) {
+							imageView.setImageResource(options.unsuccessfulLoadResourceId);
+						}
+					}
+				}
+			}
+
+			@Override
+			public void onImageReceived(Bitmap bitmap) {
+				ImageView imageView = viewMapper.removeImageView(this);
+				if (imageView != null) {
+					imageView.setImageBitmap(bitmap);
+				}
+			}
+		};
+		return listener;
+	}
+
+	private void registerImageView(ImageView view, ImageReceivedListener listener) {
+		ImageReceivedListener oldListener = viewMapper.removeListener(view);
+		if (oldListener != null) {
+			// TODO: CANCEL THE OLD REQUEST HERE
+		}
+
+		viewMapper.registerImageViewToListener(view, listener);
+	}
+
+	private Point getImageViewDimensions(ImageView imageView) {
+		Point dimensions = new Point();
+		dimensions.x = getDimensions(imageView, true);
+		dimensions.y = getDimensions(imageView, false);
+		if (dimensions.x <= 0) {
+			dimensions.x = -1;
+		}
+		if (dimensions.y <= 0) {
+			dimensions.y = -1;
+		}
+		return dimensions;
+	}
+
+	private int getDimensions(ImageView imageView, boolean isWidth) {
+		LayoutParams params = imageView.getLayoutParams();
+		int length = isWidth ? params.width : params.height;
+		if (length == LayoutParams.WRAP_CONTENT) {
+			return -1;
+		} else if (length == LayoutParams.MATCH_PARENT) {
+			try {
+				return getParentDimensions((ViewGroup) imageView.getParent(), isWidth);
+			} catch (ClassCastException e) {
+				return -1;
+			}
+		} else {
+			return length;
+		}
+	}
+
+	private int getParentDimensions(ViewGroup parent, boolean isWidth) {
+		LayoutParams params;
+		if (parent == null || (params = parent.getLayoutParams()) == null) {
+			return -1;
+		}
+		int length = isWidth ? params.width : params.height;
+		if (length == LayoutParams.WRAP_CONTENT) {
+			return -1;
+		} else if (length == LayoutParams.MATCH_PARENT) {
+			try {
+				return getParentDimensions((ViewGroup) parent.getParent(), isWidth);
+			} catch (ClassCastException e) {
+				return -1;
+			}
+		} else {
+			return length;
+		}
+	}
+
+	private ImageReceivedListener getBlankImageReceivedListener() {
+		return new ImageReceivedListener() {
+			@Override
+			public void onLoadImageFailed() {
+				viewMapper.removeImageView(this);
+			}
+
+			@Override
+			public void onImageReceived(Bitmap bitmap) {
+				viewMapper.removeImageView(this);
+			}
+		};
+	}
+
+	public static class Options {
+		public Integer overrideSampleSize = null;
+		public Integer heightBounds = null;
+		public Integer widthBounds = null;
+		public boolean autoDetectBounds = false;
+		public boolean useScreenSizeAsBounds = false;
+		public Integer placeholderImageResourceId = null;
+		public Integer unsuccessfulLoadResourceId = null;
 	}
 }

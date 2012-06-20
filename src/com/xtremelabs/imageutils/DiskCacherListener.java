@@ -2,7 +2,7 @@ package com.xtremelabs.imageutils;
 
 import android.graphics.Bitmap;
 
-public interface DiskCacherListener {
+interface DiskCacherListener {
 
 	void onImageDecoded(Bitmap bitmap);
 

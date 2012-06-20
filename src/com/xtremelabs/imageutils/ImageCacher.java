@@ -2,12 +2,15 @@ package com.xtremelabs.imageutils;
 
 import java.io.FileNotFoundException;
 
-import com.xtremelabs.imageutils.DefaultImageDiskCacher.FileFormatException;
-
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Point;
+
+import com.xtremelabs.imageutils.DefaultImageDiskCacher.FileFormatException;
 
 public class ImageCacher {
+	@SuppressWarnings("unused")
+	private static final String TAG = "ImageCacher";
 	private static ImageCacher imageCacher;
 
 	private ImageDiskCacherInterface diskCache;
@@ -17,7 +20,7 @@ public class ImageCacher {
 	private ImageCacher(Context appContext) {
 		memoryCache = new DefaultImageMemoryLRUCacher();
 		diskCache = new DefaultImageDiskCacher(appContext);
-		networkInterface = new DefaultImageDownloader(diskCache);
+		networkInterface = new DefaultImageDownloader(appContext, diskCache);
 	}
 
 	public static synchronized ImageCacher getInstance(Context appContext) {
@@ -67,30 +70,40 @@ public class ImageCacher {
 	 */
 	public synchronized Bitmap getBitmapWithBounds(final String url, final ImageRequestListener listener, final Integer width, final Integer height) {
 		validateUrl(url);
-
-		/*
-		 * We only know the sample size if the image is currently cached on disk. Otherwise we need it from the network first.
-		 */
-		if (diskCache.isCached(url)) {
-			try {
-				return getBitmapWithScale(url, listener, diskCache.getSampleSize(url, width, height));
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
+		
+		SampleSizeFetcher fetcher = generateSampleSizeFetcher(url, width, height);
+		NetworkImageRequestListener networkImageRequestListener = getNewNetworkImageRequestListener(url, listener, fetcher);
+		if (!networkInterface.queueIfLoadingFromNetwork(url, networkImageRequestListener)) {
+			/*
+			 * We only know the sample size if the image is currently cached on disk. Otherwise we need it from the network first.
+			 */
+			if (diskCache.isCached(url)) {
+				try {
+					return getBitmapFromMemoryOrDisk(url, listener, diskCache.getSampleSize(url, width, height));
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+				} catch (FileFormatException e) {
+					e.printStackTrace();
+				}
 			}
-		}
 
-		loadImageFromNetwork(url, listener, new SampleSizeFetcher() {
+			loadImageFromNetwork(url, listener, generateSampleSizeFetcher(url, width, height));
+		}
+		return null;
+	}
+
+	private SampleSizeFetcher generateSampleSizeFetcher(final String url, final Integer width, final Integer height) {
+		return new SampleSizeFetcher() {
 			@Override
-			public int onSampleSizeRequired() {
+			public int onSampleSizeRequired() throws FileNotFoundException {
 				try {
 					return diskCache.getSampleSize(url, width, height);
 				} catch (FileNotFoundException e) {
 					e.printStackTrace();
-					return 1;
+					throw e;
 				}
 			}
-		});
-		return null;
+		};
 	}
 
 	/**
@@ -109,41 +122,50 @@ public class ImageCacher {
 	public synchronized Bitmap getBitmapWithScale(final String url, final ImageRequestListener listener, final int sampleSize) {
 		validateUrl(url);
 
-		Bitmap bitmap = null;
-		try {
-			bitmap = getBitmapFromMemoryOrDisk(url, listener, sampleSize);
-		} catch (FileNotFoundException e) {
-			// We get to ignore this exception safely.
-		} catch (FileFormatException e) {
-			// We get to ignore this exception safely.
+		NetworkImageRequestListener networkImageRequestListener = getNewNetworkImageRequestListener(url, listener, new SampleSizeFetcher() {
+			@Override
+			public int onSampleSizeRequired() throws FileNotFoundException {
+				return sampleSize;
+			}
+		});
+		
+		if (!networkInterface.queueIfLoadingFromNetwork(url, networkImageRequestListener)) {
+			Bitmap bitmap = null;
+			try {
+				bitmap = getBitmapFromMemoryOrDisk(url, listener, sampleSize);
+			} catch (FileNotFoundException e) {
+				// We get to ignore this exception safely.
+			} catch (FileFormatException e) {
+				// We get to ignore this exception safely.
+			}
+
+			if (bitmap != null) {
+				return bitmap;
+			} else {
+				loadImageFromNetwork(url, listener, new SampleSizeFetcher() {
+					@Override
+					public int onSampleSizeRequired() {
+						return sampleSize;
+					}
+				});
+			}
 		}
-		if (bitmap != null) {
-			return bitmap;
-		} else {
-			loadImageFromNetwork(url, listener, new SampleSizeFetcher() {
-				@Override
-				public int onSampleSizeRequired() {
-					return sampleSize;
-				}
-			});
-			return null;
-		}
+		return null;
+	}
+
+	// TODO: Trigger a network request for the image. We may want to move this into the database...
+	// FIXME: What happens during the error condition?
+	public Point getImageDimensions(String url) throws FileNotFoundException {
+		return diskCache.getImageDimensions(url);
 	}
 
 	private synchronized Bitmap getBitmapFromMemoryOrDisk(String url, ImageRequestListener listener, int sampleSize) throws FileNotFoundException, FileFormatException {
-		if (memoryCache.isCached(url, sampleSize)) {
+		Bitmap bitmap;
+		if ((bitmap = memoryCache.getBitmap(url, sampleSize)) != null) {
 			diskCache.bump(url);
-			return memoryCache.getBitmap(url, sampleSize);
+			return bitmap;
 		} else if (diskCache.isCached(url)) {
-			try {
-				return loadImageFromDisk(url, listener, sampleSize);
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-				throw e;
-			} catch (FileFormatException e) {
-				e.printStackTrace();
-				throw e;
-			}
+			return loadImageFromDisk(url, listener, sampleSize);
 		} else {
 			throw new FileNotFoundException();
 		}
@@ -158,7 +180,6 @@ public class ImageCacher {
 	public synchronized void cancelRequestForBitmap(String url, ImageRequestListener listener) {
 		validateUrl(url);
 
-		// TODO: Actually cancel the network call.
 		if (listener.networkRequestListener != null) {
 			networkInterface.cancelRequest(url, listener.networkRequestListener);
 		}
@@ -173,6 +194,7 @@ public class ImageCacher {
 	public synchronized void precacheImage(String url) {
 		validateUrl(url);
 
+		// TODO: This is a race condition with this "isCached" call.
 		if (!diskCache.isCached(url)) {
 			// Request the image with a blank listener. We don't care what happens when it's done.
 			networkInterface.loadImageToDisk(url, new NetworkImageRequestListener() {
@@ -189,11 +211,7 @@ public class ImageCacher {
 		}
 	}
 
-	public ImageMemoryCacherInterface getMemCacher() {
-		return memoryCache;
-	}
-
-	private Bitmap loadImageFromDisk(final String url, final ImageRequestListener listener, final int sampleSize) throws FileNotFoundException, FileFormatException {
+	private synchronized Bitmap loadImageFromDisk(final String url, final ImageRequestListener listener, final int sampleSize) throws FileNotFoundException, FileFormatException {
 		if (diskCache.synchronousDiskCacheEnabled()) {
 			Bitmap bitmap = diskCache.getBitmapSynchronouslyFromDisk(url, sampleSize);
 			memoryCache.cacheBitmap(bitmap, url, sampleSize);
@@ -210,7 +228,7 @@ public class ImageCacher {
 		}
 	}
 
-	private void loadImageFromNetwork(String url, ImageRequestListener listener, SampleSizeFetcher sampleSizeFetcher) {
+	private synchronized void loadImageFromNetwork(String url, ImageRequestListener listener, SampleSizeFetcher sampleSizeFetcher) {
 		NetworkImageRequestListener networkListener = getNewNetworkImageRequestListener(url, listener, sampleSizeFetcher);
 		listener.networkRequestListener = networkListener;
 		networkInterface.loadImageToDisk(url, networkListener);
@@ -220,19 +238,7 @@ public class ImageCacher {
 		return new NetworkImageRequestListener() {
 			@Override
 			public void onSuccess() {
-				Bitmap bitmap = null;
-				try {
-					bitmap = getBitmapFromMemoryOrDisk(url, listener, sampleSizeFetcher.onSampleSizeRequired());
-				} catch (FileNotFoundException e) {
-					e.printStackTrace();
-					listener.onFailure("File not found after it was downloaded!");
-				} catch (FileFormatException e) {
-					e.printStackTrace();
-					listener.onFailure("File format exception after the file was downloaded!");
-				}
-				if (bitmap != null) {
-					listener.onImageAvailable(bitmap);
-				}
+				onNetworkListenerSuccess(url, listener, sampleSizeFetcher);
 			}
 
 			@Override
@@ -242,6 +248,22 @@ public class ImageCacher {
 		};
 	}
 
+	private synchronized void onNetworkListenerSuccess(final String url, final ImageRequestListener listener, final SampleSizeFetcher sampleSizeFetcher) {
+		Bitmap bitmap = null;
+		try {
+			bitmap = getBitmapFromMemoryOrDisk(url, listener, sampleSizeFetcher.onSampleSizeRequired());
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			listener.onFailure("File not found after it was downloaded!");
+		} catch (FileFormatException e) {
+			e.printStackTrace();
+			listener.onFailure("File format exception after the file was downloaded!");
+		}
+		if (bitmap != null) {
+			listener.onImageAvailable(bitmap);
+		}
+	}
+
 	private void validateUrl(String url) {
 		if (url == null || url.length() == 0) {
 			throw new IllegalArgumentException("Null URL passed into the image system.");
@@ -249,7 +271,7 @@ public class ImageCacher {
 	}
 
 	private interface SampleSizeFetcher {
-		public int onSampleSizeRequired();
+		public int onSampleSizeRequired() throws FileNotFoundException;
 	}
 
 	public static abstract class ImageRequestListener {
@@ -258,5 +280,17 @@ public class ImageCacher {
 		public abstract void onImageAvailable(Bitmap bitmap);
 
 		public abstract void onFailure(String message);
+	}
+
+	public void clearMemCache() {
+		memoryCache.clearCache();
+	}
+
+	public void setMemCacheSize(int size) {
+		memoryCache.setMaximumCacheSize(size);
+	}
+
+	public ImageMemoryCacherInterface getMemCacher() {
+		return memoryCache;
 	}
 }

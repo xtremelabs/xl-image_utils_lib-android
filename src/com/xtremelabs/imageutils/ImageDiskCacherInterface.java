@@ -3,6 +3,7 @@ package com.xtremelabs.imageutils;
 import java.io.FileNotFoundException;
 
 import android.graphics.Bitmap;
+import android.graphics.Point;
 
 import com.xtremelabs.imageutils.DefaultImageDiskCacher.FileFormatException;
 import com.xtremelabs.imageutils.ImageCacher.ImageRequestListener;
@@ -20,7 +21,9 @@ interface ImageDiskCacherInterface extends ImageInputStreamLoader {
 
 	void getBitmapAsynchronousFromDisk(String url, int sampleSize, DiskCacherListener diskCacherListener);
 
-	boolean bump(String url);
+	void bump(String url);
 
 	void setDiskCacheSize(long sizeInBytes);
+
+	Point getImageDimensions(String url) throws FileNotFoundException;
 }

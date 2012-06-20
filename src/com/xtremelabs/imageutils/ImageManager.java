@@ -1,7 +1,5 @@
 package com.xtremelabs.imageutils;
 
-import java.util.List;
-
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
@@ -11,7 +9,7 @@ import android.support.v4.app.Fragment;
 
 import com.xtremelabs.imageutils.ImageCacher.ImageRequestListener;
 
-public class ImageManager {
+class ImageManager {
 	private ImageListenerMapper listenerHelper = new ImageListenerMapper();
 	private Handler handler;
 	private static ImageManager imageManager;
@@ -31,95 +29,116 @@ public class ImageManager {
 		if (imageManager == null) {
 			imageManager = new ImageManager(context);
 		}
+		
 		return imageManager;
 	}
-	
+
 	public void getBitmap(Activity activity, final String url, ImageReceivedListener listener) {
 		getBitmap((Object) activity, url, listener);
 	}
-	
+
 	public void getBitmap(Fragment fragment, final String url, ImageReceivedListener listener) {
 		getBitmap((Object) fragment, url, listener);
 	}
 
+	/**
+	 * This call must be made from the UI thread.
+	 * 
+	 * @param key
+	 * @param url
+	 * @param listener
+	 */
 	public void getBitmap(Object key, final String url, ImageReceivedListener listener) {
 		if (GeneralUtils.isStringBlank(url)) {
 			listener.onLoadImageFailed();
 			return;
 		}
 
-		CustomImageListener customImageListener = new CustomImageListener(url);
+		CacheListener cacheListener = new CacheListener(url);
 
-		synchronized (this) {
-			if (!listenerHelper.isListenerRegistered(listener)) {
-				listenerHelper.registerNewListener(listener, key);
-			}
-			listenerHelper.linkUrlToListener(url, customImageListener, listener);
-		}
-
-		Bitmap bitmap = imageCacher.getBitmap(url, customImageListener);
+		listenerHelper.registerNewListener(listener, key, cacheListener);
+		
+		Bitmap bitmap = imageCacher.getBitmap(url, cacheListener);
 		if (bitmap != null) {
-			replyToAllListenersForUrl(bitmap, url);
-		}
-	}
-
-	public synchronized void removeListenersForKey(Object key) {
-		listenerHelper.removeAllEntriesForObject(key);
-	}
-
-	private void onBitmapAvailableForUrl(final Bitmap bitmap, final String url) {
-		handler.post(new Runnable() {
-			@Override
-			public void run() {
-				replyToAllListenersForUrl(bitmap, url);
-			}
-		});
-	}
-
-	private void onFailureForUrl(final String url) {
-		handler.post(new Runnable() {
-			@Override
-			public void run() {
-				replyToAllListenersWithFailureForUrl(url);
-			}
-		});
-	}
-
-	private void replyToAllListenersForUrl(Bitmap bitmap, String url) {
-		List<ImageReceivedListener> list = listenerHelper.getAndRemoveListenersForUrl(url);
-		if (list != null) {
-			for (ImageReceivedListener listener : list) {
-				listener.onImageReceived(bitmap, url);
-			}
-		}
-	}
-
-	private void replyToAllListenersWithFailureForUrl(String url) {
-		List<ImageReceivedListener> list = listenerHelper.getAndRemoveListenersForUrl(url);
-		if (list != null) {
-			for (ImageReceivedListener listener : list) {
-				listener.onLoadImageFailed();
+			if (listenerHelper.unregisterListener(listener)) {
+				listener.onImageReceived(bitmap);
 			}
 		}
 	}
 	
-	public class CustomImageListener extends ImageRequestListener {
-		private String url;
+	public void getBitmap(Object key, String url, ImageReceivedListener listener, Integer width, Integer height) {
+		if (GeneralUtils.isStringBlank(url)) {
+			listener.onLoadImageFailed();
+			return;
+		}
+
+		CacheListener cacheListener = new CacheListener(url);
+
+		listenerHelper.registerNewListener(listener, key, cacheListener);
 		
-		public CustomImageListener(String url) {
+		Bitmap bitmap = imageCacher.getBitmapWithBounds(url, cacheListener, width, height);
+		if (bitmap != null) {
+			if (listenerHelper.unregisterListener(listener)) {
+				listener.onImageReceived(bitmap);
+			}
+		}
+	}
+	
+	public void getBitmap(Object key, String url, ImageReceivedListener listener, int overrideSampleSize) {
+		if (GeneralUtils.isStringBlank(url)) {
+			listener.onLoadImageFailed();
+			return;
+		}
+
+		CacheListener cacheListener = new CacheListener(url);
+
+		listenerHelper.registerNewListener(listener, key, cacheListener);
+		
+		Bitmap bitmap = imageCacher.getBitmapWithScale(url, cacheListener, overrideSampleSize);
+		if (bitmap != null) {
+			if (listenerHelper.unregisterListener(listener)) {
+				listener.onImageReceived(bitmap);
+			}
+		}
+	}
+
+	public void removeListenersForKey(Object key) {
+		listenerHelper.removeAllEntriesForKey(key);
+	}
+
+	class CacheListener extends ImageRequestListener {
+		private String url;
+
+		public CacheListener(String url) {
 			this.url = url;
 		}
-		
+
 		@Override
-		public void onImageAvailable(Bitmap bitmap) {
-			onBitmapAvailableForUrl(bitmap, url);
+		public void onImageAvailable(final Bitmap bitmap) {
+			handler.post(new Runnable() {
+				@Override
+				public void run() {
+					ImageReceivedListener listener = listenerHelper.getAndRemoveListener(CacheListener.this);
+					if (listener != null) {
+						listener.onImageReceived(bitmap);
+					}
+				}
+			});
 		}
 
 		@Override
 		public void onFailure(String message) {
-			onFailureForUrl(url);
+			handler.post(new Runnable() {
+				@Override
+				public void run() {
+					ImageReceivedListener listener = listenerHelper.getAndRemoveListener(CacheListener.this);
+					if (listener != null) {
+						listener.onLoadImageFailed();
+					}
+				}
+			});
 		}
-		
+
 		public void setCancelled(boolean cancelled) {
 			if (cancelled) {
 				imageCacher.cancelRequestForBitmap(url, this);

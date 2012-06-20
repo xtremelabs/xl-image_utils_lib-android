@@ -1,6 +1,6 @@
 package com.xtremelabs.imageutils;
 
-public class EvictionQueueContainer {
+class EvictionQueueContainer {
 	private String mUrl;
 	private int mSampleSize;
 
@@ -30,7 +30,6 @@ public class EvictionQueueContainer {
 		final String url = evictionQueueContainer.getUrl();
 		final int sampleSize = evictionQueueContainer.getSampleSize();
 
-		return (mUrl == null && mUrl == url && mUrl.equals(url)) && sampleSize == mSampleSize;
-
+		return (mUrl != null && mUrl.equals(url)) && sampleSize == mSampleSize;
 	}
 }

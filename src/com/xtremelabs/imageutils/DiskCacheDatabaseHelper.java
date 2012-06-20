@@ -2,6 +2,7 @@ package com.xtremelabs.imageutils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -17,6 +18,7 @@ public class DiskCacheDatabaseHelper extends SQLiteOpenHelper {
 	private final String DICTIONARY_TABLE_CREATE = "CREATE TABLE IF NOT EXISTS " + DICTIONARY_TABLE_NAME + " (" + columns[0] + " VARCHAR PRIMARY KEY, " + columns[1] + " INTEGER, " + columns[2]
 			+ " INTEGER);";
 	private final static String DATABASE_NAME = "imageCacheDatabase";
+	private ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
 
 	public DiskCacheDatabaseHelper(Context context) {
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -33,8 +35,7 @@ public class DiskCacheDatabaseHelper extends SQLiteOpenHelper {
 	}
 
 	public FileEntry getFileEntry(String url) {
-		String[] entries = { url };
-		Cursor cursor = getReadableDatabase().query(DICTIONARY_TABLE_NAME, columns, columns[0] + " = ?", entries, null, null, null);
+		Cursor cursor = getReadableDatabase().query(DICTIONARY_TABLE_NAME, columns, columns[0] + " = ?", new String[] {url}, null, null, null);
 		if (cursor.getCount() == 0) {
 			return null;
 		} else {
@@ -72,15 +73,18 @@ public class DiskCacheDatabaseHelper extends SQLiteOpenHelper {
 		return 1 == getWritableDatabase().delete(DICTIONARY_TABLE_NAME, columns[0] + " = ?", args);
 	}
 
-	public boolean updateFile(String url, long lastAccessTime) {
+	public void updateFile(final String url, long lastAccessTime) {
 		if (GeneralUtils.isStringBlank(url)) {
 			throw new IllegalArgumentException("Cannot add a null URL to the database.");
 		}
-
-		ContentValues values = new ContentValues(1);
+		final ContentValues values = new ContentValues(1);
 		values.put(columns[2], lastAccessTime);
-		String[] entries = { url };
-		return 1 == getWritableDatabase().update(DICTIONARY_TABLE_NAME, values, columns[0] + " = ?", entries);
+		executor.execute(new Runnable() {
+			@Override
+			public void run() {
+				getWritableDatabase().update(DICTIONARY_TABLE_NAME, values, columns[0] + " = ?", new String[] {url});	
+			}
+		});
 	}
 
 	public void resetTable() {

@@ -2,7 +2,7 @@ package com.xtremelabs.imageutils;
 
 import android.graphics.Bitmap;
 
-public interface ImageReceivedListener {
-	public void onImageReceived(Bitmap bitmap, String url);
+interface ImageReceivedListener {
+	public void onImageReceived(Bitmap bitmap);
 	public void onLoadImageFailed();
 }

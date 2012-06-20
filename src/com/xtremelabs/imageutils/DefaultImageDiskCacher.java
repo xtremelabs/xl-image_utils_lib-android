@@ -8,15 +8,17 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
-import com.xtremelabs.imageutils.ImageCacher.ImageRequestListener;
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
+import android.util.Log;
+
+import com.xtremelabs.imageutils.ImageCacher.ImageRequestListener;
 
 public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
-	private long maximumCacheSizeInBytes = 31457280; // 30MB
+	private static final String TAG = "DefaultImageDiskCacher";
+	private long maximumCacheSizeInBytes = 30 * 1024 * 1024; // 30MB
 	private boolean synchronousDiskAccess = true;
 	private DiskManager diskManager;
 	private DiskCacheDatabaseHelper databaseHelper;
@@ -27,15 +29,16 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public synchronized boolean isCached(String url) {
+	public boolean isCached(String url) {
 		return diskManager.isOnDisk(encode(url));
 	}
 
 	@Override
-	public synchronized int getSampleSize(String url, Integer width, Integer height) throws FileNotFoundException {
+	public int getSampleSize(String url, Integer width, Integer height) throws FileNotFoundException {
+		FileInputStream fileInputStream = null;
 		try {
 			File file = getFile(url);
-			FileInputStream fileInputStream = new FileInputStream(file);
+			fileInputStream = new FileInputStream(file);
 			BitmapFactory.Options opts = new BitmapFactory.Options();
 			opts.inJustDecodeBounds = true;
 			BitmapFactory.decodeStream(fileInputStream, null, opts);
@@ -44,6 +47,13 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			throw e;
+		} finally {
+			if (fileInputStream != null) {
+				try {
+					fileInputStream.close();
+				} catch (IOException e) {
+				}
+			}
 		}
 	}
 
@@ -58,14 +68,14 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public synchronized Bitmap getBitmapSynchronouslyFromDisk(String url, int sampleSize) throws FileNotFoundException, FileFormatException {
+	public Bitmap getBitmapSynchronouslyFromDisk(String url, int sampleSize) throws FileNotFoundException, FileFormatException {
 		File file = getFile(url);
 		FileInputStream fileInputStream = null;
 		fileInputStream = new FileInputStream(file);
 		BitmapFactory.Options opts = new BitmapFactory.Options();
 		opts.inSampleSize = sampleSize;
 		Bitmap bitmap = BitmapFactory.decodeStream(fileInputStream, null, opts);
-		if(fileInputStream != null) {
+		if (fileInputStream != null) {
 			try {
 				fileInputStream.close();
 			} catch (IOException e) {
@@ -80,7 +90,7 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public synchronized void getBitmapAsynchronousFromDisk(final String url, final int sampleSize, final DiskCacherListener diskCacherListener) {
+	public void getBitmapAsynchronousFromDisk(final String url, final int sampleSize, final DiskCacherListener diskCacherListener) {
 		/*
 		 * ImageRequestData data = new ImageRequestData(); data.url = url; data.sampleSize = sampleSize; List<DiskCacherListener> dataCacheListeners; dataCacheListeners =
 		 * asyncRequestMap.get(data); if (dataCacheListeners == null) { dataCacheListeners = new }
@@ -90,6 +100,18 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 		 * @Override public void run() { Bitmap bitmap = getBitmapSynchronousFromDisk(appContext, url, sampleSize); if (bitmap != null) diskCacherListener.onImageDecoded(bitmap); }
 		 * });
 		 */
+
+		ThreadPool.execute(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					Bitmap bitmap = getBitmapSynchronouslyFromDisk(url, sampleSize);
+					diskCacherListener.onImageDecoded(bitmap);
+				} catch (FileNotFoundException e) {
+				} catch (FileFormatException e) {
+				}
+			}
+		});
 	}
 
 	@Override
@@ -103,8 +125,8 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public boolean bump(String url) {
-		return databaseHelper.updateFile(url, System.currentTimeMillis());
+	public void bump(String url) {
+		databaseHelper.updateFile(url, System.currentTimeMillis());
 	}
 
 	@Override
@@ -134,10 +156,12 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 		while ((width == null || imageDimensions.x / sampleSize >= width) && (height == null || imageDimensions.y / sampleSize >= height)) {
 			sampleSize *= 2;
 		}
-		return sampleSize / 2;
+		sampleSize /= 2;
+		Log.d(TAG, "Scaled to " + sampleSize);
+		return sampleSize;
 	}
 
-	private synchronized void clearLeastUsedFilesInCache() {
+	private void clearLeastUsedFilesInCache() {
 		while (databaseHelper.getTotalSizeOnDisk() > maximumCacheSizeInBytes) {
 			String url = databaseHelper.getLRU().getUrl();
 			diskManager.deleteFile(encode(url));
@@ -163,5 +187,20 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 		 * 
 		 */
 		private static final long serialVersionUID = -2180782787028503586L;
+	}
+
+	@Override
+	public Point getImageDimensions(String url) throws FileNotFoundException {
+		try {
+			FileInputStream fileInputStream;
+			fileInputStream = new FileInputStream(getFile(url));
+			BitmapFactory.Options o = new BitmapFactory.Options();
+			o.inJustDecodeBounds = true;
+			BitmapFactory.decodeStream(fileInputStream, null, o);
+			return new Point(o.outWidth, o.outHeight);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			throw e;
+		}
 	}
 }

@@ -37,7 +37,7 @@ public class DiskManager {
 		return new File(getCacheDir(), filename);
 	}
 
-	public void loadStreamToFile(InputStream inputStream, String filename) {
+	public void loadStreamToFile(InputStream inputStream, String filename) throws IOException {
 		File file = new File(getCacheDir(), filename);
 		FileOutputStream fileOutputStream = null;
 
@@ -54,8 +54,10 @@ public class DiskManager {
 			directorySize += file.length();
 		} catch (IOException e) {
 			file.delete();
+			throw e;
 		} catch (OutOfMemoryError e) {
 			file.delete();
+			throw e;
 		} finally {
 			try {
 				if (fileOutputStream != null) {
