@@ -39,10 +39,6 @@ public class MappingManager {
 		}
 	}
 
-	public synchronized List<NetworkImageRequestListener> retrieveListeners(String url) {
-		return urlToListenersMap.remove(url);
-	}
-	
 	public synchronized List<NetworkImageRequestListener> removeListenersForUrl(String url) {
 		urlToNetworkDownloadRunnableMap.remove(url);
 		return urlToListenersMap.remove(url);

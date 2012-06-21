@@ -25,7 +25,7 @@ class ImageListenerMapper {
 		cacheListenerToImageReceivedListenerMap.put(customImageListener, imageReceivedListener);
 	}
 
-	public synchronized boolean unregisterListener(ImageReceivedListener listener) {
+	public synchronized CacheListener unregisterListener(ImageReceivedListener listener) {
 		ListenerInfo info = listenerToInfoMap.remove(listener);
 		if (info != null) {
 			List<ImageReceivedListener> listenerList = keyToListenersMap.get(info.key);
@@ -35,11 +35,10 @@ class ImageListenerMapper {
 					keyToListenersMap.remove(info.key);
 				}
 			}
-			
 			cacheListenerToImageReceivedListenerMap.remove(info.cacheListener);
-			return true;
+			return info.cacheListener;
 		} else {
-			return false;
+			return null;
 		}
 	}
 	

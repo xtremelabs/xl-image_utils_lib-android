@@ -7,21 +7,15 @@ import java.util.List;
 
 import org.apache.http.client.ClientProtocolException;
 
-import android.content.Context;
-import android.os.AsyncTask;
-import android.os.Handler;
-
 public class DefaultImageDownloader implements ImageNetworkInterface {
 	@SuppressWarnings("unused")
 	private static final String TAG = "DefaultImageDownloader";
 
 	private final MappingManager mappingManager = new MappingManager();
 
-	private Handler handler;
 	private ImageInputStreamLoader inputStreamLoader;
 
-	public DefaultImageDownloader(Context applicationContext, ImageInputStreamLoader inputStreamLoader) {
-		handler = new Handler(applicationContext.getMainLooper());
+	public DefaultImageDownloader(ImageInputStreamLoader inputStreamLoader) {
 		this.inputStreamLoader = inputStreamLoader;
 	}
 
@@ -41,9 +35,9 @@ public class DefaultImageDownloader implements ImageNetworkInterface {
 	}
 
 	private void imageLoadComplete(String url) {
-		final List<NetworkImageRequestListener> listeners = mappingManager.retrieveListeners(url);
+		final List<NetworkImageRequestListener> listeners = mappingManager.removeListenersForUrl(url);
 		if (listeners != null) {
-			handler.post(new Runnable() {
+			ThreadPool.execute(new Runnable() {
 				@Override
 				public void run() {
 					for (NetworkImageRequestListener listener : listeners) {
@@ -66,15 +60,14 @@ public class DefaultImageDownloader implements ImageNetworkInterface {
 	public void removeAllListenersForUrl(String url) {
 		final List<NetworkImageRequestListener> listeners = mappingManager.removeListenersForUrl(url);
 		if (listeners != null) {
-			new AsyncTask<Void, Void, Void>() {
+			ThreadPool.execute(new Runnable() {
 				@Override
-				protected Void doInBackground(Void... params) {
+				public void run() {
 					for (NetworkImageRequestListener listener : listeners) {
 						listener.onFailure();
 					}
-					return null;
 				}
-			}.execute();
+			});
 		}
 	}
 

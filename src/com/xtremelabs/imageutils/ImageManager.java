@@ -25,11 +25,11 @@ class ImageManager {
 		if (!(context instanceof Application)) {
 			throw new IllegalArgumentException("The context passed in must be an application context!");
 		}
-		
+
 		if (imageManager == null) {
 			imageManager = new ImageManager(context);
 		}
-		
+
 		return imageManager;
 	}
 
@@ -57,15 +57,15 @@ class ImageManager {
 		CacheListener cacheListener = new CacheListener(url);
 
 		listenerHelper.registerNewListener(listener, key, cacheListener);
-		
+
 		Bitmap bitmap = imageCacher.getBitmap(url, cacheListener);
 		if (bitmap != null) {
-			if (listenerHelper.unregisterListener(listener)) {
+			if (listenerHelper.unregisterListener(listener) != null) {
 				listener.onImageReceived(bitmap);
 			}
 		}
 	}
-	
+
 	public void getBitmap(Object key, String url, ImageReceivedListener listener, Integer width, Integer height) {
 		if (GeneralUtils.isStringBlank(url)) {
 			listener.onLoadImageFailed();
@@ -75,15 +75,15 @@ class ImageManager {
 		CacheListener cacheListener = new CacheListener(url);
 
 		listenerHelper.registerNewListener(listener, key, cacheListener);
-		
+
 		Bitmap bitmap = imageCacher.getBitmapWithBounds(url, cacheListener, width, height);
 		if (bitmap != null) {
-			if (listenerHelper.unregisterListener(listener)) {
+			if (listenerHelper.unregisterListener(listener) != null) {
 				listener.onImageReceived(bitmap);
 			}
 		}
 	}
-	
+
 	public void getBitmap(Object key, String url, ImageReceivedListener listener, int overrideSampleSize) {
 		if (GeneralUtils.isStringBlank(url)) {
 			listener.onLoadImageFailed();
@@ -93,10 +93,10 @@ class ImageManager {
 		CacheListener cacheListener = new CacheListener(url);
 
 		listenerHelper.registerNewListener(listener, key, cacheListener);
-		
+
 		Bitmap bitmap = imageCacher.getBitmapWithScale(url, cacheListener, overrideSampleSize);
 		if (bitmap != null) {
-			if (listenerHelper.unregisterListener(listener)) {
+			if (listenerHelper.unregisterListener(listener) != null) {
 				listener.onImageReceived(bitmap);
 			}
 		}
@@ -139,10 +139,12 @@ class ImageManager {
 			});
 		}
 
-		public void setCancelled(boolean cancelled) {
-			if (cancelled) {
-				imageCacher.cancelRequestForBitmap(url, this);
-			}
+		public void cancelRequest() {
+			imageCacher.cancelRequestForBitmap(url, this);
 		}
+	}
+
+	public void cancelRequest(ImageReceivedListener listener) {
+//		listenerHelper.cancelRequestForListener(listener);
 	}
 }

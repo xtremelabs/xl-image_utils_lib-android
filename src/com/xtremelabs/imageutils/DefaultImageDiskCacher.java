@@ -12,11 +12,11 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
-import android.util.Log;
 
 import com.xtremelabs.imageutils.ImageCacher.ImageRequestListener;
 
 public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
+	@SuppressWarnings("unused")
 	private static final String TAG = "DefaultImageDiskCacher";
 	private long maximumCacheSizeInBytes = 30 * 1024 * 1024; // 30MB
 	private boolean synchronousDiskAccess = true;
@@ -157,7 +157,6 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 			sampleSize *= 2;
 		}
 		sampleSize /= 2;
-		Log.d(TAG, "Scaled to " + sampleSize);
 		return sampleSize;
 	}
 

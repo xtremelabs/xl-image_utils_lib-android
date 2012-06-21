@@ -40,6 +40,7 @@ public class ImageLoader {
 		initKeyAndAppContext(fragment, fragment.getActivity().getApplicationContext());
 	}
 
+	@SuppressWarnings("deprecation")
 	private void initKeyAndAppContext(Object key, Context applicationContext) {
 		this.applicationContext = applicationContext;
 		this.key = key;
@@ -56,17 +57,19 @@ public class ImageLoader {
 		ImageManager.getInstance(applicationContext).removeListenersForKey(key);
 	}
 
-	public void loadImage(ImageView imageView, String url, final Options options) {
+	public void loadImage(ImageView imageView, String url, Options options) {
+		if (options == null) {
+			options = Options.getRecommendedOptions();
+		}
+
 		ImageReceivedListener listener = getDefaultImageReceivedListener(options);
 
 		registerImageView(imageView, listener);
 
-		if (options != null) {
-			if (options.placeholderImageResourceId != null) {
-				imageView.setImageResource(options.placeholderImageResourceId);
-			} else {
-				imageView.setImageBitmap(null);
-			}
+		if (options.placeholderImageResourceId != null) {
+			imageView.setImageResource(options.placeholderImageResourceId);
+		} else {
+			imageView.setImageBitmap(null);
 		}
 
 		if (!tryGetBitmapWithScaling(imageView, url, options, listener)) {
@@ -74,17 +77,22 @@ public class ImageLoader {
 		}
 	}
 
-	public void loadImage(ImageView imageView, String url, final Options options, final ImageLoadingListener listener) {
+	public void loadImage(ImageView imageView, String url, Options options, final ImageLoadingListener listener) {
 		if (listener == null) {
 			throw new IllegalArgumentException("You cannot pass in a null ImageLoadingListener.");
 		}
-		
+
+		if (options == null) {
+			options = Options.getRecommendedOptions();
+		}
+
+		final Options listenerOptions = options;
 		ImageReceivedListener imageReceivedListener = new ImageReceivedListener() {
 			@Override
 			public void onLoadImageFailed() {
 				ImageView imageView = viewMapper.removeImageView(this);
-				if (options != null && options.unsuccessfulLoadResourceId != null) {
-					imageView.setImageResource(options.unsuccessfulLoadResourceId);
+				if (listenerOptions.unsuccessfulLoadResourceId != null) {
+					imageView.setImageResource(listenerOptions.unsuccessfulLoadResourceId);
 				}
 				listener.onImageLoadError();
 			}
@@ -100,12 +108,10 @@ public class ImageLoader {
 
 		registerImageView(imageView, imageReceivedListener);
 
-		if (options != null) {
-			if (options.placeholderImageResourceId != null) {
-				imageView.setImageResource(options.placeholderImageResourceId);
-			} else {
-				imageView.setImageBitmap(null);
-			}
+		if (options.placeholderImageResourceId != null) {
+			imageView.setImageResource(options.placeholderImageResourceId);
+		} else {
+			imageView.setImageBitmap(null);
 		}
 
 		if (!tryGetBitmapWithScaling(imageView, url, options, imageReceivedListener)) {
@@ -124,7 +130,7 @@ public class ImageLoader {
 	public void setMemCacheSize(int size) {
 		ImageCacher.getInstance(applicationContext).setMemCacheSize(size);
 	}
-	
+
 	public void precacheImageToMemory(String url, Context applicationContext, Integer width, Integer height) {
 		imageManager.getBitmap(applicationContext, url, getBlankImageReceivedListener(), width, height);
 	}
@@ -132,12 +138,8 @@ public class ImageLoader {
 	public static void precacheImage(String url, Context applicationContext) {
 		ImageCacher.getInstance(applicationContext).precacheImage(url);
 	}
-	
-	private boolean tryGetBitmapWithScaling(ImageView imageView, String url, final Options options, ImageReceivedListener listener) {
-		if (options == null) {
-			return false;
-		}
 
+	private boolean tryGetBitmapWithScaling(ImageView imageView, String url, final Options options, ImageReceivedListener listener) {
 		if (options.overrideSampleSize != null) {
 			imageManager.getBitmap(key, url, listener, options.overrideSampleSize);
 			return true;
@@ -184,10 +186,8 @@ public class ImageLoader {
 			public void onLoadImageFailed() {
 				ImageView imageView = viewMapper.removeImageView(this);
 				if (imageView != null) {
-					if (options != null) {
-						if (options.unsuccessfulLoadResourceId != null) {
-							imageView.setImageResource(options.unsuccessfulLoadResourceId);
-						}
+					if (options.unsuccessfulLoadResourceId != null) {
+						imageView.setImageResource(options.unsuccessfulLoadResourceId);
 					}
 				}
 			}
@@ -206,9 +206,9 @@ public class ImageLoader {
 	private void registerImageView(ImageView view, ImageReceivedListener listener) {
 		ImageReceivedListener oldListener = viewMapper.removeListener(view);
 		if (oldListener != null) {
-			// TODO: CANCEL THE OLD REQUEST HERE
+			// TODO: Cancel old calls here!
+			// imageManager.cancelRequest(oldListener);
 		}
-
 		viewMapper.registerImageViewToListener(view, listener);
 	}
 
@@ -282,5 +282,12 @@ public class ImageLoader {
 		public boolean useScreenSizeAsBounds = false;
 		public Integer placeholderImageResourceId = null;
 		public Integer unsuccessfulLoadResourceId = null;
+
+		public static Options getRecommendedOptions() {
+			Options o = new Options();
+			o.autoDetectBounds = true;
+			o.useScreenSizeAsBounds = true;
+			return o;
+		}
 	}
 }

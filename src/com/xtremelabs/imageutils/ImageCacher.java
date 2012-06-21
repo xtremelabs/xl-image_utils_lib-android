@@ -20,7 +20,7 @@ public class ImageCacher {
 	private ImageCacher(Context appContext) {
 		memoryCache = new DefaultImageMemoryLRUCacher();
 		diskCache = new DefaultImageDiskCacher(appContext);
-		networkInterface = new DefaultImageDownloader(appContext, diskCache);
+		networkInterface = new DefaultImageDownloader(diskCache);
 	}
 
 	public static synchronized ImageCacher getInstance(Context appContext) {
