@@ -40,7 +40,6 @@ public class ImageLoader {
 		initKeyAndAppContext(fragment, fragment.getActivity().getApplicationContext());
 	}
 
-	@SuppressWarnings("deprecation")
 	private void initKeyAndAppContext(Object key, Context applicationContext) {
 		this.applicationContext = applicationContext;
 		this.key = key;
