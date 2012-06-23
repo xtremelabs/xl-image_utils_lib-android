@@ -8,8 +8,6 @@ import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.support.v4.app.Fragment;
 import android.view.Display;
-import android.view.ViewGroup;
-import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
 import android.widget.ImageView;
 
@@ -86,24 +84,7 @@ public class ImageLoader {
 		}
 
 		final Options listenerOptions = options;
-		ImageReceivedListener imageReceivedListener = new ImageReceivedListener() {
-			@Override
-			public void onLoadImageFailed() {
-				ImageView imageView = viewMapper.removeImageView(this);
-				if (listenerOptions.unsuccessfulLoadResourceId != null) {
-					imageView.setImageResource(listenerOptions.unsuccessfulLoadResourceId);
-				}
-				listener.onImageLoadError();
-			}
-
-			@Override
-			public void onImageReceived(Bitmap bitmap) {
-				ImageView imageView = viewMapper.removeImageView(this);
-				if (imageView != null) {
-					listener.onImageAvailable(imageView, bitmap);
-				}
-			}
-		};
+		ImageReceivedListener imageReceivedListener = getImageReceivedListenerWithCallback(listener, listenerOptions);
 
 		registerImageView(imageView, imageReceivedListener);
 
@@ -153,7 +134,7 @@ public class ImageLoader {
 		}
 
 		if (options.autoDetectBounds) {
-			Point imageBounds = getImageViewDimensions(imageView);
+			Point imageBounds = ViewDimensionsUtil.getImageViewDimensions(imageView);
 			if (imageBounds.x != -1) {
 				if (width == null) {
 					width = imageBounds.x;
@@ -201,6 +182,27 @@ public class ImageLoader {
 		};
 		return listener;
 	}
+	
+	private ImageReceivedListener getImageReceivedListenerWithCallback(final ImageLoadingListener listener, final Options listenerOptions) {
+		return new ImageReceivedListener() {
+			@Override
+			public void onLoadImageFailed() {
+				ImageView imageView = viewMapper.removeImageView(this);
+				if (listenerOptions.unsuccessfulLoadResourceId != null) {
+					imageView.setImageResource(listenerOptions.unsuccessfulLoadResourceId);
+				}
+				listener.onImageLoadError();
+			}
+
+			@Override
+			public void onImageReceived(Bitmap bitmap) {
+				ImageView imageView = viewMapper.removeImageView(this);
+				if (imageView != null) {
+					listener.onImageAvailable(imageView, bitmap);
+				}
+			}
+		};
+	}
 
 	private void registerImageView(ImageView view, ImageReceivedListener listener) {
 		ImageReceivedListener oldListener = viewMapper.removeListener(view);
@@ -209,54 +211,6 @@ public class ImageLoader {
 			// imageManager.cancelRequest(oldListener);
 		}
 		viewMapper.registerImageViewToListener(view, listener);
-	}
-
-	private Point getImageViewDimensions(ImageView imageView) {
-		Point dimensions = new Point();
-		dimensions.x = getDimensions(imageView, true);
-		dimensions.y = getDimensions(imageView, false);
-		if (dimensions.x <= 0) {
-			dimensions.x = -1;
-		}
-		if (dimensions.y <= 0) {
-			dimensions.y = -1;
-		}
-		return dimensions;
-	}
-
-	private int getDimensions(ImageView imageView, boolean isWidth) {
-		LayoutParams params = imageView.getLayoutParams();
-		int length = isWidth ? params.width : params.height;
-		if (length == LayoutParams.WRAP_CONTENT) {
-			return -1;
-		} else if (length == LayoutParams.MATCH_PARENT) {
-			try {
-				return getParentDimensions((ViewGroup) imageView.getParent(), isWidth);
-			} catch (ClassCastException e) {
-				return -1;
-			}
-		} else {
-			return length;
-		}
-	}
-
-	private int getParentDimensions(ViewGroup parent, boolean isWidth) {
-		LayoutParams params;
-		if (parent == null || (params = parent.getLayoutParams()) == null) {
-			return -1;
-		}
-		int length = isWidth ? params.width : params.height;
-		if (length == LayoutParams.WRAP_CONTENT) {
-			return -1;
-		} else if (length == LayoutParams.MATCH_PARENT) {
-			try {
-				return getParentDimensions((ViewGroup) parent.getParent(), isWidth);
-			} catch (ClassCastException e) {
-				return -1;
-			}
-		} else {
-			return length;
-		}
 	}
 
 	private ImageReceivedListener getBlankImageReceivedListener() {
