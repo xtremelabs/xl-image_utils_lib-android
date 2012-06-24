@@ -17,7 +17,7 @@ public class MappingManager {
 		urlToNetworkDownloadRunnableMap.put(url, runnable);
 	}
 
-	public synchronized boolean queueIfLoadingFromNetwork(String url, NetworkImageRequestListener onLoadComplete) {
+	public synchronized boolean queueIfDownloadingFromNetwork(String url, NetworkImageRequestListener onLoadComplete) {
 		if (isRequestingUrlFromNetwork(url)) {
 			urlToListenersMap.get(url).add(onLoadComplete);
 			return true;
@@ -37,6 +37,10 @@ public class MappingManager {
 				urlToNetworkDownloadRunnableMap.remove(url).cancel();
 			}
 		}
+	}
+
+	public synchronized List<NetworkImageRequestListener> getListenersForUrl(String url) {
+		return urlToListenersMap.get(url);
 	}
 
 	public synchronized List<NetworkImageRequestListener> removeListenersForUrl(String url) {

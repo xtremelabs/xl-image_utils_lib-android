@@ -14,16 +14,6 @@ public class DefaultImageMemoryLRUCacher implements ImageMemoryCacherInterface {
 	private LinkedList<EvictionQueueContainer> evictionQueue = new LinkedList<EvictionQueueContainer>();
 	
 	@Override
-	public synchronized boolean isCached(String url, int sampleSize) {
-		HashMap<Integer, Bitmap> images = memcache.get(url);
-		if (images != null) {
-			return images.containsKey(sampleSize);
-		} else {
-			return false;
-		}
-	}
-
-	@Override
 	public synchronized Bitmap getBitmap(String url, int sampleSize) {
 		HashMap<Integer, Bitmap> map = memcache.get(url);
 		if (map != null) {

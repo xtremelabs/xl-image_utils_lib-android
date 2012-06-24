@@ -13,24 +13,22 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
 
-import com.xtremelabs.imageutils.ImageCacher.ImageRequestListener;
-
 public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 	@SuppressWarnings("unused")
 	private static final String TAG = "DefaultImageDiskCacher";
-	private long maximumCacheSizeInBytes = 30 * 1024 * 1024; // 30MB
-	private boolean synchronousDiskAccess = true;
-	private DiskManager diskManager;
-	private DiskCacheDatabaseHelper databaseHelper;
+	private long mMaximumCacheSizeInBytes = 30 * 1024 * 1024; // 30MB
+	private boolean mSynchronousDiskAccess = true;
+	private DiskManager mDiskManager;
+	private DiskCacheDatabaseHelper mDatabaseHelper;
 
 	public DefaultImageDiskCacher(Context appContext) {
-		diskManager = new DiskManager("img", appContext);
-		databaseHelper = new DiskCacheDatabaseHelper(appContext);
+		mDiskManager = new DiskManager("img", appContext);
+		mDatabaseHelper = new DiskCacheDatabaseHelper(appContext);
 	}
 
 	@Override
 	public boolean isCached(String url) {
-		return diskManager.isOnDisk(encode(url));
+		return mDiskManager.isOnDisk(encode(url));
 	}
 
 	@Override
@@ -59,13 +57,13 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 
 	@Override
 	public synchronized boolean synchronousDiskCacheEnabled() {
-		return synchronousDiskAccess;
+		return mSynchronousDiskAccess;
 	}
 
-	@Override
-	public synchronized void cancelRequest(String url, ImageRequestListener listener) {
-
-	}
+//	@Override
+//	public synchronized void cancelRequest(String url, ImageRequestListener listener) {
+//
+//	}
 
 	@Override
 	public Bitmap getBitmapSynchronouslyFromDisk(String url, int sampleSize) throws FileNotFoundException, FileFormatException {
@@ -115,23 +113,23 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public void loadImageFromInputStream(String url, InputStream inputStream) throws IOException {
-		diskManager.loadStreamToFile(inputStream, encode(url));
-		File file = diskManager.getFile(encode(url));
-		if (!databaseHelper.addFile(url, file.length(), System.currentTimeMillis())) {
-			databaseHelper.updateFile(url, System.currentTimeMillis());
+	public void downloadImageFromInputStream(String url, InputStream inputStream) throws IOException {
+		mDiskManager.loadStreamToFile(inputStream, encode(url));
+		File file = mDiskManager.getFile(encode(url));
+		if (!mDatabaseHelper.addFile(url, file.length(), System.currentTimeMillis())) {
+			mDatabaseHelper.updateFile(url, System.currentTimeMillis());
 		}
 		clearLeastUsedFilesInCache();
 	}
 
 	@Override
 	public void bump(String url) {
-		databaseHelper.updateFile(url, System.currentTimeMillis());
+		mDatabaseHelper.updateFile(url, System.currentTimeMillis());
 	}
 
 	@Override
 	public void setDiskCacheSize(long sizeInBytes) {
-		maximumCacheSizeInBytes = sizeInBytes;
+		mMaximumCacheSizeInBytes = sizeInBytes;
 		clearLeastUsedFilesInCache();
 	}
 
@@ -161,15 +159,15 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 	}
 
 	private void clearLeastUsedFilesInCache() {
-		while (databaseHelper.getTotalSizeOnDisk() > maximumCacheSizeInBytes) {
-			String url = databaseHelper.getLRU().getUrl();
-			diskManager.deleteFile(encode(url));
-			databaseHelper.removeFile(url);
+		while (mDatabaseHelper.getTotalSizeOnDisk() > mMaximumCacheSizeInBytes) {
+			String url = mDatabaseHelper.getLRU().getUrl();
+			mDiskManager.deleteFile(encode(url));
+			mDatabaseHelper.removeFile(url);
 		}
 	}
 
 	private File getFile(String url) {
-		return diskManager.getFile(encode(url));
+		return mDiskManager.getFile(encode(url));
 	}
 
 	private String encode(String url) {
@@ -189,14 +187,14 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public Point getImageDimensions(String url) throws FileNotFoundException {
+	public Dimensions getImageDimensions(String url) throws FileNotFoundException {
 		try {
 			FileInputStream fileInputStream;
 			fileInputStream = new FileInputStream(getFile(url));
 			BitmapFactory.Options o = new BitmapFactory.Options();
 			o.inJustDecodeBounds = true;
 			BitmapFactory.decodeStream(fileInputStream, null, o);
-			return new Point(o.outWidth, o.outHeight);
+			return new Dimensions(o.outWidth, o.outHeight);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			throw e;

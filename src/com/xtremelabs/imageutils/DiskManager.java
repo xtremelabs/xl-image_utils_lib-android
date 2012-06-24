@@ -76,27 +76,6 @@ public class DiskManager {
 			}
 		}
 	}
-
-	public void touch(String filename) throws IOException {
-		File file = new File(cacheDir, filename);
-
-		if (file != null) {
-			if (file.exists()) {
-				file.setLastModified(System.currentTimeMillis());
-			} else {
-				file.createNewFile();
-				directorySize += file.length();
-			}
-		}
-	}
-
-	public boolean touchIfExists(String filename) {
-		File file = new File(cacheDir, filename);
-		if (file != null && file.exists()) {
-			return file.setLastModified(System.currentTimeMillis());
-		}
-		return false;
-	}
 	
 	public long getLastModifiedTime(String filename) {
 		File file = new File(cacheDir, filename);

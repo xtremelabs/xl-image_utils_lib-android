@@ -11,54 +11,52 @@ public class DefaultImageDownloader implements ImageNetworkInterface {
 	@SuppressWarnings("unused")
 	private static final String TAG = "DefaultImageDownloader";
 
-	private final MappingManager mappingManager = new MappingManager();
+	private final MappingManager mMappingManager = new MappingManager();
 
-	private ImageInputStreamLoader inputStreamLoader;
+	private NetworkToDiskInterface mNetworkToDiskInterface;
 
-	public DefaultImageDownloader(ImageInputStreamLoader inputStreamLoader) {
-		this.inputStreamLoader = inputStreamLoader;
+	public DefaultImageDownloader(NetworkToDiskInterface networkToDiskInterface) {
+		mNetworkToDiskInterface = networkToDiskInterface;
 	}
 
 	@Override
-	public synchronized void loadImageToDisk(final String url, final NetworkImageRequestListener onLoadComplete) {
-		if (mappingManager.queueIfLoadingFromNetwork(url, onLoadComplete)) {
+	public synchronized boolean queueIfDownloadingFromNetwork(String url, NetworkImageRequestListener onLoadComplete) {
+		return mMappingManager.queueIfDownloadingFromNetwork(url, onLoadComplete);
+	}
+
+	@Override
+	public synchronized void downloadImageToDisk(final String url, final NetworkImageRequestListener onLoadComplete) {
+		if (mMappingManager.queueIfDownloadingFromNetwork(url, onLoadComplete)) {
 			return;
 		}
 		ImageDownloadingRunnable runnable = new ImageDownloadingRunnable(url);
-		mappingManager.addToListenerNewMap(url, onLoadComplete, runnable);
+		mMappingManager.addToListenerNewMap(url, onLoadComplete, runnable);
 		ThreadPool.execute(runnable);
 	}
 
 	@Override
-	public synchronized void cancelRequest(String url, NetworkImageRequestListener listener) {
-		mappingManager.cancelRequest(url, listener);
-	}
-
-	private void imageLoadComplete(String url) {
-		final List<NetworkImageRequestListener> listeners = mappingManager.removeListenersForUrl(url);
-		if (listeners != null) {
-			ThreadPool.execute(new Runnable() {
-				@Override
-				public void run() {
-					for (NetworkImageRequestListener listener : listeners) {
-						listener.onSuccess();
-					}
-				}
-			});
+	public void cancelRequest(String url, NetworkImageRequestListener listener) {
+		synchronized (listener) {
+			mMappingManager.cancelRequest(url, listener);
 		}
 	}
 
-	@Override
-	public boolean queueIfLoadingFromNetwork(String url, NetworkImageRequestListener onLoadComplete) {
-		return mappingManager.queueIfLoadingFromNetwork(url, onLoadComplete);
+	private void onDownloadSucceeded(String url) {
+		final List<NetworkImageRequestListener> listeners = mMappingManager.getListenersForUrl(url);
+		if (listeners != null) {
+			int size;
+			NetworkImageRequestListener listener;
+			while ((size = listeners.size()) != 0) {
+				listener
+				synchronized (listeners) {
+					listeners.remove(location)
+				}
+			}
+		}
 	}
 
-	public ImageDownloadingRunnable getImageDownloadingRunnable(String url) {
-		return new ImageDownloadingRunnable(url);
-	}
-
-	public void removeAllListenersForUrl(String url) {
-		final List<NetworkImageRequestListener> listeners = mappingManager.removeListenersForUrl(url);
+	private void onDownloadFailed(String url) {
+		final List<NetworkImageRequestListener> listeners = mMappingManager.removeListenersForUrl(url);
 		if (listeners != null) {
 			ThreadPool.execute(new Runnable() {
 				@Override
@@ -71,13 +69,17 @@ public class DefaultImageDownloader implements ImageNetworkInterface {
 		}
 	}
 
+	private synchronized void onDownloadCancelled(String url) {
+		mMappingManager.removeListenersForUrl(url);
+	}
+
 	public class ImageDownloadingRunnable implements Runnable {
-		private String url;
-		private boolean cancelled = false;
-		private InputStream inputStream = null;
+		private String mUrl;
+		private boolean mCancelled = false;
+		private InputStream mInputStream = null;
 
 		public ImageDownloadingRunnable(String url) {
-			this.url = url;
+			mUrl = url;
 		}
 
 		@Override
@@ -92,17 +94,17 @@ public class DefaultImageDownloader implements ImageNetworkInterface {
 		}
 
 		private synchronized void checkLoadCompleteAndRemoveListeners() {
-			if (!cancelled) {
-				imageLoadComplete(url);
+			if (!mCancelled) {
+				onDownloadSucceeded(mUrl);
 			}
-			removeAllListenersForUrl(url);
+			onDownloadFailed(mUrl);
 		}
 
 		public synchronized void cancel() {
-			cancelled = true;
-			if (inputStream != null) {
+			mCancelled = true;
+			if (mInputStream != null) {
 				try {
-					inputStream.close();
+					mInputStream.close();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -110,16 +112,16 @@ public class DefaultImageDownloader implements ImageNetworkInterface {
 		}
 
 		public synchronized void executeNetworkRequest() throws ClientProtocolException, IOException {
-			if (cancelled) {
-				removeAllListenersForUrl(url);
+			if (mCancelled) {
+				onDownloadFailed(mUrl);
 				return;
 			}
-			inputStream = new URL(url).openStream();
+			mInputStream = new URL(mUrl).openStream();
 		}
 
 		public void passInputStreamToImageLoader() throws IOException {
-			if (inputStream != null) {
-				inputStreamLoader.loadImageFromInputStream(url, inputStream);
+			if (mInputStream != null) {
+				mNetworkToDiskInterface.downloadImageFromInputStream(mUrl, mInputStream);
 			}
 		}
 	}
