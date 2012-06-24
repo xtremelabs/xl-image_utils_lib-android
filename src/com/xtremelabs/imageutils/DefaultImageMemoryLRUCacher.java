@@ -8,7 +8,7 @@ import android.graphics.Bitmap;
 public class DefaultImageMemoryLRUCacher implements ImageMemoryCacherInterface {
 	@SuppressWarnings("unused")
 	private static final String TAG = "DefaultImageMemoryLRUCacher";
-	private int maximumCacheEntries = 3;
+	private int maximumCacheEntries = 50;
 
 	private HashMap<String, HashMap<Integer, Bitmap>> memcache = new HashMap<String, HashMap<Integer, Bitmap>>();
 	private LinkedList<EvictionQueueContainer> evictionQueue = new LinkedList<EvictionQueueContainer>();

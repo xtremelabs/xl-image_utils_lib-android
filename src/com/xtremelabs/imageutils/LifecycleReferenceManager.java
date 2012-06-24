@@ -30,58 +30,28 @@ class LifecycleReferenceManager {
 
 		return referenceManager;
 	}
-
-	/**
-	 * This call must be made from the UI thread.
-	 * 
-	 * @param key
-	 * @param url
-	 * @param listener
-	 */
-	public void getBitmap(Object key, final String url, ImageManagerListener listener) {
+	
+	public void getBitmap(Object key, String url, ImageManagerListener imageManagerListener, ScalingInfo scalingInfo) {
 		if (GeneralUtils.isStringBlank(url)) {
-			listener.onLoadImageFailed();
+			imageManagerListener.onLoadImageFailed();
 			return;
 		}
-
-		ImageManagerCacheListener cacheListener = generateRegisteredListener(key, url, listener);
-		Bitmap bitmap = mImageCacher.getBitmap(url, cacheListener);
-		returnImageIfValid(listener, bitmap);
-	}
-
-	public void getBitmap(Object key, String url, ImageManagerListener listener, Integer width, Integer height) {
-		if (GeneralUtils.isStringBlank(url)) {
-			listener.onLoadImageFailed();
-			return;
-		}
-
-		ImageManagerCacheListener cacheListener = generateRegisteredListener(key, url, listener);
-		Bitmap bitmap = mImageCacher.getBitmapWithBounds(url, cacheListener, width, height);
-		returnImageIfValid(listener, bitmap);
-	}
-
-	public void getBitmap(Object key, String url, ImageManagerListener listener, int overrideSampleSize) {
-		if (GeneralUtils.isStringBlank(url)) {
-			listener.onLoadImageFailed();
-			return;
-		}
-
-		ImageManagerCacheListener cacheListener = generateRegisteredListener(key, url, listener);
-		Bitmap bitmap = mImageCacher.getBitmapWithScale(url, cacheListener, overrideSampleSize);
-		returnImageIfValid(listener, bitmap);
+		ImageManagerCacheListener cacheListener = generateRegisteredListener(key, url, imageManagerListener);
+		Bitmap bitmap = mImageCacher.getBitmap(url, cacheListener, scalingInfo);
+		returnImageIfValid(imageManagerListener, bitmap);
 	}
 
 	public void removeListenersForKey(Object key) {
 		mListenerHelper.removeAllEntriesForKey(key);
 	}
 	
-	public void cancelRequest(ImageManagerListener listener) {
+	public void cancelRequest(ImageManagerListener imageManagerListener) {
 		// TODO: Do not forget to remove the listeners from THIS class!
-		// listenerHelper.cancelRequestForListener(listener);
+		mListenerHelper.unregisterListener(imageManagerListener).cancelRequest();
 	}
 	
 	private ImageManagerCacheListener generateRegisteredListener(Object key, String url, ImageManagerListener listener) {
-		ImageManagerCacheListener cacheListener = new ImageManagerCacheListener(url);
+		ImageManagerCacheListener cacheListener = new ImageManagerCacheListener();
 
 		mListenerHelper.registerNewListener(listener, key, cacheListener);
 		return cacheListener;
@@ -94,12 +64,6 @@ class LifecycleReferenceManager {
 	}
 
 	class ImageManagerCacheListener extends ImageCacherListener {
-		private String mUrl;
-
-		public ImageManagerCacheListener(String url) {
-			mUrl = url;
-		}
-
 		@Override
 		public void onImageAvailable(final Bitmap bitmap) {
 			mUiThreadHandler.post(new Runnable() {
@@ -127,7 +91,7 @@ class LifecycleReferenceManager {
 		}
 
 		public void cancelRequest() {
-			mImageCacher.cancelRequestForBitmap(mUrl, this);
+			mImageCacher.cancelRequestForBitmap(this);
 		}
 	}
 }

@@ -4,10 +4,11 @@ import java.io.FileNotFoundException;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.util.Log;
 
-import com.xtremelabs.imageutils.DefaultImageDiskCacher.FileFormatException;
+import com.xtremelabs.imageutils.AsyncOperationsMaps.AsyncOperationState;
 
-class ImageCacher {
+class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOperationsObserver {
 	@SuppressWarnings("unused")
 	private static final String TAG = "ImageCacher";
 	private static ImageCacher mImageCacher;
@@ -16,10 +17,13 @@ class ImageCacher {
 	private ImageMemoryCacherInterface mMemoryCache;
 	private ImageNetworkInterface mNetworkInterface;
 
+	private AsyncOperationsMaps mAsyncOperationsMap;
+
 	private ImageCacher(Context appContext) {
 		mMemoryCache = new DefaultImageMemoryLRUCacher();
-		mDiskCache = new DefaultImageDiskCacher(appContext);
-		mNetworkInterface = new DefaultImageDownloader(mDiskCache);
+		mDiskCache = new DefaultImageDiskCacher(appContext, this);
+		mNetworkInterface = new DefaultImageDownloader(mDiskCache, this);
+		mAsyncOperationsMap = new AsyncOperationsMaps(this);
 	}
 
 	public static synchronized ImageCacher getInstance(Context appContext) {
@@ -29,183 +33,52 @@ class ImageCacher {
 		return mImageCacher;
 	}
 
-	/**
-	 * Retrieves and caches the requested bitmap. The bitmap returned by this method is always the full sized image.
-	 * 
-	 * @param url
-	 *            The location of the image on the web.
-	 * @param listener
-	 *            If the image is not synchronously available with this call, the bitmap will be returned at some time in the future to this listener, so long
-	 *            as the request is not cancelled.
-	 * @return Returns the bitmap if it is synchronously available, or null.
-	 */
-	public Bitmap getBitmap(String url, ImageCacherListener listener) {
-		return getBitmapWithScale(url, listener, 1);
-	}
+	public Bitmap getBitmap(String url, ImageCacherListener imageCacherListener, ScalingInfo scalingInfo) {
+		throwExceptionIfNeeded(url, imageCacherListener, scalingInfo);
 
-	/**
-	 * This method will return a (potentially) scaled down version of the requested image. If the image requested is smaller than at least one of the bounds
-	 * provided, the full image will be returned. Otherwise, this method will return an image that is guaranteed to be larger than both bounds, and potentially
-	 * scaled down from its original size in order to conserve memory. Enter "null" for either the width or height if you do not want the image to be scaled
-	 * relative to that dimension.
-	 * 
-	 * Example 1:
-	 * 
-	 * Let the requested image be of size 640x480. The width specified is 120 pixels, and the height is null (and therefore ignored). The returned image will be
-	 * 160x120 pixels.
-	 * 
-	 * Example 2:
-	 * 
-	 * Let the requested image be of size 300x300. The width specified is 50px, the height is specified at 140px. The returned image will be 150x150.
-	 * 
-	 * @param url
-	 *            Location of the image on the web.
-	 * @param imageCacherListener
-	 *            If the image is not synchronously available, null will be returned, and the image will eventually be sent to this listener.
-	 * @param width
-	 *            The width (in pixels) of the display area for the image. This is usually the width of the ImageView or ImageButton that the image will be
-	 *            loaded to.
-	 * @param height
-	 *            The height (in pixels) of the display area for the image. This is usually the height of the ImageView or ImageButton that the image will be
-	 *            loaded to.
-	 * @return Returns a reference to the bitmap if it is synchronously available. Otherwise null is returned, and the bitmap will eventually be returned to the
-	 *         listener if the request is not cancelled.
-	 */
-	public synchronized Bitmap getBitmapWithBounds(final String url, final ImageCacherListener imageCacherListener, final Integer width, final Integer height) {
-		validateUrl(url);
-
-		SampleSizeFetcher fetcher = generateSampleSizeFetcher(url, width, height);
-		NetworkImageRequestListener networkImageRequestListener = getNewNetworkImageRequestListener(url, imageCacherListener, fetcher);
-		if (!mNetworkInterface.queueIfDownloadingFromNetwork(url, networkImageRequestListener)) {
-			/*
-			 * We only know the sample size if the image is currently cached on disk. Otherwise we need it from the network first.
-			 */
-			if (mDiskCache.isCached(url)) {
-				try {
-					return getBitmapFromMemoryOrDisk(url, imageCacherListener, mDiskCache.getSampleSize(url, width, height));
-				} catch (FileNotFoundException e) {
-					e.printStackTrace();
-				} catch (FileFormatException e) {
-					e.printStackTrace();
-				}
-			}
-
-			loadImageFromNetwork(url, imageCacherListener, generateSampleSizeFetcher(url, width, height));
+		AsyncOperationState asyncOperationState = mAsyncOperationsMap.queueListenerIfRequestPending(imageCacherListener, url, scalingInfo);
+		if (asyncOperationState != AsyncOperationState.NOT_QUEUED) {
+			Log.d(TAG, "Detected already queued...");
+			return null;
 		}
-		return null;
-	}
 
-	private SampleSizeFetcher generateSampleSizeFetcher(final String url, final Integer width, final Integer height) {
-		return new SampleSizeFetcher() {
-			@Override
-			public int onSampleSizeRequired() throws FileNotFoundException {
-				try {
-					return mDiskCache.getSampleSize(url, width, height);
-				} catch (FileNotFoundException e) {
-					e.printStackTrace();
-					throw e;
-				}
-			}
-		};
-	}
-
-	/**
-	 * Retrieves and caches the bitmap for the provided url. The bitmap returned will be scaled by the provided sample size.
-	 * 
-	 * @param url
-	 *            Location of the image on the web.
-	 * @param imageCacherListener
-	 *            If the image is not synchronously available, null will be returned, and the image will eventually be sent to this listener.
-	 * @param sampleSize
-	 *            This parameter MUST BE A POWER OF 2 unless you have good reason to pick a non-power-of-two value. The width and height dimensions of the image
-	 *            being returned will be divided by this sample size.
-	 * @return Returns a reference to the bitmap if it is synchronously available. Otherwise null is returned, and the bitmap will eventually be returned to the
-	 *         listener if the request is not cancelled.
-	 */
-	public synchronized Bitmap getBitmapWithScale(final String url, final ImageCacherListener imageCacherListener, final int sampleSize) {
-		validateUrl(url);
-		
-		/*
-		 * Logic for below:
-		 * 
-		 * 1. If currently requesting from the network, queue with that call.
-		 * 
-		 * 2. If currently requesting from the disk, queue with that call.
-		 * 
-		 * 3. If image is in memory, get the image from the memcache and return.
-		 * 
-		 * 4. If image is in disk:
-		 * 
-		 * a) Synchronously decode and return if synchronous disk cache is enabled
-		 * 
-		 * b) Queue for and start the asynchronous call.
-		 * 
-		 * 5. If we haven't done any of the above, queue for and start the network call.
-		 */
-
-		NetworkImageRequestListener networkImageRequestListener = getNewNetworkImageRequestListener(url, imageCacherListener, new SampleSizeFetcher() {
-			@Override
-			public int onSampleSizeRequired() throws FileNotFoundException {
-				return sampleSize;
-			}
-		});
-
-		if (!mNetworkInterface.queueIfDownloadingFromNetwork(url, networkImageRequestListener)) {
-			Bitmap bitmap = null;
+		if (mDiskCache.isCached(url)) {
+			Log.d(TAG, "Image is cached on disk!");
 			try {
-				bitmap = getBitmapFromMemoryOrDisk(url, imageCacherListener, sampleSize);
-			} catch (FileNotFoundException e) {
-				// We get to ignore this exception safely.
-			} catch (FileFormatException e) {
-				// We get to ignore this exception safely.
-			}
+				int sampleSize = getSampleSize(url, scalingInfo);
 
-			if (bitmap != null) {
-				return bitmap;
-			} else {
-				loadImageFromNetwork(url, imageCacherListener, new SampleSizeFetcher() {
-					@Override
-					public int onSampleSizeRequired() {
-						return sampleSize;
-					}
-				});
+				Bitmap bitmap;
+				if ((bitmap = mMemoryCache.getBitmap(url, sampleSize)) != null) {
+					Log.d(TAG, "Bitmap was in memcache.");
+					return bitmap;
+				} else {
+					Log.d(TAG, "Decoding from disk.");
+					decodeBitmapFromDisk(url, imageCacherListener, sampleSize);
+				}
+			} catch (FileNotFoundException e) {
 			}
+		} else {
+			Log.d(TAG, "Downloading image from network.");
+			downloadImageFromNetwork(url, imageCacherListener, scalingInfo);
 		}
 		return null;
+	}
+
+	@Override
+	public int getSampleSize(String url, ScalingInfo scalingInfo) throws FileNotFoundException {
+		int sampleSize;
+		if (scalingInfo.sampleSize != null) {
+			sampleSize = scalingInfo.sampleSize;
+		} else {
+			sampleSize = mDiskCache.getSampleSize(url, scalingInfo.width, scalingInfo.height);
+		}
+		return sampleSize;
 	}
 
 	// TODO: Trigger a network request for the image. We may want to move this into the database...
 	// FIXME: What happens during the error condition?
 	public Dimensions getImageDimensions(String url) throws FileNotFoundException {
 		return mDiskCache.getImageDimensions(url);
-	}
-
-	private synchronized Bitmap getBitmapFromMemoryOrDisk(String url, ImageCacherListener imageCacherListener, int sampleSize) throws FileNotFoundException,
-			FileFormatException {
-		Bitmap bitmap;
-		if ((bitmap = mMemoryCache.getBitmap(url, sampleSize)) != null) {
-			mDiskCache.bump(url);
-			return bitmap;
-		} else if (mDiskCache.isCached(url)) {
-			return loadImageFromDisk(url, imageCacherListener, sampleSize);
-		} else {
-			throw new FileNotFoundException();
-		}
-	}
-
-	/**
-	 * Cancels any asynchronous requests that are currently pending for the provided url that uses the provided listener.
-	 * 
-	 * @param url
-	 * @param imageCacherListener
-	 */
-	public synchronized void cancelRequestForBitmap(String url, ImageCacherListener imageCacherListener) {
-		validateUrl(url);
-
-		if (imageCacherListener.networkRequestListener != null) {
-			mNetworkInterface.cancelRequest(url, imageCacherListener.networkRequestListener);
-		}
-		// diskCache.cancelRequest(url, listener);
 	}
 
 	/**
@@ -216,87 +89,14 @@ class ImageCacher {
 	public synchronized void precacheImage(String url) {
 		validateUrl(url);
 
+		// TODO: This no longer works. Fix it.
 		// TODO: This is a race condition with this "isCached" call.
 		if (!mDiskCache.isCached(url)) {
 			// Request the image with a blank listener. We don't care what happens when it's done.
-			mNetworkInterface.downloadImageToDisk(url, new NetworkImageRequestListener() {
-				@Override
-				public void onSuccess() {
-				}
-
-				@Override
-				public void onFailure() {
-				}
-			});
+			mNetworkInterface.downloadImageToDisk(url);
 		} else {
 			mDiskCache.bump(url);
 		}
-	}
-
-	private synchronized Bitmap loadImageFromDisk(final String url, final ImageCacherListener imageCacherListener, final int sampleSize)
-			throws FileNotFoundException, FileFormatException {
-		if (mDiskCache.synchronousDiskCacheEnabled()) {
-			Bitmap bitmap = mDiskCache.getBitmapSynchronouslyFromDisk(url, sampleSize);
-			mMemoryCache.cacheBitmap(bitmap, url, sampleSize);
-			return bitmap;
-		} else {
-			mDiskCache.getBitmapAsynchronousFromDisk(url, sampleSize, new DiskCacherListener() {
-				@Override
-				public void onImageDecoded(Bitmap bitmap) {
-					mMemoryCache.cacheBitmap(bitmap, url, sampleSize);
-					imageCacherListener.onImageAvailable(bitmap);
-				}
-			});
-			return null;
-		}
-	}
-
-	private synchronized void loadImageFromNetwork(String url, ImageCacherListener imageCacherListener, SampleSizeFetcher sampleSizeFetcher) {
-		NetworkImageRequestListener networkListener = getNewNetworkImageRequestListener(url, imageCacherListener, sampleSizeFetcher);
-		imageCacherListener.networkRequestListener = networkListener;
-		mNetworkInterface.downloadImageToDisk(url, networkListener);
-	}
-
-	private NetworkImageRequestListener getNewNetworkImageRequestListener(final String url, final ImageCacherListener imageCacherListener,
-			final SampleSizeFetcher sampleSizeFetcher) {
-		return new NetworkImageRequestListener() {
-			@Override
-			public void onSuccess() {
-				onNetworkListenerSuccess(url, imageCacherListener, sampleSizeFetcher);
-			}
-
-			@Override
-			public void onFailure() {
-				imageCacherListener.onFailure("Failed to get image from the network!");
-			}
-		};
-	}
-
-	private synchronized void onNetworkListenerSuccess(final String url, final ImageCacherListener imageCacherListener,
-			final SampleSizeFetcher sampleSizeFetcher) {
-		Bitmap bitmap = null;
-		try {
-			bitmap = getBitmapFromMemoryOrDisk(url, imageCacherListener, sampleSizeFetcher.onSampleSizeRequired());
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			imageCacherListener.onFailure("File not found after it was downloaded!");
-		} catch (FileFormatException e) {
-			e.printStackTrace();
-			imageCacherListener.onFailure("File format exception after the file was downloaded!");
-		}
-		if (bitmap != null) {
-			imageCacherListener.onImageAvailable(bitmap);
-		}
-	}
-
-	private void validateUrl(String url) {
-		if (url == null || url.length() == 0) {
-			throw new IllegalArgumentException("Null URL passed into the image system.");
-		}
-	}
-
-	private interface SampleSizeFetcher {
-		public int onSampleSizeRequired() throws FileNotFoundException;
 	}
 
 	public void clearMemCache() {
@@ -306,16 +106,70 @@ class ImageCacher {
 	public void setMemCacheSize(int size) {
 		mMemoryCache.setMaximumCacheSize(size);
 	}
+	
+	public void cancelRequestForBitmap(ImageCacherListener imageCacherListener) {
+		mAsyncOperationsMap.cancelPendingRequest(imageCacherListener);
+	}
 
-	public ImageMemoryCacherInterface getMemCacher() {
-		return mMemoryCache;
+	private void downloadImageFromNetwork(String url, ImageCacherListener imageCacherListener, ScalingInfo scalingInfo) {
+		mAsyncOperationsMap.registerListenerForNetworkRequest(imageCacherListener, url, scalingInfo);
+		mNetworkInterface.downloadImageToDisk(url);
+	}
+
+	private void decodeBitmapFromDisk(String url, ImageCacherListener imageCacherListener, int sampleSize) {
+		mAsyncOperationsMap.registerListenerForDecode(imageCacherListener, url, sampleSize);
+		mDiskCache.getBitmapAsynchronouslyFromDisk(url, sampleSize);
+	}
+
+	private void validateUrl(String url) {
+		if (url == null || url.length() == 0) {
+			throw new IllegalArgumentException("Null URL passed into the image system.");
+		}
+	}
+
+	private void throwExceptionIfNeeded(String url, ImageCacherListener imageCacherListener, ScalingInfo scalingInfo) {
+		ThreadChecker.throwErrorIfOffUiThread();
+
+		validateUrl(url);
+
+		if (imageCacherListener == null) {
+			throw new IllegalArgumentException("The ImageCacherListener must not be null.");
+		}
+
+		if (scalingInfo == null) {
+			throw new IllegalArgumentException("The ScalingInfo must not be null.");
+		}
 	}
 
 	public static abstract class ImageCacherListener {
-		private NetworkImageRequestListener networkRequestListener;
-
 		public abstract void onImageAvailable(Bitmap bitmap);
 
 		public abstract void onFailure(String message);
+	}
+
+	@Override
+	public void onImageDecoded(Bitmap bitmap, String url, int sampleSize) {
+		mMemoryCache.cacheBitmap(bitmap, url, sampleSize);
+		mAsyncOperationsMap.onDecodeSuccess(bitmap, url, sampleSize);
+	}
+
+	@Override
+	public void onImageDecodeFailed(String url, int sampleSize) {
+		mAsyncOperationsMap.onDecodeFailed(url, sampleSize);
+	}
+
+	@Override
+	public void onImageDownloaded(String url) {
+		mAsyncOperationsMap.onDownloadComplete(url);
+	}
+
+	@Override
+	public void onImageDownloadFailed(String url) {
+		mAsyncOperationsMap.onDownloadFailed(url);
+	}
+
+	@Override
+	public void onImageDecodeRequired(String url, int sampleSize) {
+		mDiskCache.getBitmapAsynchronouslyFromDisk(url, sampleSize);
 	}
 }

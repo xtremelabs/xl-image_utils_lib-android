@@ -3,79 +3,42 @@ package com.xtremelabs.imageutils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.List;
 
 import org.apache.http.client.ClientProtocolException;
+
+import android.util.Log;
 
 public class DefaultImageDownloader implements ImageNetworkInterface {
 	@SuppressWarnings("unused")
 	private static final String TAG = "DefaultImageDownloader";
 
-	private final MappingManager mMappingManager = new MappingManager();
+//	private final MappingManager mMappingManager = new MappingManager();
 
 	private NetworkToDiskInterface mNetworkToDiskInterface;
+	private ImageDownloadObserver mImageDownloadObserver;
+	
+	private ThreadPool mThreadPool = new ThreadPool(6);
 
-	public DefaultImageDownloader(NetworkToDiskInterface networkToDiskInterface) {
+	public DefaultImageDownloader(NetworkToDiskInterface networkToDiskInterface, ImageDownloadObserver imageDownloadObserver) {
 		mNetworkToDiskInterface = networkToDiskInterface;
+		mImageDownloadObserver = imageDownloadObserver;
 	}
 
 	@Override
-	public synchronized boolean queueIfDownloadingFromNetwork(String url, NetworkImageRequestListener onLoadComplete) {
-		return mMappingManager.queueIfDownloadingFromNetwork(url, onLoadComplete);
-	}
-
-	@Override
-	public synchronized void downloadImageToDisk(final String url, final NetworkImageRequestListener onLoadComplete) {
-		if (mMappingManager.queueIfDownloadingFromNetwork(url, onLoadComplete)) {
-			return;
-		}
+	public void downloadImageToDisk(final String url) {
 		ImageDownloadingRunnable runnable = new ImageDownloadingRunnable(url);
-		mMappingManager.addToListenerNewMap(url, onLoadComplete, runnable);
-		ThreadPool.execute(runnable);
+//		mMappingManager.addToListenerNewMap(url, onLoadComplete, runnable);
+		mThreadPool.execute(runnable);
 	}
 
 	@Override
-	public void cancelRequest(String url, NetworkImageRequestListener listener) {
-		synchronized (listener) {
-			mMappingManager.cancelRequest(url, listener);
-		}
-	}
-
-	private void onDownloadSucceeded(String url) {
-		final List<NetworkImageRequestListener> listeners = mMappingManager.getListenersForUrl(url);
-		if (listeners != null) {
-			int size;
-			NetworkImageRequestListener listener;
-			while ((size = listeners.size()) != 0) {
-				listener
-				synchronized (listeners) {
-					listeners.remove(location)
-				}
-			}
-		}
-	}
-
-	private void onDownloadFailed(String url) {
-		final List<NetworkImageRequestListener> listeners = mMappingManager.removeListenersForUrl(url);
-		if (listeners != null) {
-			ThreadPool.execute(new Runnable() {
-				@Override
-				public void run() {
-					for (NetworkImageRequestListener listener : listeners) {
-						listener.onFailure();
-					}
-				}
-			});
-		}
-	}
-
-	private synchronized void onDownloadCancelled(String url) {
-		mMappingManager.removeListenersForUrl(url);
+	public void cancelRequest(String url) {
 	}
 
 	public class ImageDownloadingRunnable implements Runnable {
 		private String mUrl;
 		private boolean mCancelled = false;
+		private boolean failed = false;
 		private InputStream mInputStream = null;
 
 		public ImageDownloadingRunnable(String url) {
@@ -88,16 +51,21 @@ public class DefaultImageDownloader implements ImageNetworkInterface {
 				executeNetworkRequest();
 				passInputStreamToImageLoader();
 			} catch (IOException e) {
+				failed = true;
 				e.printStackTrace();
+				Log.d(TAG, "Failed to download the image! Error message: " + e.getMessage());
 			}
 			checkLoadCompleteAndRemoveListeners();
 		}
 
 		private synchronized void checkLoadCompleteAndRemoveListeners() {
 			if (!mCancelled) {
-				onDownloadSucceeded(mUrl);
+				if (failed) {
+					mImageDownloadObserver.onImageDownloadFailed(mUrl);
+				} else {
+					mImageDownloadObserver.onImageDownloaded(mUrl);
+				}
 			}
-			onDownloadFailed(mUrl);
 		}
 
 		public synchronized void cancel() {
@@ -112,10 +80,6 @@ public class DefaultImageDownloader implements ImageNetworkInterface {
 		}
 
 		public synchronized void executeNetworkRequest() throws ClientProtocolException, IOException {
-			if (mCancelled) {
-				onDownloadFailed(mUrl);
-				return;
-			}
 			mInputStream = new URL(mUrl).openStream();
 		}
 

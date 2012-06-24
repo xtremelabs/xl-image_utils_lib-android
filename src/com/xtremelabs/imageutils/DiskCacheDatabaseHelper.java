@@ -15,8 +15,8 @@ public class DiskCacheDatabaseHelper extends SQLiteOpenHelper {
 
 	private final static int DATABASE_VERSION = 1;
 	private final String DICTIONARY_TABLE_NAME = "img_cache";
-	private final String DICTIONARY_TABLE_CREATE = "CREATE TABLE IF NOT EXISTS " + DICTIONARY_TABLE_NAME + " (" + columns[0] + " VARCHAR PRIMARY KEY, " + columns[1] + " INTEGER, " + columns[2]
-			+ " INTEGER);";
+	private final String DICTIONARY_TABLE_CREATE = "CREATE TABLE IF NOT EXISTS " + DICTIONARY_TABLE_NAME + " (" + columns[0] + " VARCHAR PRIMARY KEY, "
+			+ columns[1] + " INTEGER, " + columns[2] + " INTEGER);";
 	private final static String DATABASE_NAME = "imageCacheDatabase";
 	private ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
 
@@ -35,7 +35,7 @@ public class DiskCacheDatabaseHelper extends SQLiteOpenHelper {
 	}
 
 	public FileEntry getFileEntry(String url) {
-		Cursor cursor = getReadableDatabase().query(DICTIONARY_TABLE_NAME, columns, columns[0] + " = ?", new String[] {url}, null, null, null);
+		Cursor cursor = getReadableDatabase().query(DICTIONARY_TABLE_NAME, columns, columns[0] + " = ?", new String[] { url }, null, null, null);
 		if (cursor.getCount() == 0) {
 			return null;
 		} else {
@@ -56,16 +56,19 @@ public class DiskCacheDatabaseHelper extends SQLiteOpenHelper {
 		return list;
 	}
 
-	public boolean addFile(String url, long size, long lastAccessTime) {
+	public void addOrUpdateFile(String url, long size) {
 		if (GeneralUtils.isStringBlank(url)) {
 			throw new IllegalArgumentException("Cannot add a null URL to the database.");
 		}
 
-		ContentValues values = new ContentValues(3);
-		values.put(columns[0], url);
-		values.put(columns[1], size);
-		values.put(columns[2], lastAccessTime);
-		return -1 != getWritableDatabase().insert(DICTIONARY_TABLE_NAME, null, values);
+		getWritableDatabase().rawQuery("INSERT OR REPLACE INTO " + DICTIONARY_TABLE_NAME + " VALUES (?, ?, ?)",
+				new String[] { url, Long.toString(size), Long.toString(System.currentTimeMillis()) });
+
+		// ContentValues values = new ContentValues(3);
+		// values.put(columns[0], url);
+		// values.put(columns[1], size);
+		// values.put(columns[2], lastAccessTime);
+		// return -1 != getWritableDatabase().insert(DICTIONARY_TABLE_NAME, null, values);
 	}
 
 	public boolean removeFile(String url) {
@@ -82,7 +85,7 @@ public class DiskCacheDatabaseHelper extends SQLiteOpenHelper {
 		executor.execute(new Runnable() {
 			@Override
 			public void run() {
-				getWritableDatabase().update(DICTIONARY_TABLE_NAME, values, columns[0] + " = ?", new String[] {url});	
+				getWritableDatabase().update(DICTIONARY_TABLE_NAME, values, columns[0] + " = ?", new String[] { url });
 			}
 		});
 	}
@@ -107,7 +110,8 @@ public class DiskCacheDatabaseHelper extends SQLiteOpenHelper {
 
 	public FileEntry getLRU() {
 		Cursor cursor = getReadableDatabase().rawQuery(
-				"SELECT * FROM " + DICTIONARY_TABLE_NAME + " WHERE " + columns[2] + " = (SELECT min(" + columns[2] + ") AS min FROM " + DICTIONARY_TABLE_NAME + ")", null);
+				"SELECT * FROM " + DICTIONARY_TABLE_NAME + " WHERE " + columns[2] + " = (SELECT min(" + columns[2] + ") AS min FROM " + DICTIONARY_TABLE_NAME
+						+ ")", null);
 		if (cursor.getCount() == 0) {
 			return null;
 		}

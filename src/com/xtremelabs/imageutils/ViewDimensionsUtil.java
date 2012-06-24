@@ -21,6 +21,9 @@ class ViewDimensionsUtil {
 
 	private static int getDimensions(ImageView imageView, boolean isWidth) {
 		LayoutParams params = imageView.getLayoutParams();
+		if (params == null) {
+			return -1;
+		}
 		int length = isWidth ? params.width : params.height;
 		if (length == LayoutParams.WRAP_CONTENT) {
 			return -1;

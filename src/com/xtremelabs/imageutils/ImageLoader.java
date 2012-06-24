@@ -45,7 +45,7 @@ public class ImageLoader {
 	 */
 	public ImageLoader(Activity activity) {
 		ThreadChecker.throwErrorIfOffUiThread();
-		
+
 		if (activity == null) {
 			throw new IllegalArgumentException("Activity cannot be null!");
 		}
@@ -63,7 +63,7 @@ public class ImageLoader {
 	 */
 	public ImageLoader(Fragment fragment) {
 		ThreadChecker.throwErrorIfOffUiThread();
-		
+
 		if (fragment == null) {
 			throw new IllegalArgumentException("Fragment cannot be null!");
 		}
@@ -77,7 +77,7 @@ public class ImageLoader {
 	 */
 	public void onDestroy() {
 		ThreadChecker.throwErrorIfOffUiThread();
-		
+
 		mReferenceManager.removeListenersForKey(mKey);
 	}
 
@@ -98,7 +98,7 @@ public class ImageLoader {
 	 */
 	public void loadImage(ImageView imageView, String url, Options options) {
 		ThreadChecker.throwErrorIfOffUiThread();
-		
+
 		if (options == null) {
 			options = new Options();
 		}
@@ -125,7 +125,7 @@ public class ImageLoader {
 	 */
 	public void loadImage(ImageView imageView, String url, Options options, final ImageLoaderListener listener) {
 		ThreadChecker.throwErrorIfOffUiThread();
-		
+
 		if (listener == null) {
 			throw new IllegalArgumentException("You cannot pass in a null ImageLoadingListener.");
 		}
@@ -189,7 +189,7 @@ public class ImageLoader {
 	 */
 	public static void precacheImage(String url, Context applicationContext) {
 		ThreadChecker.throwErrorIfOffUiThread();
-		
+
 		ImageCacher.getInstance(applicationContext).precacheImage(url);
 	}
 
@@ -198,7 +198,8 @@ public class ImageLoader {
 	 * 
 	 * Caches the image at the provided URL into both the disk cache and into the memory cache.
 	 * 
-	 * This method call is useful for pre-caching smaller images. If used for a ListView that has many small images, the quality of scrolling will be vastly improved.
+	 * This method call is useful for pre-caching smaller images. If used for a ListView that has many small images, the quality of scrolling will be vastly
+	 * improved.
 	 * 
 	 * The Width and Height allow you to specify the size of the view that the image will be loaded to. If the image is significantly larger than the provided
 	 * width and/or height, the image will be scaled down in memory, allowing for significant improvements to memory usage and performance, at no cost to image
@@ -213,8 +214,11 @@ public class ImageLoader {
 	 */
 	public void precacheImageToMemory(String url, Context applicationContext, Integer width, Integer height) {
 		ThreadChecker.throwErrorIfOffUiThread();
-		
-		mReferenceManager.getBitmap(applicationContext, url, getBlankImageManagerListener(), width, height);
+
+		ScalingInfo scalingInfo = new ScalingInfo();
+		scalingInfo.height = height;
+		scalingInfo.width = width;
+		mReferenceManager.getBitmap(applicationContext, url, getBlankImageManagerListener(), scalingInfo);
 	}
 
 	private void initKeyAndAppContext(Object key, Context applicationContext) {
@@ -229,9 +233,9 @@ public class ImageLoader {
 	private void performImageRequest(ImageView imageView, String url, Options options, ImageManagerListener imageManagerListener) {
 		registerImageView(imageView, imageManagerListener);
 		setPreLoadedImage(imageView, options);
-		if (!tryGetBitmapWithScaling(imageView, url, options, imageManagerListener)) {
-			mReferenceManager.getBitmap(mKey, url, imageManagerListener);
-		}
+
+		ScalingInfo scalingInfo = getScalingInfo(imageView, url, options, imageManagerListener);
+		mReferenceManager.getBitmap(mKey, url, imageManagerListener, scalingInfo);
 	}
 
 	private void setPreLoadedImage(ImageView imageView, Options options) {
@@ -242,10 +246,12 @@ public class ImageLoader {
 		}
 	}
 
-	private boolean tryGetBitmapWithScaling(ImageView imageView, String url, final Options options, ImageManagerListener listener) {
+	private ScalingInfo getScalingInfo(ImageView imageView, String url, final Options options, ImageManagerListener listener) {
+		ScalingInfo scalingInfo = new ScalingInfo();
 		if (options.overrideSampleSize != null) {
-			mReferenceManager.getBitmap(mKey, url, listener, options.overrideSampleSize);
-			return true;
+			// mReferenceManager.getBitmap(mKey, url, listener, options.overrideSampleSize);
+			scalingInfo.sampleSize = options.overrideSampleSize;
+			return scalingInfo;
 		}
 
 		Integer width = options.widthBounds;
@@ -275,19 +281,23 @@ public class ImageLoader {
 			}
 		}
 
-		if (width != null || height != null) {
-			mReferenceManager.getBitmap(mKey, url, listener, width, height);
-			return true;
-		}
+		scalingInfo.width = width;
+		scalingInfo.height = height;
+		return scalingInfo;
 
-		return false;
+		// if (width != null || height != null) {
+		// mReferenceManager.getBitmap(mKey, url, listener, width, height);
+		// return true;
+		// }
+
+		// return false;
 	}
 
 	private void registerImageView(ImageView view, ImageManagerListener listener) {
 		ImageManagerListener oldListener = mViewMapper.removeListener(view);
 		if (oldListener != null) {
 			// TODO: Cancel old calls here!
-			// imageManager.cancelRequest(oldListener);
+			mReferenceManager.cancelRequest(oldListener);
 		}
 		mViewMapper.registerImageViewToListener(view, listener);
 	}

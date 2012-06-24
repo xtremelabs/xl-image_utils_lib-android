@@ -1,9 +1,7 @@
 package com.xtremelabs.imageutils;
 
 interface ImageNetworkInterface {
-	void downloadImageToDisk(String url, NetworkImageRequestListener onComplete);
+	void downloadImageToDisk(String url);
 
-	public void cancelRequest(String url, NetworkImageRequestListener listener);
-
-	boolean queueIfDownloadingFromNetwork(String url, NetworkImageRequestListener onLoadComplete);
+	public void cancelRequest(String url);
 }
