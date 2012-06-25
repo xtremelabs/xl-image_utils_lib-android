@@ -7,7 +7,7 @@ import java.util.HashMap;
 
 import org.apache.http.client.ClientProtocolException;
 
-public class DefaultImageDownloader implements ImageNetworkInterface {
+class DefaultImageDownloader implements ImageNetworkInterface {
 	@SuppressWarnings("unused")
 	private static final String TAG = "DefaultImageDownloader";
 
@@ -35,7 +35,7 @@ public class DefaultImageDownloader implements ImageNetworkInterface {
 		runnable.cancel();
 	}
 
-	public class ImageDownloadingRunnable implements Runnable {
+	class ImageDownloadingRunnable implements Runnable {
 		private String mUrl;
 		private boolean mCancelled = false;
 		private boolean failed = false;

@@ -11,8 +11,6 @@ interface ImageDiskCacherInterface extends NetworkToDiskInterface {
 
 	int getSampleSize(String url, Integer width, Integer height);
 
-//	void cancelRequest(String url, ICListener listener);
-
 	Bitmap getBitmapSynchronouslyFromDisk(String url, int sampleSize) throws FileNotFoundException, FileFormatException;
 
 	void getBitmapAsynchronouslyFromDisk(String url, int sampleSize);
@@ -22,4 +20,6 @@ interface ImageDiskCacherInterface extends NetworkToDiskInterface {
 	void setDiskCacheSize(long sizeInBytes);
 
 	Dimensions getImageDimensions(String url);
+
+	void cancelRequest(String url, int sampleSize);
 }

@@ -164,4 +164,9 @@ class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOp
 	public void cancelNetworkRequest(String url) {
 		mNetworkInterface.cancelRequest(url);
 	}
+
+	@Override
+	public void cancelDecodeRequest(String url, int sampleSize) {
+		mDiskCache.cancelRequest(url, sampleSize);
+	}
 }

@@ -29,7 +29,7 @@ import android.widget.ImageView;
 public class ImageLoader {
 	@SuppressWarnings("unused")
 	private static final String TAG = "ImageLoader";
-	
+
 	private ImageViewReferenceMapper mViewMapper = new ImageViewReferenceMapper();
 	private LifecycleReferenceManager mReferenceManager;
 	private Context mApplicationContext;
@@ -252,7 +252,6 @@ public class ImageLoader {
 	private ScalingInfo getScalingInfo(ImageView imageView, String url, final Options options, ImageManagerListener listener) {
 		ScalingInfo scalingInfo = new ScalingInfo();
 		if (options.overrideSampleSize != null) {
-			// mReferenceManager.getBitmap(mKey, url, listener, options.overrideSampleSize);
 			scalingInfo.sampleSize = options.overrideSampleSize;
 			return scalingInfo;
 		}
@@ -287,19 +286,13 @@ public class ImageLoader {
 		scalingInfo.width = width;
 		scalingInfo.height = height;
 		return scalingInfo;
-
-		// if (width != null || height != null) {
-		// mReferenceManager.getBitmap(mKey, url, listener, width, height);
-		// return true;
-		// }
-
-		// return false;
 	}
 
 	private void registerImageView(ImageView view, ImageManagerListener listener) {
 		ImageManagerListener oldListener = mViewMapper.removeListener(view);
 		if (oldListener != null) {
-			mReferenceManager.cancelRequest(oldListener);
+			// FIXME: Get the cancel call working!
+			// mReferenceManager.cancelRequest(oldListener);
 		}
 		mViewMapper.registerImageViewToListener(view, listener);
 	}

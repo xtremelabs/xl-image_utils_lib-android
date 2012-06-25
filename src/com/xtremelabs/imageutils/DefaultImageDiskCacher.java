@@ -13,7 +13,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
-public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
+class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 	@SuppressWarnings("unused")
 	private static final String TAG = "DefaultImageDiskCacher";
 	private long mMaximumCacheSizeInBytes = 30 * 1024 * 1024; // 30MB
@@ -50,10 +50,10 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 		return sampleSize;
 	}
 
-	// @Override
-	// public synchronized void cancelRequest(String url, ImageRequestListener listener) {
-	//
-	// }
+	@Override
+	public void cancelRequest(String url, int sampleSize) {
+		// TODO: Cancel pending disk requests here.
+	}
 
 	@Override
 	public Bitmap getBitmapSynchronouslyFromDisk(String url, int sampleSize) throws FileNotFoundException, FileFormatException {

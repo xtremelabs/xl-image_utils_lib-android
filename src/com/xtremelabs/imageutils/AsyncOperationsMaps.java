@@ -1,19 +1,18 @@
 package com.xtremelabs.imageutils;
 
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
 import android.graphics.Bitmap;
-import android.util.Log;
 
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
 
 class AsyncOperationsMaps {
+	@SuppressWarnings("unused")
 	private static final String TAG = "AsyncOperationsMap";
-	
+
 	public enum AsyncOperationState {
 		QUEUED_FOR_NETWORK_REQUEST, QUEUED_FOR_DECODE_REQUEST, NOT_QUEUED
 	}
@@ -22,60 +21,52 @@ class AsyncOperationsMaps {
 	private HashMap<ImageCacherListener, String> mListenerToUrlMapForNetwork = new HashMap<ImageCacher.ImageCacherListener, String>();
 
 	private HashMap<DecodeOperationParameters, List<ImageCacherListener>> mDecodeParamsToListenersMap = new HashMap<DecodeOperationParameters, List<ImageCacherListener>>();
-	private HashMap<ImageCacherListener, DecodeOperationParameters> mListenerToDiskParamsMap = new HashMap<ImageCacherListener, DecodeOperationParameters>();
+	private HashMap<ImageCacherListener, DecodeOperationParameters> mListenerToDecodeParamsMap = new HashMap<ImageCacherListener, DecodeOperationParameters>();
 
 	private AsyncOperationsObserver mAsyncOperationsObserver;
-	
+
 	public AsyncOperationsMaps(AsyncOperationsObserver asyncOperationsObserver) {
 		mAsyncOperationsObserver = asyncOperationsObserver;
 	}
-	
+
 	public synchronized boolean isNetworkRequestPendingForUrl(String url) {
 		return mUrlToListenersMapForNetwork.containsKey(url);
 	}
-	
+
 	public synchronized AsyncOperationState queueListenerIfRequestPending(ImageCacherListener imageCacherListener, String url, ScalingInfo scalingInfo) {
 		if (isNetworkRequestPendingForUrl(url)) {
-			addToQueueForNetworkRequest(imageCacherListener, url, scalingInfo);
+			registerListenerForNetworkRequest(imageCacherListener, url, scalingInfo);
 			return AsyncOperationState.QUEUED_FOR_NETWORK_REQUEST;
 		}
 
-		try {
-			int sampleSize = mAsyncOperationsObserver.getSampleSize(url, scalingInfo);
-			DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, sampleSize);
-			if (isDecodeRequestPendingForParams(decodeOperationParameters)) {
-				queueForDecodeRequest(imageCacherListener, decodeOperationParameters);
-				return AsyncOperationState.QUEUED_FOR_DECODE_REQUEST;
-			}
-		} catch (FileNotFoundException e) {
+		int sampleSize = mAsyncOperationsObserver.getSampleSize(url, scalingInfo);
+		DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, sampleSize);
+		if (isDecodeRequestPendingForParams(decodeOperationParameters)) {
+			queueForDecodeRequest(imageCacherListener, decodeOperationParameters);
+			return AsyncOperationState.QUEUED_FOR_DECODE_REQUEST;
 		}
+
 		return AsyncOperationState.NOT_QUEUED;
 	}
 
 	public synchronized void registerListenerForNetworkRequest(ImageCacherListener imageCacherListener, String url, ScalingInfo scalingInfo) {
+		NetworkRequestParameters networkRequestParameters = new NetworkRequestParameters(imageCacherListener, scalingInfo);
+		
 		List<NetworkRequestParameters> networkRequestParametersList = mUrlToListenersMapForNetwork.get(url);
 		if (networkRequestParametersList == null) {
 			networkRequestParametersList = new ArrayList<NetworkRequestParameters>();
 			mUrlToListenersMapForNetwork.put(url, networkRequestParametersList);
 		}
-		NetworkRequestParameters networkRequestParameters = new NetworkRequestParameters(imageCacherListener, scalingInfo);
 		networkRequestParametersList.add(networkRequestParameters);
 
 		mListenerToUrlMapForNetwork.put(imageCacherListener, url);
 	}
-
+	
 	public synchronized void registerListenerForDecode(ImageCacherListener imageCacherListener, String url, int sampleSize) {
 		DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, sampleSize);
-		List<ImageCacherListener> imageCacherListenerList = mDecodeParamsToListenersMap.get(decodeOperationParameters);
-		if (imageCacherListenerList == null) {
-			imageCacherListenerList = new ArrayList<ImageCacherListener>();
-			mDecodeParamsToListenersMap.put(decodeOperationParameters, imageCacherListenerList);
-		}
-		imageCacherListenerList.add(imageCacherListener);
-
-		mListenerToDiskParamsMap.put(imageCacherListener, decodeOperationParameters);
+		queueForDecodeRequest(imageCacherListener, decodeOperationParameters);
 	}
-
+	
 	public void onDecodeSuccess(Bitmap bitmap, String url, int sampleSize) {
 		DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, sampleSize);
 
@@ -88,7 +79,7 @@ class AsyncOperationsMaps {
 			}
 		}
 	}
-	
+
 	public void onDecodeFailed(String url, int sampleSize) {
 		DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, sampleSize);
 
@@ -110,7 +101,7 @@ class AsyncOperationsMaps {
 			}
 		}
 	}
-	
+
 	public void onDownloadFailed(String url) {
 		NetworkRequestParameters networkRequestParameters;
 		while ((networkRequestParameters = getListenerWaitingOnDownload(url)) != null) {
@@ -121,59 +112,69 @@ class AsyncOperationsMaps {
 			}
 		}
 	}
-	
+
 	public synchronized void cancelPendingRequest(ImageCacherListener imageCacherListener) {
 		String url = mListenerToUrlMapForNetwork.remove(imageCacherListener);
 		if (url != null) {
-			Log.d(TAG, "1");
 			List<NetworkRequestParameters> networkRequestParametersList = mUrlToListenersMapForNetwork.get(url);
-			Log.d(TAG, "2");
 			if (networkRequestParametersList != null) {
-				Log.d(TAG, "3");
 				networkRequestParametersList.remove(imageCacherListener);
-				Log.d(TAG, "4");
 				if (networkRequestParametersList.isEmpty()) {
-					Log.d(TAG, "5");
+					// FIXME: The cancel call is never made from here.
+					/*
+					 * For some reason the network request is not actually being removed from the networkRequestParametersList.
+					 * 
+					 * This needs to be debugged. Find out if and when we are properly evicting things out of the queue.
+					 */
 					mAsyncOperationsObserver.cancelNetworkRequest(url);
-					
 					mUrlToListenersMapForNetwork.remove(url);
 				}
 			}
 		}
-		
-		DecodeOperationParameters decodeOperationParameters = mListenerToDiskParamsMap.remove(imageCacherListener);
+
+		// TODO: This needs to be tested as well.
+		/*
+		 * If the network system is failing to cancel, I am afraid the disk system is failing to cancel as well.
+		 */
+		DecodeOperationParameters decodeOperationParameters = mListenerToDecodeParamsMap.remove(imageCacherListener);
 		if (decodeOperationParameters != null) {
 			List<ImageCacherListener> imageCacherListenersList = mDecodeParamsToListenersMap.get(decodeOperationParameters);
 			if (imageCacherListenersList != null) {
 				imageCacherListenersList.remove(imageCacherListener);
 				if (imageCacherListenersList.size() == 0) {
-					// TODO: Cancel the decode operation here by calling the observer.
-					
+					mAsyncOperationsObserver.cancelDecodeRequest(url, decodeOperationParameters.mSampleSize);
 					mDecodeParamsToListenersMap.remove(decodeOperationParameters);
 				}
 			}
 		}
+	}
+	
+	private void queueForDecodeRequest(ImageCacherListener imageCacherListener, DecodeOperationParameters decodeOperationParameters) {
+		List<ImageCacherListener> imageCacherListenerList = mDecodeParamsToListenersMap.get(decodeOperationParameters);
+		if (imageCacherListenerList == null) {
+			imageCacherListenerList = new ArrayList<ImageCacherListener>();
+			mDecodeParamsToListenersMap.put(decodeOperationParameters, imageCacherListenerList);
+		}
+		imageCacherListenerList.add(imageCacherListener);
+
+		mListenerToDecodeParamsMap.put(imageCacherListener, decodeOperationParameters);
 	}
 
 	private synchronized HashSet<DecodeOperationParameters> moveNetworkListenersToDiskQueue(String url) {
 		List<NetworkRequestParameters> networkRequestParametersList = mUrlToListenersMapForNetwork.remove(url);
 		if (networkRequestParametersList != null) {
 			HashSet<DecodeOperationParameters> diskRequestsToMake = new HashSet<DecodeOperationParameters>();
-			
+
 			for (NetworkRequestParameters networkRequestParameters : networkRequestParametersList) {
 				mListenerToUrlMapForNetwork.remove(networkRequestParameters);
 
-				try {
-					int sampleSize;
-					sampleSize = mAsyncOperationsObserver.getSampleSize(url, networkRequestParameters.mScalingInfo);
-					DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, sampleSize);
-					queueForDecodeRequest(networkRequestParameters.mImageCacherListener, decodeOperationParameters);
-					diskRequestsToMake.add(decodeOperationParameters);
-				} catch (FileNotFoundException e) {
-					// TODO: Handle error condition.
-				}
+				int sampleSize;
+				sampleSize = mAsyncOperationsObserver.getSampleSize(url, networkRequestParameters.mScalingInfo);
+				DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, sampleSize);
+				queueForDecodeRequest(networkRequestParameters.mImageCacherListener, decodeOperationParameters);
+				diskRequestsToMake.add(decodeOperationParameters);
 			}
-			
+
 			return diskRequestsToMake;
 		}
 		return null;
@@ -193,13 +194,13 @@ class AsyncOperationsMaps {
 			if (imageCacherListeners.size() == 0) {
 				mDecodeParamsToListenersMap.remove(decodeOperationParameters);
 			}
-			
-			mListenerToDiskParamsMap.remove(imageCacherListener);
+
+			mListenerToDecodeParamsMap.remove(imageCacherListener);
 			return true;
 		}
 		return false;
 	}
-	
+
 	private synchronized boolean removeQueuedListenerForDownload(NetworkRequestParameters networkRequestParameters) {
 		String url = mListenerToUrlMapForNetwork.remove(networkRequestParameters);
 		if (url != null) {
@@ -222,7 +223,7 @@ class AsyncOperationsMaps {
 		}
 		return null;
 	}
-	
+
 	private NetworkRequestParameters getListenerWaitingOnDownload(String url) {
 		List<NetworkRequestParameters> networkRequestParametersList = mUrlToListenersMapForNetwork.get(url);
 		if (networkRequestParametersList != null && networkRequestParametersList.size() > 0) {
@@ -231,25 +232,8 @@ class AsyncOperationsMaps {
 		return null;
 	}
 
-	private void queueForDecodeRequest(ImageCacherListener imageCacherListener, DecodeOperationParameters decodeOperationParameters) {
-		List<ImageCacherListener> imageCacherListenerList = mDecodeParamsToListenersMap.get(decodeOperationParameters);
-		if (imageCacherListenerList == null) {
-			imageCacherListenerList = new ArrayList<ImageCacherListener>();
-			mDecodeParamsToListenersMap.put(decodeOperationParameters, imageCacherListenerList);
-		}
-		imageCacherListenerList.add(imageCacherListener);
-
-		mListenerToDiskParamsMap.put(imageCacherListener, decodeOperationParameters);
-	}
-
 	private boolean isDecodeRequestPendingForParams(DecodeOperationParameters decodeOperationParameters) {
 		return mDecodeParamsToListenersMap.containsKey(decodeOperationParameters);
-	}
-
-	private void addToQueueForNetworkRequest(ImageCacherListener imageCacherListener, String url, ScalingInfo scalingInfo) {
-		NetworkRequestParameters params = new NetworkRequestParameters(imageCacherListener, scalingInfo);
-		mUrlToListenersMapForNetwork.get(url).add(params);
-		mListenerToUrlMapForNetwork.put(imageCacherListener, url);
 	}
 
 	private class NetworkRequestParameters {
@@ -260,58 +244,27 @@ class AsyncOperationsMaps {
 			mImageCacherListener = imageCacherListener;
 			mScalingInfo = scalingInfo;
 		}
-		
+
 		@Override
 		public boolean equals(Object o) {
 			if (o == null) {
 				return false;
 			}
-			
+
 			if (!(o instanceof NetworkRequestParameters)) {
 				return false;
 			}
-			
+
 			NetworkRequestParameters params = (NetworkRequestParameters) o;
 			if (params.mScalingInfo != mScalingInfo) {
 				return false;
 			}
-			
+
 			if (params.mImageCacherListener != mImageCacherListener) {
 				return false;
 			}
-			
+
 			return true;
-		}
-	}
-
-	private class DecodeOperationParameters {
-		String mUrl;
-		int mSampleSize;
-
-		DecodeOperationParameters(String url, int sampleSize) {
-			mUrl = url;
-			mSampleSize = sampleSize;
-		}
-
-		@Override
-		public int hashCode() {
-			int hash;
-			hash = 31 * mSampleSize + 17;
-			hash += mUrl.hashCode();
-			return hash;
-		}
-
-		@Override
-		public boolean equals(Object o) {
-			if (!(o instanceof DecodeOperationParameters)) {
-				return false;
-			}
-
-			DecodeOperationParameters otherObject = (DecodeOperationParameters) o;
-			if (otherObject.mSampleSize == mSampleSize && otherObject.mUrl.equals(mUrl)) {
-				return true;
-			}
-			return false;
 		}
 	}
 }

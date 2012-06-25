@@ -1,13 +1,12 @@
 package com.xtremelabs.imageutils;
 
-import java.io.FileNotFoundException;
 
 interface AsyncOperationsObserver {
 	public void onImageDecodeRequired(String url, int mSampleSize);
 	
-	public int getSampleSize(String url, ScalingInfo scalingInfo) throws FileNotFoundException;
+	public int getSampleSize(String url, ScalingInfo scalingInfo);
 
 	public void cancelNetworkRequest(String url);
-	
-	// TODO: Add onCancelDecodeRequest.
+
+	public void cancelDecodeRequest(String url, int sampleSize);
 }
