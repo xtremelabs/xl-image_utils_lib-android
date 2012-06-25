@@ -4,7 +4,7 @@ import android.graphics.Bitmap;
 import android.widget.ImageView;
 
 interface ImageLoaderListener {
-	public void onImageAvailable(ImageView imageView, Bitmap bitmap);
+	public void onImageAvailable(ImageView imageView, Bitmap bitmap, boolean isFromMemoryCache);
 
 	public void onImageLoadError();
 }

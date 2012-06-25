@@ -61,7 +61,7 @@ class LifecycleReferenceManager {
 	
 	private void returnImageIfValid(ImageManagerListener listener, Bitmap bitmap) {
 		if (bitmap != null && mListenerHelper.unregisterListener(listener) != null) {
-			listener.onImageReceived(bitmap);
+			listener.onImageReceived(bitmap, true);
 		}
 	}
 
@@ -73,7 +73,7 @@ class LifecycleReferenceManager {
 				public void run() {
 					ImageManagerListener listener = mListenerHelper.getAndRemoveListener(ImageManagerCacheListener.this);
 					if (listener != null) {
-						listener.onImageReceived(bitmap);
+						listener.onImageReceived(bitmap, false);
 					}
 				}
 			});
