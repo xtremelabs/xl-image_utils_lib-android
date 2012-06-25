@@ -27,6 +27,9 @@ import android.widget.ImageView;
  * @author Jamie Halpern
  */
 public class ImageLoader {
+	@SuppressWarnings("unused")
+	private static final String TAG = "ImageLoader";
+	
 	private ImageViewReferenceMapper mViewMapper = new ImageViewReferenceMapper();
 	private LifecycleReferenceManager mReferenceManager;
 	private Context mApplicationContext;
@@ -296,7 +299,6 @@ public class ImageLoader {
 	private void registerImageView(ImageView view, ImageManagerListener listener) {
 		ImageManagerListener oldListener = mViewMapper.removeListener(view);
 		if (oldListener != null) {
-			// TODO: Cancel old calls here!
 			mReferenceManager.cancelRequest(oldListener);
 		}
 		mViewMapper.registerImageViewToListener(view, listener);
@@ -347,12 +349,10 @@ public class ImageLoader {
 		return new ImageManagerListener() {
 			@Override
 			public void onLoadImageFailed() {
-				mViewMapper.removeImageView(this);
 			}
 
 			@Override
 			public void onImageReceived(Bitmap bitmap) {
-				mViewMapper.removeImageView(this);
 			}
 		};
 	}

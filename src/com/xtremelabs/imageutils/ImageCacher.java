@@ -4,7 +4,6 @@ import java.io.FileNotFoundException;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.util.Log;
 
 import com.xtremelabs.imageutils.AsyncOperationsMaps.AsyncOperationState;
 
@@ -38,34 +37,25 @@ class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOp
 
 		AsyncOperationState asyncOperationState = mAsyncOperationsMap.queueListenerIfRequestPending(imageCacherListener, url, scalingInfo);
 		if (asyncOperationState != AsyncOperationState.NOT_QUEUED) {
-			Log.d(TAG, "Detected already queued...");
 			return null;
 		}
 
-		if (mDiskCache.isCached(url)) {
-			Log.d(TAG, "Image is cached on disk!");
-			try {
-				int sampleSize = getSampleSize(url, scalingInfo);
-
-				Bitmap bitmap;
-				if ((bitmap = mMemoryCache.getBitmap(url, sampleSize)) != null) {
-					Log.d(TAG, "Bitmap was in memcache.");
-					return bitmap;
-				} else {
-					Log.d(TAG, "Decoding from disk.");
-					decodeBitmapFromDisk(url, imageCacherListener, sampleSize);
-				}
-			} catch (FileNotFoundException e) {
+		int sampleSize = getSampleSize(url, scalingInfo);
+		if (mDiskCache.isCached(url) && sampleSize != -1) {
+			Bitmap bitmap;
+			if ((bitmap = mMemoryCache.getBitmap(url, sampleSize)) != null) {
+				return bitmap;
+			} else {
+				decodeBitmapFromDisk(url, imageCacherListener, sampleSize);
 			}
 		} else {
-			Log.d(TAG, "Downloading image from network.");
 			downloadImageFromNetwork(url, imageCacherListener, scalingInfo);
 		}
 		return null;
 	}
 
 	@Override
-	public int getSampleSize(String url, ScalingInfo scalingInfo) throws FileNotFoundException {
+	public int getSampleSize(String url, ScalingInfo scalingInfo) {
 		int sampleSize;
 		if (scalingInfo.sampleSize != null) {
 			sampleSize = scalingInfo.sampleSize;
@@ -89,10 +79,7 @@ class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOp
 	public synchronized void precacheImage(String url) {
 		validateUrl(url);
 
-		// TODO: This no longer works. Fix it.
-		// TODO: This is a race condition with this "isCached" call.
-		if (!mDiskCache.isCached(url)) {
-			// Request the image with a blank listener. We don't care what happens when it's done.
+		if (!mAsyncOperationsMap.isNetworkRequestPendingForUrl(url) && !mDiskCache.isCached(url)) {
 			mNetworkInterface.downloadImageToDisk(url);
 		} else {
 			mDiskCache.bump(url);
@@ -106,7 +93,7 @@ class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOp
 	public void setMemCacheSize(int size) {
 		mMemoryCache.setMaximumCacheSize(size);
 	}
-	
+
 	public void cancelRequestForBitmap(ImageCacherListener imageCacherListener) {
 		mAsyncOperationsMap.cancelPendingRequest(imageCacherListener);
 	}
@@ -171,5 +158,10 @@ class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOp
 	@Override
 	public void onImageDecodeRequired(String url, int sampleSize) {
 		mDiskCache.getBitmapAsynchronouslyFromDisk(url, sampleSize);
+	}
+
+	@Override
+	public void cancelNetworkRequest(String url) {
+		mNetworkInterface.cancelRequest(url);
 	}
 }

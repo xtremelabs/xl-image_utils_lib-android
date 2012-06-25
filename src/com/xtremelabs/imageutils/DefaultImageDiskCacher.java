@@ -7,11 +7,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.List;
 
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Point;
 
 public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 	@SuppressWarnings("unused")
@@ -20,13 +20,19 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 	private DiskManager mDiskManager;
 	private DiskCacheDatabaseHelper mDatabaseHelper;
 	private ImageDecodeObserver mImageDecodeObserver;
-	
+	private ImageDimensionsMap mImageDimensionsMap = new ImageDimensionsMap();
+
 	private ThreadPool mThreadPool = new ThreadPool(5);
 
 	public DefaultImageDiskCacher(Context appContext, ImageDecodeObserver imageDecodeObserver) {
 		mDiskManager = new DiskManager("img", appContext);
 		mDatabaseHelper = new DiskCacheDatabaseHelper(appContext);
 		mImageDecodeObserver = imageDecodeObserver;
+
+		List<FileEntry> entries = mDatabaseHelper.getAllEntries();
+		for (FileEntry entry : entries) {
+			mImageDimensionsMap.putDimensions(entry.getUrl(), entry.getDimensions());
+		}
 	}
 
 	@Override
@@ -35,33 +41,19 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public int getSampleSize(String url, Integer width, Integer height) throws FileNotFoundException {
-		FileInputStream fileInputStream = null;
-		try {
-			File file = getFile(url);
-			fileInputStream = new FileInputStream(file);
-			BitmapFactory.Options opts = new BitmapFactory.Options();
-			opts.inJustDecodeBounds = true;
-			BitmapFactory.decodeStream(fileInputStream, null, opts);
-			Point point = new Point(opts.outWidth, opts.outHeight);
-			return calculateSampleSize(width, height, point);
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			throw e;
-		} finally {
-			if (fileInputStream != null) {
-				try {
-					fileInputStream.close();
-				} catch (IOException e) {
-				}
-			}
+	public int getSampleSize(String url, Integer width, Integer height) {
+		Dimensions dimensions = getImageDimensions(url);
+		if (dimensions == null) {
+			return -1;
 		}
+		int sampleSize = calculateSampleSize(width, height, dimensions);
+		return sampleSize;
 	}
 
-//	@Override
-//	public synchronized void cancelRequest(String url, ImageRequestListener listener) {
-//
-//	}
+	// @Override
+	// public synchronized void cancelRequest(String url, ImageRequestListener listener) {
+	//
+	// }
 
 	@Override
 	public Bitmap getBitmapSynchronouslyFromDisk(String url, int sampleSize) throws FileNotFoundException, FileFormatException {
@@ -88,13 +80,13 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 	@Override
 	public void getBitmapAsynchronouslyFromDisk(final String url, final int sampleSize) {
 		/*
-		 * ImageRequestData data = new ImageRequestData(); data.url = url; data.sampleSize = sampleSize; List<DiskCacherListener> dataCacheListeners; dataCacheListeners =
-		 * asyncRequestMap.get(data); if (dataCacheListeners == null) { dataCacheListeners = new }
+		 * ImageRequestData data = new ImageRequestData(); data.url = url; data.sampleSize = sampleSize; List<DiskCacherListener> dataCacheListeners;
+		 * dataCacheListeners = asyncRequestMap.get(data); if (dataCacheListeners == null) { dataCacheListeners = new }
 		 * 
 		 * ThreadPool.execute(new Runnable() {
 		 * 
-		 * @Override public void run() { Bitmap bitmap = getBitmapSynchronousFromDisk(appContext, url, sampleSize); if (bitmap != null) diskCacherListener.onImageDecoded(bitmap); }
-		 * });
+		 * @Override public void run() { Bitmap bitmap = getBitmapSynchronousFromDisk(appContext, url, sampleSize); if (bitmap != null)
+		 * diskCacherListener.onImageDecoded(bitmap); } });
 		 */
 
 		mThreadPool.execute(new Runnable() {
@@ -116,13 +108,15 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 	public void downloadImageFromInputStream(String url, InputStream inputStream) throws IOException {
 		mDiskManager.loadStreamToFile(inputStream, encode(url));
 		File file = mDiskManager.getFile(encode(url));
-		mDatabaseHelper.addOrUpdateFile(url, file.length());
+		Dimensions dimensions = getImageDimensionsFromDisk(url);
+		mImageDimensionsMap.putDimensions(url, dimensions);
+		mDatabaseHelper.addOrUpdateFile(url, file.length(), dimensions.getWidth(), dimensions.getHeight());
 		clearLeastUsedFilesInCache();
 	}
 
 	@Override
 	public void bump(String url) {
-		mDatabaseHelper.updateFile(url, System.currentTimeMillis());
+		mDatabaseHelper.updateFile(url);
 	}
 
 	@Override
@@ -132,8 +126,8 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 	}
 
 	/**
-	 * This calculates the sample size be dividing the width and the height until the first point at which information is lost. Then, it takes one step back and returns the last
-	 * sample size that did not lead to any loss of information.
+	 * This calculates the sample size be dividing the width and the height until the first point at which information is lost. Then, it takes one step back and
+	 * returns the last sample size that did not lead to any loss of information.
 	 * 
 	 * @param width
 	 *            The image will not be scaled down to be smaller than this width. Null for no scaling by width.
@@ -143,13 +137,13 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 	 *            The dimensions of the image, as decoded from the full image on disk.
 	 * @return The calculated sample size. 1 if both height and width are null.
 	 */
-	private int calculateSampleSize(Integer width, Integer height, Point imageDimensions) {
+	private int calculateSampleSize(Integer width, Integer height, Dimensions imageDimensions) {
 		if (width == null && height == null) {
 			return 1;
 		}
 
 		int sampleSize = 2;
-		while ((width == null || imageDimensions.x / sampleSize >= width) && (height == null || imageDimensions.y / sampleSize >= height)) {
+		while ((width == null || imageDimensions.getWidth() / sampleSize >= width) && (height == null || imageDimensions.getHeight() / sampleSize >= height)) {
 			sampleSize *= 2;
 		}
 		sampleSize /= 2;
@@ -161,6 +155,7 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 			String url = mDatabaseHelper.getLRU().getUrl();
 			mDiskManager.deleteFile(encode(url));
 			mDatabaseHelper.removeFile(url);
+			mImageDimensionsMap.removeDimensions(url);
 		}
 	}
 
@@ -185,7 +180,12 @@ public class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public Dimensions getImageDimensions(String url) throws FileNotFoundException {
+	public Dimensions getImageDimensions(String url) {
+		Dimensions dimensions = mImageDimensionsMap.getImageDimensions(url);
+		return dimensions;
+	}
+
+	private Dimensions getImageDimensionsFromDisk(String url) throws FileNotFoundException {
 		try {
 			FileInputStream fileInputStream;
 			fileInputStream = new FileInputStream(getFile(url));

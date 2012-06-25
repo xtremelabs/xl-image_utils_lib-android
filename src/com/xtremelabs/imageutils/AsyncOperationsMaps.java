@@ -7,10 +7,13 @@ import java.util.HashSet;
 import java.util.List;
 
 import android.graphics.Bitmap;
+import android.util.Log;
 
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
 
 class AsyncOperationsMaps {
+	private static final String TAG = "AsyncOperationsMap";
+	
 	public enum AsyncOperationState {
 		QUEUED_FOR_NETWORK_REQUEST, QUEUED_FOR_DECODE_REQUEST, NOT_QUEUED
 	}
@@ -22,11 +25,15 @@ class AsyncOperationsMaps {
 	private HashMap<ImageCacherListener, DecodeOperationParameters> mListenerToDiskParamsMap = new HashMap<ImageCacherListener, DecodeOperationParameters>();
 
 	private AsyncOperationsObserver mAsyncOperationsObserver;
-
+	
 	public AsyncOperationsMaps(AsyncOperationsObserver asyncOperationsObserver) {
 		mAsyncOperationsObserver = asyncOperationsObserver;
 	}
-
+	
+	public synchronized boolean isNetworkRequestPendingForUrl(String url) {
+		return mUrlToListenersMapForNetwork.containsKey(url);
+	}
+	
 	public synchronized AsyncOperationState queueListenerIfRequestPending(ImageCacherListener imageCacherListener, String url, ScalingInfo scalingInfo) {
 		if (isNetworkRequestPendingForUrl(url)) {
 			addToQueueForNetworkRequest(imageCacherListener, url, scalingInfo);
@@ -42,7 +49,6 @@ class AsyncOperationsMaps {
 			}
 		} catch (FileNotFoundException e) {
 		}
-
 		return AsyncOperationState.NOT_QUEUED;
 	}
 
@@ -58,7 +64,7 @@ class AsyncOperationsMaps {
 		mListenerToUrlMapForNetwork.put(imageCacherListener, url);
 	}
 
-	public void registerListenerForDecode(ImageCacherListener imageCacherListener, String url, int sampleSize) {
+	public synchronized void registerListenerForDecode(ImageCacherListener imageCacherListener, String url, int sampleSize) {
 		DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, sampleSize);
 		List<ImageCacherListener> imageCacherListenerList = mDecodeParamsToListenersMap.get(decodeOperationParameters);
 		if (imageCacherListenerList == null) {
@@ -119,11 +125,16 @@ class AsyncOperationsMaps {
 	public synchronized void cancelPendingRequest(ImageCacherListener imageCacherListener) {
 		String url = mListenerToUrlMapForNetwork.remove(imageCacherListener);
 		if (url != null) {
+			Log.d(TAG, "1");
 			List<NetworkRequestParameters> networkRequestParametersList = mUrlToListenersMapForNetwork.get(url);
+			Log.d(TAG, "2");
 			if (networkRequestParametersList != null) {
+				Log.d(TAG, "3");
 				networkRequestParametersList.remove(imageCacherListener);
-				if (networkRequestParametersList.size() == 0) {
-					// TODO: Call the observer and tell it to cancel the network request.
+				Log.d(TAG, "4");
+				if (networkRequestParametersList.isEmpty()) {
+					Log.d(TAG, "5");
+					mAsyncOperationsObserver.cancelNetworkRequest(url);
 					
 					mUrlToListenersMapForNetwork.remove(url);
 				}
@@ -241,10 +252,6 @@ class AsyncOperationsMaps {
 		mListenerToUrlMapForNetwork.put(imageCacherListener, url);
 	}
 
-	private boolean isNetworkRequestPendingForUrl(String url) {
-		return mUrlToListenersMapForNetwork.containsKey(url);
-	}
-
 	private class NetworkRequestParameters {
 		ImageCacherListener mImageCacherListener;
 		ScalingInfo mScalingInfo;
@@ -252,6 +259,28 @@ class AsyncOperationsMaps {
 		NetworkRequestParameters(ImageCacherListener imageCacherListener, ScalingInfo scalingInfo) {
 			mImageCacherListener = imageCacherListener;
 			mScalingInfo = scalingInfo;
+		}
+		
+		@Override
+		public boolean equals(Object o) {
+			if (o == null) {
+				return false;
+			}
+			
+			if (!(o instanceof NetworkRequestParameters)) {
+				return false;
+			}
+			
+			NetworkRequestParameters params = (NetworkRequestParameters) o;
+			if (params.mScalingInfo != mScalingInfo) {
+				return false;
+			}
+			
+			if (params.mImageCacherListener != mImageCacherListener) {
+				return false;
+			}
+			
+			return true;
 		}
 	}
 

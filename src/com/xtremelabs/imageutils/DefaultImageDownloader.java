@@ -3,21 +3,19 @@ package com.xtremelabs.imageutils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.HashMap;
 
 import org.apache.http.client.ClientProtocolException;
-
-import android.util.Log;
 
 public class DefaultImageDownloader implements ImageNetworkInterface {
 	@SuppressWarnings("unused")
 	private static final String TAG = "DefaultImageDownloader";
 
-//	private final MappingManager mMappingManager = new MappingManager();
-
 	private NetworkToDiskInterface mNetworkToDiskInterface;
 	private ImageDownloadObserver mImageDownloadObserver;
+	private HashMap<String, ImageDownloadingRunnable> mUrlToRunnableMap = new HashMap<String, ImageDownloadingRunnable>();
 	
-	private ThreadPool mThreadPool = new ThreadPool(6);
+	private ThreadPool mThreadPool = new ThreadPool(8);
 
 	public DefaultImageDownloader(NetworkToDiskInterface networkToDiskInterface, ImageDownloadObserver imageDownloadObserver) {
 		mNetworkToDiskInterface = networkToDiskInterface;
@@ -25,14 +23,16 @@ public class DefaultImageDownloader implements ImageNetworkInterface {
 	}
 
 	@Override
-	public void downloadImageToDisk(final String url) {
+	public synchronized void downloadImageToDisk(final String url) {
 		ImageDownloadingRunnable runnable = new ImageDownloadingRunnable(url);
-//		mMappingManager.addToListenerNewMap(url, onLoadComplete, runnable);
+		mUrlToRunnableMap.put(url,  runnable);
 		mThreadPool.execute(runnable);
 	}
 
 	@Override
-	public void cancelRequest(String url) {
+	public synchronized void cancelRequest(String url) {
+		ImageDownloadingRunnable runnable = mUrlToRunnableMap.remove(url);
+		runnable.cancel();
 	}
 
 	public class ImageDownloadingRunnable implements Runnable {
@@ -52,8 +52,6 @@ public class DefaultImageDownloader implements ImageNetworkInterface {
 				passInputStreamToImageLoader();
 			} catch (IOException e) {
 				failed = true;
-				e.printStackTrace();
-				Log.d(TAG, "Failed to download the image! Error message: " + e.getMessage());
 			}
 			checkLoadCompleteAndRemoveListeners();
 		}
@@ -74,7 +72,6 @@ public class DefaultImageDownloader implements ImageNetworkInterface {
 				try {
 					mInputStream.close();
 				} catch (IOException e) {
-					e.printStackTrace();
 				}
 			}
 		}

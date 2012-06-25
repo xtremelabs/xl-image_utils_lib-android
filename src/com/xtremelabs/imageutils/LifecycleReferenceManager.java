@@ -8,6 +8,9 @@ import android.os.Handler;
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
 
 class LifecycleReferenceManager {
+	@SuppressWarnings("unused")
+	private static final String TAG = "LifecycleReferenceManager";
+	
 	private static LifecycleReferenceManager referenceManager;
 
 	private LifecycleKeyListenerMapper mListenerHelper = new LifecycleKeyListenerMapper();
@@ -46,7 +49,6 @@ class LifecycleReferenceManager {
 	}
 	
 	public void cancelRequest(ImageManagerListener imageManagerListener) {
-		// TODO: Do not forget to remove the listeners from THIS class!
 		mListenerHelper.unregisterListener(imageManagerListener).cancelRequest();
 	}
 	

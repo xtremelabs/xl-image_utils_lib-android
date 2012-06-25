@@ -9,14 +9,17 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 public class DiskCacheDatabaseHelper extends SQLiteOpenHelper {
-	private String[] columns = { "url", "sizeondisk", "lastaccess" };
+	private static final String TAG = "DiskCacheDatabaseHelper";
 
-	private final static int DATABASE_VERSION = 1;
+	private String[] columns = { "url", "sizeondisk", "width", "height", "lastaccess" };
+
+	private final static int DATABASE_VERSION = 2;
 	private final String DICTIONARY_TABLE_NAME = "img_cache";
 	private final String DICTIONARY_TABLE_CREATE = "CREATE TABLE IF NOT EXISTS " + DICTIONARY_TABLE_NAME + " (" + columns[0] + " VARCHAR PRIMARY KEY, "
-			+ columns[1] + " INTEGER, " + columns[2] + " INTEGER);";
+			+ columns[1] + " INTEGER, " + columns[2] + " INTEGER, " + columns[3] + " INTEGER, " + columns[4] + " INTEGER);";
 	private final static String DATABASE_NAME = "imageCacheDatabase";
 	private ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
 
@@ -32,11 +35,13 @@ public class DiskCacheDatabaseHelper extends SQLiteOpenHelper {
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 		// TODO: Fill this in. Kinda important...
+		resetTable(db);
 	}
 
 	public FileEntry getFileEntry(String url) {
 		Cursor cursor = getReadableDatabase().query(DICTIONARY_TABLE_NAME, columns, columns[0] + " = ?", new String[] { url }, null, null, null);
 		if (cursor.getCount() == 0) {
+			Log.d(TAG, "Sample size - Was unable to get file entry!");
 			return null;
 		} else {
 			cursor.moveToFirst();
@@ -56,19 +61,19 @@ public class DiskCacheDatabaseHelper extends SQLiteOpenHelper {
 		return list;
 	}
 
-	public void addOrUpdateFile(String url, long size) {
+	public void addOrUpdateFile(String url, long size, int width, int height) {
 		if (GeneralUtils.isStringBlank(url)) {
 			throw new IllegalArgumentException("Cannot add a null URL to the database.");
 		}
-
-		getWritableDatabase().rawQuery("INSERT OR REPLACE INTO " + DICTIONARY_TABLE_NAME + " VALUES (?, ?, ?)",
-				new String[] { url, Long.toString(size), Long.toString(System.currentTimeMillis()) });
-
-		// ContentValues values = new ContentValues(3);
-		// values.put(columns[0], url);
-		// values.put(columns[1], size);
-		// values.put(columns[2], lastAccessTime);
-		// return -1 != getWritableDatabase().insert(DICTIONARY_TABLE_NAME, null, values);
+		
+		ContentValues values = new ContentValues();
+		values.put(columns[0], url);
+		values.put(columns[1], size);
+		values.put(columns[2], width);
+		values.put(columns[3], height);
+		values.put(columns[4], System.currentTimeMillis());
+		
+		getWritableDatabase().insertWithOnConflict(DICTIONARY_TABLE_NAME, null, values, SQLiteDatabase.CONFLICT_REPLACE);
 	}
 
 	public boolean removeFile(String url) {
@@ -76,12 +81,12 @@ public class DiskCacheDatabaseHelper extends SQLiteOpenHelper {
 		return 1 == getWritableDatabase().delete(DICTIONARY_TABLE_NAME, columns[0] + " = ?", args);
 	}
 
-	public void updateFile(final String url, long lastAccessTime) {
+	public void updateFile(final String url) {
 		if (GeneralUtils.isStringBlank(url)) {
 			throw new IllegalArgumentException("Cannot add a null URL to the database.");
 		}
 		final ContentValues values = new ContentValues(1);
-		values.put(columns[2], lastAccessTime);
+		values.put(columns[4], System.currentTimeMillis());
 		executor.execute(new Runnable() {
 			@Override
 			public void run() {
@@ -90,9 +95,9 @@ public class DiskCacheDatabaseHelper extends SQLiteOpenHelper {
 		});
 	}
 
-	public void resetTable() {
-		getWritableDatabase().execSQL("DROP TABLE " + DICTIONARY_TABLE_NAME);
-		getWritableDatabase().execSQL(DICTIONARY_TABLE_CREATE);
+	public void resetTable(SQLiteDatabase db) {
+		db.execSQL("DROP TABLE " + DICTIONARY_TABLE_NAME);
+		db.execSQL(DICTIONARY_TABLE_CREATE);
 	}
 
 	public long getTotalSizeOnDisk() {
@@ -110,7 +115,7 @@ public class DiskCacheDatabaseHelper extends SQLiteOpenHelper {
 
 	public FileEntry getLRU() {
 		Cursor cursor = getReadableDatabase().rawQuery(
-				"SELECT * FROM " + DICTIONARY_TABLE_NAME + " WHERE " + columns[2] + " = (SELECT min(" + columns[2] + ") AS min FROM " + DICTIONARY_TABLE_NAME
+				"SELECT * FROM " + DICTIONARY_TABLE_NAME + " WHERE " + columns[4] + " = (SELECT min(" + columns[4] + ") AS min FROM " + DICTIONARY_TABLE_NAME
 						+ ")", null);
 		if (cursor.getCount() == 0) {
 			return null;
@@ -122,6 +127,9 @@ public class DiskCacheDatabaseHelper extends SQLiteOpenHelper {
 	}
 
 	private FileEntry createFileEntry(Cursor cursor) {
-		return new FileEntry(cursor.getString(0), cursor.getLong(1), cursor.getLong(2));
+		FileEntry fileEntry = new FileEntry(cursor.getString(0), cursor.getLong(1), cursor.getInt(2), cursor.getInt(3), cursor.getLong(4));
+		Log.d(TAG, "Sample size - File entry stats: " + fileEntry.getLastAccessTime() + ", " + fileEntry.getDimensions().getWidth() + ", "
+				+ fileEntry.getDimensions().getHeight());
+		return fileEntry;
 	}
 }

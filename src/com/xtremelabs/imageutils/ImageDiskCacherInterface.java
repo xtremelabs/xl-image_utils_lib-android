@@ -9,7 +9,7 @@ import com.xtremelabs.imageutils.DefaultImageDiskCacher.FileFormatException;
 interface ImageDiskCacherInterface extends NetworkToDiskInterface {
 	boolean isCached(String url);
 
-	int getSampleSize(String url, Integer width, Integer height) throws FileNotFoundException;
+	int getSampleSize(String url, Integer width, Integer height);
 
 //	void cancelRequest(String url, ICListener listener);
 
@@ -21,5 +21,5 @@ interface ImageDiskCacherInterface extends NetworkToDiskInterface {
 
 	void setDiskCacheSize(long sizeInBytes);
 
-	Dimensions getImageDimensions(String url) throws FileNotFoundException;
+	Dimensions getImageDimensions(String url);
 }
