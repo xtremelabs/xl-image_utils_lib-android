@@ -6,6 +6,13 @@ import java.util.List;
 
 import com.xtremelabs.imageutils.LifecycleReferenceManager.ImageManagerCacheListener;
 
+/**
+ * This class maintains three sets of mappings which ensure that any Activity that is being destroyed has all references to it released.
+ *
+ * The {@link Object} "key" in this class refers to either an Activity or a Fragment.
+ * 
+ * @author Jamie Halpern
+ */
 class LifecycleKeyListenerMapper {
 	private HashMap<Object, List<ImageManagerListener>> mKeyToListenersMap = new HashMap<Object, List<ImageManagerListener>>();
 	private HashMap<ImageManagerListener, ListenerInfo> mListenerToInfoMap = new HashMap<ImageManagerListener, ListenerInfo>();
@@ -18,10 +25,10 @@ class LifecycleKeyListenerMapper {
 			mKeyToListenersMap.put(key, imageManagerListenersList);
 		}
 		imageManagerListenersList.add(imageManagerListener);
-		
+
 		ListenerInfo info = new ListenerInfo(key, customImageListener);
 		mListenerToInfoMap.put(imageManagerListener, info);
-		
+
 		mCacheListenerToImageReceivedListenerMap.put(customImageListener, imageManagerListener);
 	}
 
@@ -41,7 +48,7 @@ class LifecycleKeyListenerMapper {
 			return null;
 		}
 	}
-	
+
 	public synchronized ImageManagerListener getAndRemoveListener(ImageManagerCacheListener cacheListener) {
 		ImageManagerListener listener = mCacheListenerToImageReceivedListenerMap.get(cacheListener);
 		if (listener != null) {
@@ -65,11 +72,11 @@ class LifecycleKeyListenerMapper {
 	public synchronized boolean isListenerRegistered(ImageManagerListener imageManagerListener) {
 		return mListenerToInfoMap.containsKey(imageManagerListener);
 	}
-	
+
 	private class ListenerInfo {
 		Object mKey;
 		ImageManagerCacheListener mCacheListener;
-		
+
 		ListenerInfo(Object key, ImageManagerCacheListener cacheListener) {
 			this.mKey = key;
 			this.mCacheListener = cacheListener;

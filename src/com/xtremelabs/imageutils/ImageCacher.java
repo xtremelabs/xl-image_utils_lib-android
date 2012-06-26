@@ -7,6 +7,14 @@ import android.graphics.Bitmap;
 
 import com.xtremelabs.imageutils.AsyncOperationsMaps.AsyncOperationState;
 
+/**
+ * This class defensively handles requests from four locations: LifecycleReferenceManager, ImageMemoryCacherInterface, ImageDiskCacherInterface,
+ * ImageNetworkInterface and the AsyncOperationsMaps.
+ * 
+ * The job of this class is to "route" messages appropriately in order to ensure synchronized handling of image downloading and caching operations.
+ * 
+ * @author Jamie Halpern
+ */
 class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOperationsObserver {
 	@SuppressWarnings("unused")
 	private static final String TAG = "ImageCacher";
@@ -19,7 +27,8 @@ class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOp
 	private AsyncOperationsMaps mAsyncOperationsMap;
 
 	private ImageCacher(Context appContext) {
-		mMemoryCache = new DefaultImageMemoryLRUCacher();
+		mMemoryCache = new DefaultMemoryLRUCacher();
+
 		mDiskCache = new DefaultImageDiskCacher(appContext, this);
 		mNetworkInterface = new DefaultImageDownloader(mDiskCache, this);
 		mAsyncOperationsMap = new AsyncOperationsMaps(this);
@@ -90,7 +99,7 @@ class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOp
 		mMemoryCache.clearCache();
 	}
 
-	public void setMemCacheSize(int size) {
+	public void setMaximumCacheSize(long size) {
 		mMemoryCache.setMaximumCacheSize(size);
 	}
 

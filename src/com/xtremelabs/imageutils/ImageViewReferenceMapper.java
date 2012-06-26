@@ -4,6 +4,11 @@ import java.util.HashMap;
 
 import android.widget.ImageView;
 
+/**
+ * This class is responsible for mapping responses from the LifecycleReferenceManager back to the ImageViews that were originally passed in.
+ * 
+ * @author Jamie Halpern
+ */
 class ImageViewReferenceMapper {
 	private HashMap<ImageView, ImageManagerListener> imageViewToListenerMap = new HashMap<ImageView, ImageManagerListener>();
 	private HashMap<ImageManagerListener, ImageView> listenerToImageViewMap = new HashMap<ImageManagerListener, ImageView>();

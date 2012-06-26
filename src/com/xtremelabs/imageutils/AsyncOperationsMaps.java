@@ -149,7 +149,7 @@ class AsyncOperationsMaps {
 		}
 	}
 	
-	private void queueForDecodeRequest(ImageCacherListener imageCacherListener, DecodeOperationParameters decodeOperationParameters) {
+	private synchronized void queueForDecodeRequest(ImageCacherListener imageCacherListener, DecodeOperationParameters decodeOperationParameters) {
 		List<ImageCacherListener> imageCacherListenerList = mDecodeParamsToListenersMap.get(decodeOperationParameters);
 		if (imageCacherListenerList == null) {
 			imageCacherListenerList = new ArrayList<ImageCacherListener>();
@@ -216,7 +216,7 @@ class AsyncOperationsMaps {
 		return false;
 	}
 
-	private ImageCacherListener getListenerWaitingOnDecode(DecodeOperationParameters decodeOperationParameters) {
+	private synchronized ImageCacherListener getListenerWaitingOnDecode(DecodeOperationParameters decodeOperationParameters) {
 		List<ImageCacherListener> imageCacherListeners = mDecodeParamsToListenersMap.get(decodeOperationParameters);
 		if (imageCacherListeners != null && imageCacherListeners.size() > 0) {
 			return imageCacherListeners.get(0);
@@ -232,7 +232,7 @@ class AsyncOperationsMaps {
 		return null;
 	}
 
-	private boolean isDecodeRequestPendingForParams(DecodeOperationParameters decodeOperationParameters) {
+	private synchronized boolean isDecodeRequestPendingForParams(DecodeOperationParameters decodeOperationParameters) {
 		return mDecodeParamsToListenersMap.containsKey(decodeOperationParameters);
 	}
 

@@ -6,17 +6,19 @@ import android.util.Log;
 
 class Profiler {
 	private static HashMap<String, Long> map = new HashMap<String, Long>();
-	
+
 	public static void init(String key) {
 		map.put(key, System.currentTimeMillis());
 	}
-	
+
 	public static void report(String key) {
 		Long previousTime = map.remove(key);
 		if (previousTime != null) {
 			long time = System.currentTimeMillis() - previousTime;
-			
-			Log.i("Profiler", "Operation: " + key + " - Time: " + time);
+
+			if (time > 10) {
+				Log.i("Profiler", "Operation: " + key + " - Time: " + time);
+			}
 		}
 	}
 }

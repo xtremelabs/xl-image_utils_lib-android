@@ -7,10 +7,22 @@ import android.os.Handler;
 
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
 
+/**
+ * This class is responsible for maintaining a clear separation between the cacher and the lifecycle classes that originally made image requests (ie. Activities
+ * and Fragments).
+ * 
+ * HashMaps are used to maintain mappings between the different requests. When an Activity or Fragment is being destroyed, this class will sever all references
+ * back to the Activity or Fragment, allowing the class to become garbage collected.
+ * 
+ * Finally, this class is responsible for ensuring that all calls back to listeners in the ImageLoader occur on the UI thread. This prevents race conditions in
+ * the ImageLoader and simplifies loading the bitmaps back to image views.
+ * 
+ * @author Jamie Halpern
+ */
 class LifecycleReferenceManager {
 	@SuppressWarnings("unused")
 	private static final String TAG = "LifecycleReferenceManager";
-	
+
 	private static LifecycleReferenceManager referenceManager;
 
 	private LifecycleKeyListenerMapper mListenerHelper = new LifecycleKeyListenerMapper();
@@ -33,7 +45,7 @@ class LifecycleReferenceManager {
 
 		return referenceManager;
 	}
-	
+
 	public void getBitmap(Object key, String url, ImageManagerListener imageManagerListener, ScalingInfo scalingInfo) {
 		if (GeneralUtils.isStringBlank(url)) {
 			imageManagerListener.onLoadImageFailed();
@@ -47,18 +59,18 @@ class LifecycleReferenceManager {
 	public void removeListenersForKey(Object key) {
 		mListenerHelper.removeAllEntriesForKey(key);
 	}
-	
+
 	public void cancelRequest(ImageManagerListener imageManagerListener) {
 		mListenerHelper.unregisterListener(imageManagerListener).cancelRequest();
 	}
-	
+
 	private ImageManagerCacheListener generateRegisteredListener(Object key, String url, ImageManagerListener listener) {
 		ImageManagerCacheListener cacheListener = new ImageManagerCacheListener();
 
 		mListenerHelper.registerNewListener(listener, key, cacheListener);
 		return cacheListener;
 	}
-	
+
 	private void returnImageIfValid(ImageManagerListener listener, Bitmap bitmap) {
 		if (bitmap != null && mListenerHelper.unregisterListener(listener) != null) {
 			listener.onImageReceived(bitmap, true);

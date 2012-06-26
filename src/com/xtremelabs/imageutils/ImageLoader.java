@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Point;
+import android.os.Build;
 import android.support.v4.app.Fragment;
 import android.view.Display;
 import android.view.WindowManager;
@@ -165,6 +166,10 @@ public class ImageLoader {
 	}
 
 	/**
+	 * COMPATIBILITY: API levels 11 and under
+	 * 
+	 * PLEASE SEE setMaximumMemCacheSize for adjusting the memcache size for devices API level 12+.
+	 * 
 	 * Sets the maximum number of images that will be contained within the memory cache.
 	 * 
 	 * WARNING: Setting the memory cache size value too high will result in OutOfMemory exceptions. Developers should test their apps thoroughly and modify the
@@ -175,7 +180,29 @@ public class ImageLoader {
 	 *            The number of images that can be stored within the memory cache.
 	 */
 	public void setMemCacheSize(int numImages) {
-		ImageCacher.getInstance(mApplicationContext).setMemCacheSize(numImages);
+		if (Build.VERSION.SDK_INT <= 11) {
+			ImageCacher.getInstance(mApplicationContext).setMaximumCacheSize(numImages);
+		}
+	}
+
+	/**
+	 * COMPATIBILITY: API levels 12+
+	 * 
+	 * PLEASE SEE setMemCacheSize for adjusting the memcache size for devices API level 11 and under.
+	 * 
+	 * Sets the maximum size of the memory cache in bytes.
+	 * 
+	 * WARNING: Setting the memory cache size value too high will result in OutOfMemory exceptions. Developers should test their apps thoroughly and modify the
+	 * value set using this method based on memory consumption and app performance. A larger cache size = higher performance but worse memory usage. A smaller
+	 * cache size means worse performance but better memory usage.
+	 * 
+	 * @param maxSizeInBytes
+	 *            The maximum size of the memory cache in bytes.
+	 */
+	public void setMaximumMemCacheSize(long maxSizeInBytes) {
+		if (Build.VERSION.SDK_INT >= 12) {
+			ImageCacher.getInstance(mApplicationContext).setMaximumCacheSize(maxSizeInBytes);
+		}
 	}
 
 	// TODO: Explain the different use cases for the precaching calls

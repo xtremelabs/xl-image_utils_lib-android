@@ -6,7 +6,7 @@ import java.util.List;
 
 import android.graphics.Bitmap;
 import android.widget.ImageView;
-public class ImageViewUrlMapper {
+class ImageViewUrlMapper {
 	private HashMap<String, List<ImageView>> urlToImageViewsMap = new HashMap<String, List<ImageView>>();
 	private HashMap<ImageView, String> imageViewToUrlMap = new HashMap<ImageView, String>();
 

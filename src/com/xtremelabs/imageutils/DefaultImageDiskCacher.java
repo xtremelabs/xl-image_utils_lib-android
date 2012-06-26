@@ -88,8 +88,8 @@ class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 		 * @Override public void run() { Bitmap bitmap = getBitmapSynchronousFromDisk(appContext, url, sampleSize); if (bitmap != null)
 		 * diskCacherListener.onImageDecoded(bitmap); } });
 		 */
-
-		mThreadPool.execute(new Runnable() {
+		
+		Runnable runnable = new Runnable() {
 			@Override
 			public void run() {
 				try {
@@ -101,7 +101,9 @@ class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 					mImageDecodeObserver.onImageDecodeFailed(url, sampleSize);
 				}
 			}
-		});
+		};
+
+		mThreadPool.execute(runnable);
 	}
 
 	@Override
