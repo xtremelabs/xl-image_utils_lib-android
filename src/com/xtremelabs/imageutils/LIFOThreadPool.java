@@ -12,7 +12,7 @@ class LifoThreadPool {
 
 	public LifoThreadPool(int poolSize) {
 		if (Build.VERSION.SDK_INT >= 9) {
-			mThreadPool = new ThreadPoolExecutor(poolSize, poolSize, 5000, TimeUnit.SECONDS, new LifoBlockingDeque());
+			mThreadPool = new ThreadPoolExecutor(poolSize, poolSize, 5000, TimeUnit.SECONDS, new LifoBlockingStack());
 		} else {
 			mThreadPool = new ThreadPoolExecutor(poolSize, poolSize, 5000, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
 		}
@@ -22,27 +22,27 @@ class LifoThreadPool {
 		mThreadPool.execute(runnable);
 	}
 
-	private class LifoBlockingDeque extends LinkedBlockingDeque<Runnable> {
+	private class LifoBlockingStack extends LinkedBlockingDeque<Runnable> {
 		private static final long serialVersionUID = -4854985351588039351L;
 
 		@Override
-		public boolean offer(Runnable e) {
-			return super.offerFirst(e);
+		public boolean offer(Runnable runnable) {
+			return super.offerFirst(runnable);
 		}
 
 		@Override
-		public boolean offer(Runnable e, long timeout, TimeUnit unit) throws InterruptedException {
-			return super.offerFirst(e, timeout, unit);
+		public boolean offer(Runnable runnable, long timeout, TimeUnit unit) throws InterruptedException {
+			return super.offerFirst(runnable, timeout, unit);
 		}
 
 		@Override
-		public boolean add(Runnable e) {
-			return super.offerFirst(e);
+		public boolean add(Runnable runnable) {
+			return super.offerFirst(runnable);
 		}
 
 		@Override
-		public void put(Runnable e) throws InterruptedException {
-			super.putFirst(e);
+		public void put(Runnable runnable) throws InterruptedException {
+			super.putFirst(runnable);
 		}
 	};
 }

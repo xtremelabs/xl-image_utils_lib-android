@@ -16,7 +16,7 @@ import android.os.Environment;
  * @author Jamie Halpern
  * 
  */
-public class DiskManager {
+class DiskManager {
 	private final String subDirectory;
 	private Context appContext;
 	private File cacheDir; // Do not access this variable directly. It can disappear at any time. Use "getCacheDir()" instead.

@@ -33,8 +33,4 @@ class ImageViewReferenceMapper {
 		}
 		return listener;
 	}
-
-	public synchronized boolean isImageViewCurrentlyRegistered(ImageView view) {
-		return imageViewToListenerMap.containsKey(view);
-	}
 }
