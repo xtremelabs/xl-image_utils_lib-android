@@ -4,4 +4,6 @@ interface ImageNetworkInterface {
 	void downloadImageToDisk(String url);
 
 	void cancelRequest(String url);
+
+	void bump(String url);
 }

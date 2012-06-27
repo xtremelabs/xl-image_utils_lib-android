@@ -21,6 +21,14 @@ class DefaultImageDownloader implements ImageNetworkInterface {
 		mNetworkToDiskInterface = networkToDiskInterface;
 		mImageDownloadObserver = imageDownloadObserver;
 	}
+	
+	@Override
+	public synchronized void bump(String url) {
+		ImageDownloadingRunnable runnable = mUrlToRunnableMap.get(url);
+		if (runnable != null) {
+			mThreadPool.bump(runnable);
+		}
+	}
 
 	@Override
 	public synchronized void downloadImageToDisk(final String url) {

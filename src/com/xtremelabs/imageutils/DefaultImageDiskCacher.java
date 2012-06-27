@@ -79,16 +79,6 @@ class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 
 	@Override
 	public void getBitmapAsynchronouslyFromDisk(final String url, final int sampleSize) {
-		/*
-		 * ImageRequestData data = new ImageRequestData(); data.url = url; data.sampleSize = sampleSize; List<DiskCacherListener> dataCacheListeners;
-		 * dataCacheListeners = asyncRequestMap.get(data); if (dataCacheListeners == null) { dataCacheListeners = new }
-		 * 
-		 * ThreadPool.execute(new Runnable() {
-		 * 
-		 * @Override public void run() { Bitmap bitmap = getBitmapSynchronousFromDisk(appContext, url, sampleSize); if (bitmap != null)
-		 * diskCacherListener.onImageDecoded(bitmap); } });
-		 */
-		
 		Runnable runnable = new Runnable() {
 			@Override
 			public void run() {

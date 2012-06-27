@@ -50,7 +50,11 @@ class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOp
 		throwExceptionIfNeeded(url, imageCacherListener, scalingInfo);
 
 		AsyncOperationState asyncOperationState = mAsyncOperationsMap.queueListenerIfRequestPending(imageCacherListener, url, scalingInfo);
-		if (asyncOperationState != AsyncOperationState.NOT_QUEUED) {
+		switch (asyncOperationState) {
+		case QUEUED_FOR_NETWORK_REQUEST:
+			mNetworkInterface.bump(url);
+			return null;
+		case QUEUED_FOR_DECODE_REQUEST:
 			return null;
 		}
 
