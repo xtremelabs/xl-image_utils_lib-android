@@ -100,7 +100,7 @@ class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOp
 		if (!mAsyncOperationsMap.isNetworkRequestPendingForUrl(url) && !mDiskCache.isCached(url)) {
 			mNetworkInterface.downloadImageToDisk(url);
 		} else {
-			mDiskCache.bump(url);
+			mDiskCache.bumpOnDisk(url);
 		}
 	}
 

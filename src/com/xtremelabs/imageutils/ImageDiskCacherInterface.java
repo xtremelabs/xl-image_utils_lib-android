@@ -20,7 +20,7 @@ interface ImageDiskCacherInterface extends NetworkToDiskInterface {
 
 	void getBitmapAsynchronouslyFromDisk(String url, int sampleSize);
 
-	void bump(String url);
+	void bumpOnDisk(String url);
 
 	void setDiskCacheSize(long sizeInBytes);
 

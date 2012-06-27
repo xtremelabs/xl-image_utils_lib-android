@@ -107,7 +107,7 @@ class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public void bump(String url) {
+	public void bumpOnDisk(String url) {
 		mDatabaseHelper.updateFile(url);
 	}
 

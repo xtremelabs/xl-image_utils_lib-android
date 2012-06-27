@@ -140,6 +140,10 @@ public class ImageLoader {
 		ImageManagerListener imageManagerListener = getImageManagerListenerWithCallback(listener, options);
 		performImageRequest(imageView, url, options, imageManagerListener);
 	}
+	
+	public void stopLoadingImage(ImageView imageView) {
+		mViewMapper.removeListener(imageView);
+	}
 
 	/**
 	 * If the image for the provided URL is on disk, this method will return a Point containing the dimensions of that image.
@@ -276,10 +280,12 @@ public class ImageLoader {
 	}
 
 	private void setPreLoadedImage(ImageView imageView, Options options) {
-		if (options.placeholderImageResourceId != null) {
-			imageView.setImageResource(options.placeholderImageResourceId);
-		} else {
-			imageView.setImageBitmap(null);
+		if (options.wipeOldImageOnPreload) {
+			if (options.placeholderImageResourceId != null) {
+				imageView.setImageResource(options.placeholderImageResourceId);
+			} else {
+				imageView.setImageBitmap(null);
+			}
 		}
 	}
 
@@ -432,6 +438,8 @@ public class ImageLoader {
 		 * Default value: true.
 		 */
 		public boolean useScreenSizeAsBounds = true;
+
+		public boolean wipeOldImageOnPreload = true;
 
 		/**
 		 * The ImageLoader will load the resource at this ID prior to making the image request.
