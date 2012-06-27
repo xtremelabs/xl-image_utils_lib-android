@@ -22,7 +22,7 @@ class DefaultImageDiskCacher implements ImageDiskCacherInterface {
 	private ImageDecodeObserver mImageDecodeObserver;
 	private ImageDimensionsMap mImageDimensionsMap = new ImageDimensionsMap();
 
-	private ThreadPool mThreadPool = new ThreadPool(5);
+	private LifoThreadPool mThreadPool = new LifoThreadPool(5);
 
 	public DefaultImageDiskCacher(Context appContext, ImageDecodeObserver imageDecodeObserver) {
 		mDiskManager = new DiskManager("img", appContext);

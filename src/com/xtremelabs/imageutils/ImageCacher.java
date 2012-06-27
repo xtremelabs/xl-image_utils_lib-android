@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.os.Build;
 
 import com.xtremelabs.imageutils.AsyncOperationsMaps.AsyncOperationState;
 
@@ -27,7 +28,11 @@ class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOp
 	private AsyncOperationsMaps mAsyncOperationsMap;
 
 	private ImageCacher(Context appContext) {
-		mMemoryCache = new DefaultMemoryLRUCacher();
+		if (Build.VERSION.SDK_INT <= 11) {
+			mMemoryCache = new DefaultMemoryLRUCacher();
+		} else {
+			mMemoryCache = new AdvancedMemoryLRUCacher();
+		}
 
 		mDiskCache = new DefaultImageDiskCacher(appContext, this);
 		mNetworkInterface = new DefaultImageDownloader(mDiskCache, this);

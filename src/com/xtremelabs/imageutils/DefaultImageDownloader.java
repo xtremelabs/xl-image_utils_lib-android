@@ -15,7 +15,7 @@ class DefaultImageDownloader implements ImageNetworkInterface {
 	private ImageDownloadObserver mImageDownloadObserver;
 	private HashMap<String, ImageDownloadingRunnable> mUrlToRunnableMap = new HashMap<String, ImageDownloadingRunnable>();
 	
-	private ThreadPool mThreadPool = new ThreadPool(8);
+	private LifoThreadPool mThreadPool = new LifoThreadPool(8);
 
 	public DefaultImageDownloader(NetworkToDiskInterface networkToDiskInterface, ImageDownloadObserver imageDownloadObserver) {
 		mNetworkToDiskInterface = networkToDiskInterface;

@@ -28,8 +28,7 @@ import android.widget.ImageView;
  * @author Jamie Halpern
  */
 public class ImageLoader {
-	@SuppressWarnings("unused")
-	private static final String TAG = "ImageLoader";
+	public static final String TAG = "ImageLoader";
 
 	private ImageViewReferenceMapper mViewMapper = new ImageViewReferenceMapper();
 	private LifecycleReferenceManager mReferenceManager;
@@ -251,13 +250,21 @@ public class ImageLoader {
 		mReferenceManager.getBitmap(applicationContext, url, getBlankImageManagerListener(), scalingInfo);
 	}
 
+	@SuppressWarnings("deprecation")
 	private void initKeyAndAppContext(Object key, Context applicationContext) {
 		mApplicationContext = applicationContext;
 		mKey = key;
 		mReferenceManager = LifecycleReferenceManager.getInstance(applicationContext);
 		Display display = ((WindowManager) applicationContext.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
-		mScreenHeight = display.getHeight();
-		mScreenWidth = display.getWidth();
+		if (Build.VERSION.SDK_INT < 13) {
+			mScreenHeight = display.getHeight();
+			mScreenWidth = display.getWidth();
+		} else {
+			Point point = new Point();
+			display.getSize(point);
+			mScreenHeight = point.y;
+			mScreenWidth = point.x;
+		}
 	}
 
 	private void performImageRequest(ImageView imageView, String url, Options options, ImageManagerListener imageManagerListener) {

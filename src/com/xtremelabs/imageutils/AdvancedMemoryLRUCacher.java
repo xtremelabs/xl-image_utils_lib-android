@@ -6,7 +6,7 @@ import java.util.LinkedList;
 import android.graphics.Bitmap;
 
 class AdvancedMemoryLRUCacher implements ImageMemoryCacherInterface {
-	private long mMaximumSizeInBytes = 6144000; // 6MB default
+	private long mMaximumSizeInBytes = 12 * 1024 * 1024; // 12MB default
 	private long mSize = 0;
 
 	private HashMap<DecodeOperationParameters, Bitmap> mCache = new HashMap<DecodeOperationParameters, Bitmap>();
@@ -38,12 +38,12 @@ class AdvancedMemoryLRUCacher implements ImageMemoryCacherInterface {
 	}
 
 	@Override
-	public void setMaximumCacheSize(long size) {
+	public synchronized void setMaximumCacheSize(long size) {
 		mMaximumSizeInBytes = size;
 		performEvictions();
 	}
 	
-	private void onEntryHit(String url, int sampleSize) {
+	private synchronized void onEntryHit(String url, int sampleSize) {
 		EvictionQueueContainer container = new EvictionQueueContainer(url, sampleSize);
 
 		if (mEvictionQueue.contains(container)) {
@@ -55,7 +55,7 @@ class AdvancedMemoryLRUCacher implements ImageMemoryCacherInterface {
 		}
 	}
 	
-	private void performEvictions() {
+	private synchronized void performEvictions() {
 		while (mSize > mMaximumSizeInBytes) {
 			EvictionQueueContainer container = mEvictionQueue.removeFirst();
 			Bitmap bitmap = mCache.remove(new DecodeOperationParameters(container.getUrl(), container.getSampleSize()));
