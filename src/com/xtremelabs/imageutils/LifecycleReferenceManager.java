@@ -46,6 +46,14 @@ class LifecycleReferenceManager {
 		return referenceManager;
 	}
 
+	/**
+	 * Maps the key (usually an Activity or Fragment to the Bitmap request.
+	 * 
+	 * @param key
+	 * @param url
+	 * @param imageManagerListener
+	 * @param scalingInfo
+	 */
 	public void getBitmap(Object key, String url, ImageManagerListener imageManagerListener, ScalingInfo scalingInfo) {
 		if (GeneralUtils.isStringBlank(url)) {
 			imageManagerListener.onLoadImageFailed();

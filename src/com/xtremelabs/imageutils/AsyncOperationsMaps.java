@@ -51,7 +51,7 @@ class AsyncOperationsMaps {
 
 	public synchronized void registerListenerForNetworkRequest(ImageCacherListener imageCacherListener, String url, ScalingInfo scalingInfo) {
 		NetworkRequestParameters networkRequestParameters = new NetworkRequestParameters(imageCacherListener, scalingInfo);
-		
+
 		List<NetworkRequestParameters> networkRequestParametersList = mUrlToListenersMapForNetwork.get(url);
 		if (networkRequestParametersList == null) {
 			networkRequestParametersList = new ArrayList<NetworkRequestParameters>();
@@ -61,12 +61,12 @@ class AsyncOperationsMaps {
 
 		mListenerToUrlMapForNetwork.put(imageCacherListener, url);
 	}
-	
+
 	public synchronized void registerListenerForDecode(ImageCacherListener imageCacherListener, String url, int sampleSize) {
 		DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, sampleSize);
 		queueForDecodeRequest(imageCacherListener, decodeOperationParameters);
 	}
-	
+
 	public void onDecodeSuccess(Bitmap bitmap, String url, int sampleSize) {
 		DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, sampleSize);
 
@@ -114,41 +114,30 @@ class AsyncOperationsMaps {
 	}
 
 	public synchronized void cancelPendingRequest(ImageCacherListener imageCacherListener) {
-		String url = mListenerToUrlMapForNetwork.remove(imageCacherListener);
+		String url = mListenerToUrlMapForNetwork.get(imageCacherListener);
 		if (url != null) {
-			List<NetworkRequestParameters> networkRequestParametersList = mUrlToListenersMapForNetwork.get(url);
-			if (networkRequestParametersList != null) {
-				networkRequestParametersList.remove(imageCacherListener);
-				if (networkRequestParametersList.isEmpty()) {
-					// FIXME: The cancel call is never made from here.
-					/*
-					 * For some reason the network request is not actually being removed from the networkRequestParametersList.
-					 * 
-					 * This needs to be debugged. Find out if and when we are properly evicting things out of the queue.
-					 */
-					mAsyncOperationsObserver.cancelNetworkRequest(url);
-					mUrlToListenersMapForNetwork.remove(url);
+			List<NetworkRequestParameters> parametersList = mUrlToListenersMapForNetwork.get(url);
+			if (parametersList != null) {
+				NetworkRequestParameters networkRequestParameters = null;
+				for (NetworkRequestParameters parameter : parametersList) {
+					if (parameter.mImageCacherListener == imageCacherListener) {
+						networkRequestParameters = parameter;
+						break;
+					}
+				}
+				if (networkRequestParameters != null) {
+					removeQueuedListenerForDownload(networkRequestParameters);
+					return;
 				}
 			}
 		}
 
-		// TODO: This needs to be tested as well.
-		/*
-		 * If the network system is failing to cancel, I am afraid the disk system is failing to cancel as well.
-		 */
-		DecodeOperationParameters decodeOperationParameters = mListenerToDecodeParamsMap.remove(imageCacherListener);
+		DecodeOperationParameters decodeOperationParameters = mListenerToDecodeParamsMap.get(imageCacherListener);
 		if (decodeOperationParameters != null) {
-			List<ImageCacherListener> imageCacherListenersList = mDecodeParamsToListenersMap.get(decodeOperationParameters);
-			if (imageCacherListenersList != null) {
-				imageCacherListenersList.remove(imageCacherListener);
-				if (imageCacherListenersList.size() == 0) {
-					mAsyncOperationsObserver.cancelDecodeRequest(url, decodeOperationParameters.mSampleSize);
-					mDecodeParamsToListenersMap.remove(decodeOperationParameters);
-				}
-			}
+			removeQueuedListenerForDecode(decodeOperationParameters, imageCacherListener);
 		}
 	}
-	
+
 	private synchronized void queueForDecodeRequest(ImageCacherListener imageCacherListener, DecodeOperationParameters decodeOperationParameters) {
 		List<ImageCacherListener> imageCacherListenerList = mDecodeParamsToListenersMap.get(decodeOperationParameters);
 		if (imageCacherListenerList == null) {

@@ -7,7 +7,7 @@ import java.util.HashMap;
 
 import org.apache.http.client.ClientProtocolException;
 
-class DefaultImageDownloader implements ImageNetworkInterface {
+class ImageDownloader implements ImageNetworkInterface {
 	@SuppressWarnings("unused")
 	private static final String TAG = "DefaultImageDownloader";
 
@@ -17,7 +17,7 @@ class DefaultImageDownloader implements ImageNetworkInterface {
 	
 	private LifoThreadPool mThreadPool = new LifoThreadPool(8);
 
-	public DefaultImageDownloader(NetworkToDiskInterface networkToDiskInterface, ImageDownloadObserver imageDownloadObserver) {
+	public ImageDownloader(NetworkToDiskInterface networkToDiskInterface, ImageDownloadObserver imageDownloadObserver) {
 		mNetworkToDiskInterface = networkToDiskInterface;
 		mImageDownloadObserver = imageDownloadObserver;
 	}

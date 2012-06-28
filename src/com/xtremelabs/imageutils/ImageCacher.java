@@ -21,7 +21,7 @@ class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOp
 	private static final String TAG = "ImageCacher";
 	private static ImageCacher mImageCacher;
 
-	private ImageDiskCacherInterface mDiskCache;
+	private DiskCacherInterface mDiskCache;
 	private ImageMemoryCacherInterface mMemoryCache;
 	private ImageNetworkInterface mNetworkInterface;
 
@@ -29,13 +29,13 @@ class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOp
 
 	private ImageCacher(Context appContext) {
 		if (Build.VERSION.SDK_INT <= 11) {
-			mMemoryCache = new DefaultMemoryLRUCacher();
+			mMemoryCache = new BasicMemoryLRUCacher();
 		} else {
 			mMemoryCache = new AdvancedMemoryLRUCacher();
 		}
 
-		mDiskCache = new DefaultImageDiskCacher(appContext, this);
-		mNetworkInterface = new DefaultImageDownloader(mDiskCache, this);
+		mDiskCache = new DiskLRUCacher(appContext, this);
+		mNetworkInterface = new ImageDownloader(mDiskCache, this);
 		mAsyncOperationsMap = new AsyncOperationsMaps(this);
 	}
 
@@ -55,6 +55,7 @@ class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOp
 			mNetworkInterface.bump(url);
 			return null;
 		case QUEUED_FOR_DECODE_REQUEST:
+			mDiskCache.bumpInQueue(url, getSampleSize(url, scalingInfo));
 			return null;
 		}
 

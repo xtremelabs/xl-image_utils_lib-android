@@ -8,9 +8,9 @@ import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.os.Build;
 import android.support.v4.app.Fragment;
-import android.view.Display;
-import android.view.WindowManager;
 import android.widget.ImageView;
+
+import com.xtremelabs.imageutils.ThreadChecker.CalledFromWrongThreadException;
 
 /**
  * This class simplifies the task of loading images from a URL into an {@link ImageView} on Android.
@@ -25,7 +25,7 @@ import android.widget.ImageView;
  * When used with a {@link Fragment}, instantiate your ImageLoader in the onCreateView() method. Make sure you call the ImageLoader's onDestroy method in the
  * onDestroyView method.
  * 
- * @author Jamie Halpern
+ * @author James Halpern
  */
 public class ImageLoader {
 	public static final String TAG = "ImageLoader";
@@ -35,16 +35,17 @@ public class ImageLoader {
 	private Context mApplicationContext;
 	private Object mKey;
 
-	private int mScreenWidth, mScreenHeight;
-
 	/**
-	 * Instantiate a new {@link ImageLoader} that maps all requests to the provided {@link Activity}.
+	 * Instantiates a new {@link ImageLoader} that maps all requests to the provided {@link Activity}.
 	 * 
 	 * This should be called from your Activity's onCreate method.
 	 * 
 	 * @param activity
 	 *            All requests to the {@link ImageLoader} will be mapped to this {@link Activity}. All references are released when the ImageLoader's
 	 *            onDestroy() method is called.
+	 * 
+	 * @throws CalledFromWrongThreadException
+	 *             This constructor must be called from the UI thread.
 	 */
 	public ImageLoader(Activity activity) {
 		ThreadChecker.throwErrorIfOffUiThread();
@@ -63,6 +64,9 @@ public class ImageLoader {
 	 * @param fragment
 	 *            All requests to the {@link ImageLoader} will be mapped to this {@link Fragment}. All references are released when the ImageLoader's
 	 *            onDestroy() method is called.
+	 * 
+	 * @throws CalledFromWrongThreadException
+	 *             This constructor must be called from the UI thread.
 	 */
 	public ImageLoader(Fragment fragment) {
 		ThreadChecker.throwErrorIfOffUiThread();
@@ -77,6 +81,9 @@ public class ImageLoader {
 	 * When implementing the {@link ImageLoader} in an {@link Activity}, this method MUST BE CALLED from the Activity's onDestroy method.
 	 * 
 	 * When implementing the {@link ImageLoader} in a {@link Fragment}, this method MUST BE CALLED from the Fragment's onDestroyView method.
+	 * 
+	 * @throws CalledFromWrongThreadException
+	 *             This is thrown if the method is called from off the UI thread.
 	 */
 	public void onDestroy() {
 		ThreadChecker.throwErrorIfOffUiThread();
@@ -98,6 +105,9 @@ public class ImageLoader {
 	 * @param options
 	 *            If options is set to null, the {@link ImageLoader} will automatically try to optimize the image it returns with the default {@link Options}
 	 *            settings. See the {@link Options} docs for additional details.
+	 * 
+	 * @throws CalledFromWrongThreadException
+	 *             This is thrown if the method is called from off the UI thread.
 	 */
 	public void loadImage(ImageView imageView, String url, Options options) {
 		ThreadChecker.throwErrorIfOffUiThread();
@@ -125,6 +135,9 @@ public class ImageLoader {
 	 * @param options
 	 *            If options is set to null, the {@link ImageLoader} will automatically try to optimize the image it returns with the default {@link Options}
 	 *            settings. See the {@link Options} docs for additional details.
+	 * 
+	 * @throws CalledFromWrongThreadException
+	 *             This is thrown if the method is called from off the UI thread.
 	 */
 	public void loadImage(ImageView imageView, String url, Options options, final ImageLoaderListener listener) {
 		ThreadChecker.throwErrorIfOffUiThread();
@@ -140,7 +153,17 @@ public class ImageLoader {
 		ImageManagerListener imageManagerListener = getImageManagerListenerWithCallback(listener, options);
 		performImageRequest(imageView, url, options, imageManagerListener);
 	}
-	
+
+	/**
+	 * This call prevents any previous loadImage call from loading a Bitmap into the provided ImageView.
+	 * 
+	 * Please note it will not prevent any future loadImage calls from loading an image into that view.
+	 * 
+	 * This is useful if you have a ListView that occasionally needs images from the ImageLoader, and other times from a resources file. Before loading the
+	 * resource file's image, you would call this method.
+	 * 
+	 * @param imageView
+	 */
 	public void stopLoadingImage(ImageView imageView) {
 		mViewMapper.removeListener(imageView);
 	}
@@ -219,6 +242,9 @@ public class ImageLoader {
 	 * 
 	 * @param url
 	 * @param applicationContext
+	 * 
+	 * @throws CalledFromWrongThreadException
+	 *             This is thrown if the method is called from off the UI thread.
 	 */
 	public static void precacheImage(String url, Context applicationContext) {
 		ThreadChecker.throwErrorIfOffUiThread();
@@ -244,6 +270,9 @@ public class ImageLoader {
 	 *            See comment above. Pass in NULL if you want the width to be ignored.
 	 * @param height
 	 *            See comment above. Pass in NULL if you want the width to be ignored.
+	 * 
+	 * @throws CalledFromWrongThreadException
+	 *             This is thrown if the method is called from off the UI thread.
 	 */
 	public void precacheImageToMemory(String url, Context applicationContext, Integer width, Integer height) {
 		ThreadChecker.throwErrorIfOffUiThread();
@@ -254,32 +283,21 @@ public class ImageLoader {
 		mReferenceManager.getBitmap(applicationContext, url, getBlankImageManagerListener(), scalingInfo);
 	}
 
-	@SuppressWarnings("deprecation")
 	private void initKeyAndAppContext(Object key, Context applicationContext) {
 		mApplicationContext = applicationContext;
 		mKey = key;
 		mReferenceManager = LifecycleReferenceManager.getInstance(applicationContext);
-		Display display = ((WindowManager) applicationContext.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
-		if (Build.VERSION.SDK_INT < 13) {
-			mScreenHeight = display.getHeight();
-			mScreenWidth = display.getWidth();
-		} else {
-			Point point = new Point();
-			display.getSize(point);
-			mScreenHeight = point.y;
-			mScreenWidth = point.x;
-		}
 	}
 
 	private void performImageRequest(ImageView imageView, String url, Options options, ImageManagerListener imageManagerListener) {
-		registerImageView(imageView, imageManagerListener);
-		setPreLoadedImage(imageView, options);
+		mapImageView(imageView, imageManagerListener);
+		setPreLoadImage(imageView, options);
 
-		ScalingInfo scalingInfo = getScalingInfo(imageView, url, options, imageManagerListener);
+		ScalingInfo scalingInfo = getScalingInfo(imageView, options);
 		mReferenceManager.getBitmap(mKey, url, imageManagerListener, scalingInfo);
 	}
 
-	private void setPreLoadedImage(ImageView imageView, Options options) {
+	private void setPreLoadImage(ImageView imageView, Options options) {
 		if (options.wipeOldImageOnPreload) {
 			if (options.placeholderImageResourceId != null) {
 				imageView.setImageResource(options.placeholderImageResourceId);
@@ -289,7 +307,17 @@ public class ImageLoader {
 		}
 	}
 
-	private ScalingInfo getScalingInfo(ImageView imageView, String url, final Options options, ImageManagerListener listener) {
+	/**
+	 * Calculates the scaling information needed by the ImageCacher. The scaling info contains either the bounds used for reducing image size, or an override
+	 * sample size to force manual memory savings.
+	 * 
+	 * @param imageView
+	 *            Depending on the options that are passed in, this imageView's bounds may be auto detected and loaded into the ScalingInfo.
+	 * @param options
+	 *            The Options lets us know what scaling information we need to retreive, if any.
+	 * @return Returns the information the imageCacher needs to figure out how to decode the downloaded image.
+	 */
+	private ScalingInfo getScalingInfo(ImageView imageView, final Options options) {
 		ScalingInfo scalingInfo = new ScalingInfo();
 		if (options.overrideSampleSize != null) {
 			scalingInfo.sampleSize = options.overrideSampleSize;
@@ -300,8 +328,9 @@ public class ImageLoader {
 		Integer height = options.heightBounds;
 
 		if (options.useScreenSizeAsBounds) {
-			width = Math.min(mScreenWidth, width == null ? mScreenWidth : width);
-			height = Math.min(mScreenHeight, height == null ? mScreenHeight : height);
+			Point screenSize = DisplayUtility.getDisplaySize(mApplicationContext);
+			width = Math.min(screenSize.x, width == null ? screenSize.x : width);
+			height = Math.min(screenSize.y, height == null ? screenSize.y : height);
 		}
 
 		if (options.autoDetectBounds) {
@@ -328,15 +357,21 @@ public class ImageLoader {
 		return scalingInfo;
 	}
 
-	private void registerImageView(ImageView view, ImageManagerListener listener) {
+	private void mapImageView(ImageView view, ImageManagerListener listener) {
 		ImageManagerListener oldListener = mViewMapper.removeListener(view);
 		if (oldListener != null) {
 			// FIXME: Get the cancel call working!
-			// mReferenceManager.cancelRequest(oldListener);
+			mReferenceManager.cancelRequest(oldListener);
 		}
 		mViewMapper.registerImageViewToListener(view, listener);
 	}
 
+	/**
+	 * Handles loading the bitmap onto the ImageView upon it becoming available from the ImageCacher.
+	 * 
+	 * @param options
+	 * @return
+	 */
 	private ImageManagerListener getDefaultImageManagerListener(final Options options) {
 		return new ImageManagerListener() {
 			@Override
@@ -357,6 +392,13 @@ public class ImageLoader {
 		};
 	}
 
+	/**
+	 * Sends the Bitmap back to the original caller without loading it to the ImageView first.
+	 * 
+	 * @param listener
+	 * @param listenerOptions
+	 * @return
+	 */
 	private ImageManagerListener getImageManagerListenerWithCallback(final ImageLoaderListener listener, final Options listenerOptions) {
 		return new ImageManagerListener() {
 			@Override
@@ -378,6 +420,10 @@ public class ImageLoader {
 		};
 	}
 
+	/**
+	 * Stub ImageManagerListener used for pre-caching images.
+	 * @return
+	 */
 	private ImageManagerListener getBlankImageManagerListener() {
 		return new ImageManagerListener() {
 			@Override
@@ -395,7 +441,7 @@ public class ImageLoader {
 	 * 
 	 * See the Javadocs for the individual fields for more detail.
 	 * 
-	 * @author Jamie Halpern
+	 * @author James Halpern
 	 */
 	public static class Options {
 		/**
@@ -439,6 +485,12 @@ public class ImageLoader {
 		 */
 		public boolean useScreenSizeAsBounds = true;
 
+		/**
+		 * If set to true, the ImageLoader will, before getting the Bitmap, replace the current image within the ImageView with either a null Bitmap or the
+		 * image resource indicated by the placeholderImageResourceId.
+		 * 
+		 * If set to false, the ImageLoader will only attempt to load the requested Bitmap to the view.
+		 */
 		public boolean wipeOldImageOnPreload = true;
 
 		/**

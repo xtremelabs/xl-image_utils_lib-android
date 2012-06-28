@@ -50,8 +50,8 @@ class AdvancedMemoryLRUCacher implements ImageMemoryCacherInterface {
 			mEvictionQueue.remove(container);
 			mEvictionQueue.add(container);
 		} else {
-			performEvictions();
 			mEvictionQueue.add(container);
+			performEvictions();
 		}
 	}
 	

@@ -5,7 +5,7 @@ import java.util.LinkedList;
 
 import android.graphics.Bitmap;
 
-class DefaultMemoryLRUCacher implements ImageMemoryCacherInterface {
+class BasicMemoryLRUCacher implements ImageMemoryCacherInterface {
 	@SuppressWarnings("unused")
 	private static final String TAG = "DefaultImageMemoryLRUCacher";
 	private int mMaximumCacheEntries = 10;
