@@ -16,9 +16,11 @@ class Profiler {
 		if (previousTime != null) {
 			long time = System.currentTimeMillis() - previousTime;
 
-			if (time > 10) {
+			if (time > 5) {
 				Log.i("Profiler", "Operation: " + key + " - Time: " + time);
 			}
+		} else {
+			Log.i("Profiler", "Previous time is null.");
 		}
 	}
 }

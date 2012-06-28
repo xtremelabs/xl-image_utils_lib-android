@@ -33,6 +33,7 @@ class AdvancedMemoryLRUCacher implements ImageMemoryCacherInterface {
 
 	@Override
 	public synchronized void clearCache() {
+		mSize = 0;
 		mCache.clear();
 		mEvictionQueue.clear();
 	}

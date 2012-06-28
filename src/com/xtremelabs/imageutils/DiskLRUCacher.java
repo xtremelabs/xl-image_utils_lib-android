@@ -21,7 +21,7 @@ class DiskLRUCacher implements DiskCacherInterface {
 	private DiskManager mDiskManager;
 	private DiskCacheDatabaseHelper mDatabaseHelper;
 	private ImageDecodeObserver mImageDecodeObserver;
-	private ImageDimensionsMap mImageDimensionsMap = new ImageDimensionsMap();
+	private CachedImagesMap mCachedImagesMap = new CachedImagesMap();
 	private HashMap<DecodeOperationParameters, Runnable> mRequestToRunnableMap = new HashMap<DecodeOperationParameters, Runnable>();
 
 	private LifoThreadPool mThreadPool = new LifoThreadPool(5);
@@ -33,13 +33,13 @@ class DiskLRUCacher implements DiskCacherInterface {
 
 		List<FileEntry> entries = mDatabaseHelper.getAllEntries();
 		for (FileEntry entry : entries) {
-			mImageDimensionsMap.putDimensions(entry.getUrl(), entry.getDimensions());
+			mCachedImagesMap.putDimensions(entry.getUrl(), entry.getDimensions());
 		}
 	}
 
 	@Override
 	public boolean isCached(String url) {
-		return mDiskManager.isOnDisk(encode(url));
+		return mCachedImagesMap.isCached(url);
 	}
 
 	@Override
@@ -92,7 +92,7 @@ class DiskLRUCacher implements DiskCacherInterface {
 		mDiskManager.loadStreamToFile(inputStream, encode(url));
 		File file = mDiskManager.getFile(encode(url));
 		Dimensions dimensions = getImageDimensionsFromDisk(url);
-		mImageDimensionsMap.putDimensions(url, dimensions);
+		mCachedImagesMap.putDimensions(url, dimensions);
 		mDatabaseHelper.addOrUpdateFile(url, file.length(), dimensions.getWidth(), dimensions.getHeight());
 		clearLeastUsedFilesInCache();
 	}
@@ -118,7 +118,7 @@ class DiskLRUCacher implements DiskCacherInterface {
 
 	@Override
 	public Dimensions getImageDimensions(String url) {
-		Dimensions dimensions = mImageDimensionsMap.getImageDimensions(url);
+		Dimensions dimensions = mCachedImagesMap.getImageDimensions(url);
 		return dimensions;
 	}
 
@@ -185,7 +185,7 @@ class DiskLRUCacher implements DiskCacherInterface {
 			String url = mDatabaseHelper.getLRU().getUrl();
 			mDiskManager.deleteFile(encode(url));
 			mDatabaseHelper.removeFile(url);
-			mImageDimensionsMap.removeDimensions(url);
+			mCachedImagesMap.removeDimensions(url);
 		}
 	}
 

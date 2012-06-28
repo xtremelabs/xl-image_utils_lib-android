@@ -2,7 +2,7 @@ package com.xtremelabs.imageutils;
 
 import java.util.HashMap;
 
-class ImageDimensionsMap {
+class CachedImagesMap {
 	private HashMap<String, Dimensions> imageDimensionsMap = new HashMap<String, Dimensions>();
 	
 	public synchronized void putDimensions(String url, Dimensions dimensions) {
@@ -15,5 +15,9 @@ class ImageDimensionsMap {
 	
 	public synchronized void removeDimensions(String url) {
 		imageDimensionsMap.remove(url);
+	}
+	
+	public synchronized boolean isCached(String url) {
+		return imageDimensionsMap.containsKey(url);
 	}
 }
