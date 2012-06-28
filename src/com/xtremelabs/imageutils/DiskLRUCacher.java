@@ -60,7 +60,7 @@ class DiskLRUCacher implements DiskCacherInterface {
 	@Override
 	public void getBitmapAsynchronouslyFromDisk(final String url, final int sampleSize) {
 		final DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, sampleSize);
-		
+
 		Runnable runnable = new Runnable() {
 			@Override
 			public void run() {
@@ -73,12 +73,12 @@ class DiskLRUCacher implements DiskCacherInterface {
 				} catch (FileFormatException e) {
 					failed = true;
 				}
-				
+
 				removeRequestFromMap(decodeOperationParameters);
 				if (!failed) {
 					mImageDecodeObserver.onImageDecoded(bitmap, url, sampleSize);
 				} else {
-				mImageDecodeObserver.onImageDecodeFailed(url, sampleSize);
+					mImageDecodeObserver.onImageDecodeFailed(url, sampleSize);
 				}
 			}
 		};
@@ -127,7 +127,7 @@ class DiskLRUCacher implements DiskCacherInterface {
 			mRequestToRunnableMap.put(parameters, runnable);
 		}
 	}
-	
+
 	private void removeRequestFromMap(DecodeOperationParameters parameters) {
 		synchronized (mRequestToRunnableMap) {
 			mRequestToRunnableMap.remove(parameters);

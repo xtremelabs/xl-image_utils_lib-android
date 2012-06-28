@@ -14,9 +14,9 @@ class LifoThreadPool {
 	public LifoThreadPool(int poolSize) {
 		if (Build.VERSION.SDK_INT >= 9) {
 			mStack = new LifoBlockingStack();
-			mThreadPool = new ThreadPoolExecutor(poolSize, poolSize, 5000, TimeUnit.SECONDS, mStack);
+			mThreadPool = new ThreadPoolExecutor(poolSize, poolSize, 120, TimeUnit.SECONDS, mStack);
 		} else {
-			mThreadPool = new ThreadPoolExecutor(poolSize, poolSize, 5000, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+			mThreadPool = new ThreadPoolExecutor(poolSize, poolSize, 120, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
 		}
 	}
 

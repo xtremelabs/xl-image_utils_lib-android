@@ -2,10 +2,15 @@ package com.xtremelabs.imageutils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.HashMap;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.impl.client.DefaultHttpClient;
 
 class ImageDownloader implements ImageNetworkInterface {
 	@SuppressWarnings("unused")
@@ -14,14 +19,14 @@ class ImageDownloader implements ImageNetworkInterface {
 	private NetworkToDiskInterface mNetworkToDiskInterface;
 	private ImageDownloadObserver mImageDownloadObserver;
 	private HashMap<String, ImageDownloadingRunnable> mUrlToRunnableMap = new HashMap<String, ImageDownloadingRunnable>();
-	
+
 	private LifoThreadPool mThreadPool = new LifoThreadPool(8);
 
 	public ImageDownloader(NetworkToDiskInterface networkToDiskInterface, ImageDownloadObserver imageDownloadObserver) {
 		mNetworkToDiskInterface = networkToDiskInterface;
 		mImageDownloadObserver = imageDownloadObserver;
 	}
-	
+
 	@Override
 	public synchronized void bump(String url) {
 		ImageDownloadingRunnable runnable = mUrlToRunnableMap.get(url);
@@ -33,7 +38,7 @@ class ImageDownloader implements ImageNetworkInterface {
 	@Override
 	public synchronized void downloadImageToDisk(final String url) {
 		ImageDownloadingRunnable runnable = new ImageDownloadingRunnable(url);
-		mUrlToRunnableMap.put(url,  runnable);
+		mUrlToRunnableMap.put(url, runnable);
 		mThreadPool.execute(runnable);
 	}
 
@@ -85,7 +90,16 @@ class ImageDownloader implements ImageNetworkInterface {
 		}
 
 		public synchronized void executeNetworkRequest() throws ClientProtocolException, IOException {
-			mInputStream = new URL(mUrl).openStream();
+			HttpClient client = new DefaultHttpClient();
+			HttpUriRequest request = new HttpGet(mUrl);
+			HttpResponse response = client.execute(request);
+			HttpEntity entity = response.getEntity();
+			if (entity != null) {
+				mInputStream = entity.getContent();
+			}
+			if (entity == null || mInputStream == null) {
+				failed = true;
+			}
 		}
 
 		public void passInputStreamToImageLoader() throws IOException {
