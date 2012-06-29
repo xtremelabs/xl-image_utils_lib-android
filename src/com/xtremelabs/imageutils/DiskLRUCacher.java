@@ -33,7 +33,9 @@ class DiskLRUCacher implements DiskCacherInterface {
 
 		List<FileEntry> entries = mDatabaseHelper.getAllEntries();
 		for (FileEntry entry : entries) {
-			mCachedImagesMap.putDimensions(entry.getUrl(), entry.getDimensions());
+			if (mDiskManager.isOnDisk(encode(entry.getUrl()))) {
+				mCachedImagesMap.putDimensions(entry.getUrl(), entry.getDimensions());
+			}
 		}
 	}
 
@@ -58,7 +60,8 @@ class DiskLRUCacher implements DiskCacherInterface {
 	}
 
 	@Override
-	public void getBitmapAsynchronouslyFromDisk(final String url, final int sampleSize) {
+	public void getBitmapAsynchronouslyFromDisk(final String url, final int sampleSize, final ImageReturnedFrom returnedFrom,
+			final boolean noPreviousNetworkRequest) {
 		final DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, sampleSize);
 
 		Runnable runnable = new Runnable() {
@@ -73,11 +76,12 @@ class DiskLRUCacher implements DiskCacherInterface {
 				} catch (FileFormatException e) {
 					failed = true;
 				}
-
 				removeRequestFromMap(decodeOperationParameters);
+
 				if (!failed) {
-					mImageDecodeObserver.onImageDecoded(bitmap, url, sampleSize);
+					mImageDecodeObserver.onImageDecoded(bitmap, url, sampleSize, returnedFrom);
 				} else {
+					mDiskManager.deleteFile(encode(url));
 					mImageDecodeObserver.onImageDecodeFailed(url, sampleSize);
 				}
 			}

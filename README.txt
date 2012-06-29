@@ -145,9 +145,28 @@ unsuccessfulLoadResourceId - If the bitmap fails to load, the ImageLoader will p
 *                                         *
 *******************************************
 
-You may encounter performance issues while using the ImageLoader, or potentially OutOfMemoryErrors.
+------------------------------------------
+-    2.1 Controlling the Memory Cache    -
+------------------------------------------
+
+You may encounter performance issues while using the ImageLoader, and likely, if using SDK version 11 and under, OutOfMemoryErrors.
 
 You will have to customize the properties of the memory cache in order to optimize memory consumption.
 
 There are three calls you can make to customize the memory cache:
 
+In SDK Versions 11 and under, you can control the number of images that are retained in the image cache. The more images you maintain, the higher the performance, but the higher the chance of a memory leak. This call is imageLoader.setMemCacheSize(int numImages).
+
+If you are using APK version 12+, the ImageLoader gives you the ability to specify the amount of memory you would like the image cacher to utilize. This call is the following:
+
+imageLoader.setMaximumMemCacheSize(long, numBytes)
+
+Depending on your target devices, or the different kinds of phones you would like to support, you can configure different memcache sizes in order to maximize performance and optimize memory consumption.
+
+The final call is imageLoader.clearMemCache. This call is most usefull for SDK versions 11 and under. In the event that you are moving from screens that support a small number of large images to a screen that supports a large number of small images, you should clear the memcache first and then increase the number of images stored by the memcache system. By doing so, you reduce the possibility of your activities that use many small images from causing an out of memory exception.
+
+------------------------
+-    2.1 Precaching    -
+------------------------
+
+There is one more tool that the ImageLoader provides that can allow you to optimize performance. Using the precaching methods, the Image Loader will preemtively load the images your app requires into memory.

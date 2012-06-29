@@ -11,7 +11,7 @@ interface DiskCacherInterface extends NetworkToDiskInterface {
 
 	int getSampleSize(String url, Integer width, Integer height);
 
-	void getBitmapAsynchronouslyFromDisk(String url, int sampleSize);
+	void getBitmapAsynchronouslyFromDisk(String url, int sampleSize, ImageReturnedFrom returnedFrom, boolean noPreviousNetworkRequest);
 
 	void bumpOnDisk(String url);
 

@@ -16,7 +16,7 @@ public interface ImageLoaderListener {
 	 * @param isFromMemoryCache
 	 *            A flag indicating whether or not the bitmap was retreived synchronously from the cache.
 	 */
-	public void onImageAvailable(ImageView imageView, Bitmap bitmap, boolean isFromMemoryCache);
+	public void onImageAvailable(ImageView imageView, Bitmap bitmap, ImageReturnedFrom returnedFrom);
 
 	/**
 	 * Called in the event the bitmap could not be retreived.

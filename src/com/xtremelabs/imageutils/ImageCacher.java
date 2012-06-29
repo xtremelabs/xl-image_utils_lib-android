@@ -124,7 +124,7 @@ class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOp
 
 	private void decodeBitmapFromDisk(String url, ImageCacherListener imageCacherListener, int sampleSize) {
 		mAsyncOperationsMap.registerListenerForDecode(imageCacherListener, url, sampleSize);
-		mDiskCache.getBitmapAsynchronouslyFromDisk(url, sampleSize);
+		mDiskCache.getBitmapAsynchronouslyFromDisk(url, sampleSize, ImageReturnedFrom.DISK, true);
 	}
 
 	private void validateUrl(String url) {
@@ -148,15 +148,15 @@ class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOp
 	}
 
 	public static abstract class ImageCacherListener {
-		public abstract void onImageAvailable(Bitmap bitmap);
+		public abstract void onImageAvailable(Bitmap bitmap, ImageReturnedFrom returnedFrom);
 
 		public abstract void onFailure(String message);
 	}
 
 	@Override
-	public void onImageDecoded(Bitmap bitmap, String url, int sampleSize) {
+	public void onImageDecoded(Bitmap bitmap, String url, int sampleSize, ImageReturnedFrom returnedFrom) {
 		mMemoryCache.cacheBitmap(bitmap, url, sampleSize);
-		mAsyncOperationsMap.onDecodeSuccess(bitmap, url, sampleSize);
+		mAsyncOperationsMap.onDecodeSuccess(bitmap, url, sampleSize, returnedFrom);
 	}
 
 	@Override
@@ -176,7 +176,7 @@ class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOp
 
 	@Override
 	public void onImageDecodeRequired(String url, int sampleSize) {
-		mDiskCache.getBitmapAsynchronouslyFromDisk(url, sampleSize);
+		mDiskCache.getBitmapAsynchronouslyFromDisk(url, sampleSize, ImageReturnedFrom.NETWORK, false);
 	}
 
 	@Override

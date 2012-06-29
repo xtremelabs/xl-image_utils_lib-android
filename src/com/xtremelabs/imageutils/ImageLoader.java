@@ -383,7 +383,7 @@ public class ImageLoader {
 			}
 
 			@Override
-			public void onImageReceived(Bitmap bitmap, boolean isFromMemoryCache) {
+			public void onImageReceived(Bitmap bitmap, ImageReturnedFrom returnedFrom) {
 				ImageView imageView = mViewMapper.removeImageView(this);
 				if (imageView != null) {
 					imageView.setImageBitmap(bitmap);
@@ -411,10 +411,10 @@ public class ImageLoader {
 			}
 
 			@Override
-			public void onImageReceived(Bitmap bitmap, boolean isFromMemoryCache) {
+			public void onImageReceived(Bitmap bitmap, ImageReturnedFrom returnedFrom) {
 				ImageView imageView = mViewMapper.removeImageView(this);
 				if (imageView != null) {
-					listener.onImageAvailable(imageView, bitmap, isFromMemoryCache);
+					listener.onImageAvailable(imageView, bitmap, returnedFrom);
 				}
 			}
 		};
@@ -431,7 +431,7 @@ public class ImageLoader {
 			}
 
 			@Override
-			public void onImageReceived(Bitmap bitmap, boolean isFromMemoryCache) {
+			public void onImageReceived(Bitmap bitmap, ImageReturnedFrom returnedFrom) {
 			}
 		};
 	}

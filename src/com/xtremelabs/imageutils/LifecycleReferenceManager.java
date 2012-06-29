@@ -81,19 +81,19 @@ class LifecycleReferenceManager {
 
 	private void returnImageIfValid(ImageManagerListener listener, Bitmap bitmap) {
 		if (bitmap != null && mListenerHelper.unregisterListener(listener) != null) {
-			listener.onImageReceived(bitmap, true);
+			listener.onImageReceived(bitmap, ImageReturnedFrom.MEMORY);
 		}
 	}
 
 	class ImageManagerCacheListener extends ImageCacherListener {
 		@Override
-		public void onImageAvailable(final Bitmap bitmap) {
+		public void onImageAvailable(final Bitmap bitmap, final ImageReturnedFrom returnedFrom) {
 			mUiThreadHandler.post(new Runnable() {
 				@Override
 				public void run() {
 					ImageManagerListener listener = mListenerHelper.getAndRemoveListener(ImageManagerCacheListener.this);
 					if (listener != null) {
-						listener.onImageReceived(bitmap, false);
+						listener.onImageReceived(bitmap, returnedFrom);
 					}
 				}
 			});

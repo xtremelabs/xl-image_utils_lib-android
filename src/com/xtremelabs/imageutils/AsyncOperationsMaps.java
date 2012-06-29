@@ -67,14 +67,14 @@ class AsyncOperationsMaps {
 		queueForDecodeRequest(imageCacherListener, decodeOperationParameters);
 	}
 
-	public void onDecodeSuccess(Bitmap bitmap, String url, int sampleSize) {
+	public void onDecodeSuccess(Bitmap bitmap, String url, int sampleSize, ImageReturnedFrom returnedFrom) {
 		DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, sampleSize);
 
 		ImageCacherListener imageCacherListener;
 		while ((imageCacherListener = getListenerWaitingOnDecode(decodeOperationParameters)) != null) {
 			synchronized (imageCacherListener) {
 				if (removeQueuedListenerForDecode(decodeOperationParameters, imageCacherListener)) {
-					imageCacherListener.onImageAvailable(bitmap);
+					imageCacherListener.onImageAvailable(bitmap, returnedFrom);
 				}
 			}
 		}

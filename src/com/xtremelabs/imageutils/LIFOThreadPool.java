@@ -23,7 +23,7 @@ class LifoThreadPool {
 	public void execute(Runnable runnable) {
 		mThreadPool.execute(runnable);
 	}
-	
+
 	public void bump(Runnable runnable) {
 		if (mStack != null) {
 			mStack.bump(runnable);
@@ -52,10 +52,11 @@ class LifoThreadPool {
 		public void put(Runnable runnable) throws InterruptedException {
 			super.putFirst(runnable);
 		}
-		
+
 		public void bump(Runnable runnable) {
-			super.remove(runnable);
-			super.offerFirst(runnable);
+			if (runnable != null && super.remove(runnable)) {
+				super.offerFirst(runnable);
+			}
 		}
 	};
 }
