@@ -1,5 +1,7 @@
 package com.xtremelabs.imageutils;
 
+import java.util.List;
+
 import android.app.Application;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -19,6 +21,8 @@ import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
  * 
  * @author Jamie Halpern
  */
+// TODO: It may be worthwhile to use a WeakHashMap rather than actively forcing the user to call onDestroy.
+// Look into using a ReferenceQueue
 class LifecycleReferenceManager {
 	@SuppressWarnings("unused")
 	private static final String TAG = "LifecycleReferenceManager";
@@ -64,8 +68,8 @@ class LifecycleReferenceManager {
 		returnImageIfValid(imageManagerListener, bitmap);
 	}
 
-	public void removeListenersForKey(Object key) {
-		mListenerHelper.removeAllEntriesForKey(key);
+	public List<ImageManagerListener> removeListenersForKey(Object key) {
+		return mListenerHelper.removeAllEntriesForKey(key);
 	}
 
 	public void cancelRequest(ImageManagerListener imageManagerListener) {

@@ -9,11 +9,8 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.util.Log;
 
 class DiskCacheDatabaseHelper extends SQLiteOpenHelper {
-	private static final String TAG = "DiskCacheDatabaseHelper";
-
 	private String[] columns = { "url", "sizeondisk", "width", "height", "lastaccess" };
 
 	private final static int DATABASE_VERSION = 2;
@@ -41,7 +38,6 @@ class DiskCacheDatabaseHelper extends SQLiteOpenHelper {
 	public FileEntry getFileEntry(String url) {
 		Cursor cursor = getReadableDatabase().query(DICTIONARY_TABLE_NAME, columns, columns[0] + " = ?", new String[] { url }, null, null, null);
 		if (cursor.getCount() == 0) {
-			Log.d(TAG, "Sample size - Was unable to get file entry!");
 			return null;
 		} else {
 			cursor.moveToFirst();
@@ -128,8 +124,6 @@ class DiskCacheDatabaseHelper extends SQLiteOpenHelper {
 
 	private FileEntry createFileEntry(Cursor cursor) {
 		FileEntry fileEntry = new FileEntry(cursor.getString(0), cursor.getLong(1), cursor.getInt(2), cursor.getInt(3), cursor.getLong(4));
-		Log.d(TAG, "Sample size - File entry stats: " + fileEntry.getLastAccessTime() + ", " + fileEntry.getDimensions().getWidth() + ", "
-				+ fileEntry.getDimensions().getHeight());
 		return fileEntry;
 	}
 }

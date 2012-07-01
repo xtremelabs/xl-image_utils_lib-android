@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.widget.ImageView;
 
 public interface ImageLoaderListener {
+	// TODO: Consider making the onImageAvailable return a boolean indicating whether or not the loader should place the bitmap into the imageview.
 	/**
 	 * This method provides you with the {@link ImageView} and {@link Bitmap} from your ImageLoader's loadImage request.
 	 * 

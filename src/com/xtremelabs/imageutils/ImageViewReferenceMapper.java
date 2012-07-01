@@ -1,7 +1,5 @@
 package com.xtremelabs.imageutils;
 
-import java.util.HashMap;
-
 import android.widget.ImageView;
 
 /**
@@ -10,27 +8,17 @@ import android.widget.ImageView;
  * @author Jamie Halpern
  */
 class ImageViewReferenceMapper {
-	private HashMap<ImageView, ImageManagerListener> imageViewToListenerMap = new HashMap<ImageView, ImageManagerListener>();
-	private HashMap<ImageManagerListener, ImageView> listenerToImageViewMap = new HashMap<ImageManagerListener, ImageView>();
-
+	private TwoWayHashMap<ImageView, ImageManagerListener> map = new TwoWayHashMap<ImageView, ImageManagerListener>();
+	
 	public synchronized void registerImageViewToListener(ImageView view, ImageManagerListener listener) {
-		imageViewToListenerMap.put(view, listener);
-		listenerToImageViewMap.put(listener, view);
+		map.put(view, listener);
 	}
 
 	public synchronized ImageView removeImageView(ImageManagerListener listener) {
-		ImageView view = listenerToImageViewMap.remove(listener);
-		if (view != null) {
-			imageViewToListenerMap.remove(view);
-		}
-		return view;
+		return map.removeSecondaryItem(listener);
 	}
 
 	public synchronized ImageManagerListener removeListener(ImageView view) {
-		ImageManagerListener listener = imageViewToListenerMap.remove(view);
-		if (listener != null) {
-			listenerToImageViewMap.remove(listener);
-		}
-		return listener;
+		return map.removePrimaryItem(view);
 	}
 }

@@ -29,7 +29,7 @@ class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOp
 
 	private ImageCacher(Context appContext) {
 		if (Build.VERSION.SDK_INT <= 11) {
-			mMemoryCache = new BasicMemoryLRUCacher();
+			mMemoryCache = new SizeEstimatingMemoryLRUCacher();
 		} else {
 			mMemoryCache = new AdvancedMemoryLRUCacher();
 		}

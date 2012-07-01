@@ -57,7 +57,7 @@ class LifecycleKeyListenerMapper {
 		return listener;
 	}
 
-	public synchronized void removeAllEntriesForKey(Object key) {
+	public synchronized List<ImageManagerListener> removeAllEntriesForKey(Object key) {
 		List<ImageManagerListener> listeners = mKeyToListenersMap.remove(key);
 		if (listeners != null) {
 			for (ImageManagerListener listener : listeners) {
@@ -67,6 +67,7 @@ class LifecycleKeyListenerMapper {
 				}
 			}
 		}
+		return listeners;
 	}
 
 	public synchronized boolean isListenerRegistered(ImageManagerListener imageManagerListener) {

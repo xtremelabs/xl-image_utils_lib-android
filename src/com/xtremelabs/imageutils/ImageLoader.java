@@ -1,6 +1,6 @@
 package com.xtremelabs.imageutils;
 
-import java.io.FileNotFoundException;
+import java.util.List;
 
 import android.app.Activity;
 import android.content.Context;
@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.os.Build;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.widget.ImageView;
 
 import com.xtremelabs.imageutils.ThreadChecker.CalledFromWrongThreadException;
@@ -28,12 +29,15 @@ import com.xtremelabs.imageutils.ThreadChecker.CalledFromWrongThreadException;
  * @author James Halpern
  */
 public class ImageLoader {
+	// TODO: Add optional logging levels.
 	public static final String TAG = "ImageLoader";
 
 	private ImageViewReferenceMapper mViewMapper = new ImageViewReferenceMapper();
 	private LifecycleReferenceManager mReferenceManager;
 	private Context mApplicationContext;
 	private Object mKey;
+
+	private boolean destroyed = false;
 
 	/**
 	 * Instantiates a new {@link ImageLoader} that maps all requests to the provided {@link Activity}.
@@ -85,10 +89,17 @@ public class ImageLoader {
 	 * @throws CalledFromWrongThreadException
 	 *             This is thrown if the method is called from off the UI thread.
 	 */
-	public void onDestroy() {
+	public void destroy() {
 		ThreadChecker.throwErrorIfOffUiThread();
 
-		mReferenceManager.removeListenersForKey(mKey);
+		destroyed = true;
+
+		List<ImageManagerListener> listeners = mReferenceManager.removeListenersForKey(mKey);
+		if (listeners != null) {
+			for (ImageManagerListener listener : listeners) {
+				mViewMapper.removeImageView(listener);
+			}
+		}
 	}
 
 	/**
@@ -110,14 +121,18 @@ public class ImageLoader {
 	 *             This is thrown if the method is called from off the UI thread.
 	 */
 	public void loadImage(ImageView imageView, String url, Options options) {
-		ThreadChecker.throwErrorIfOffUiThread();
+		if (!destroyed) {
+			ThreadChecker.throwErrorIfOffUiThread();
 
-		if (options == null) {
-			options = new Options();
+			if (options == null) {
+				options = new Options();
+			}
+
+			ImageManagerListener imageManagerListener = getDefaultImageManagerListener(options);
+			performImageRequest(imageView, url, options, imageManagerListener);
+		} else {
+			Log.w(TAG, "WARNING: loadImage was called after the ImageLoader was destroyed.");
 		}
-
-		ImageManagerListener imageManagerListener = getDefaultImageManagerListener(options);
-		performImageRequest(imageView, url, options, imageManagerListener);
 	}
 
 	/**
@@ -140,20 +155,25 @@ public class ImageLoader {
 	 *             This is thrown if the method is called from off the UI thread.
 	 */
 	public void loadImage(ImageView imageView, String url, Options options, final ImageLoaderListener listener) {
-		ThreadChecker.throwErrorIfOffUiThread();
+		if (!destroyed) {
+			ThreadChecker.throwErrorIfOffUiThread();
 
-		if (listener == null) {
-			throw new IllegalArgumentException("You cannot pass in a null ImageLoadingListener.");
+			if (listener == null) {
+				throw new IllegalArgumentException("You cannot pass in a null ImageLoadingListener.");
+			}
+
+			if (options == null) {
+				options = new Options();
+			}
+
+			ImageManagerListener imageManagerListener = getImageManagerListenerWithCallback(listener, options);
+			performImageRequest(imageView, url, options, imageManagerListener);
+		} else {
+			Log.w(TAG, "WARNING: loadImage was called after the ImageLoader was destroyed.");
 		}
-
-		if (options == null) {
-			options = new Options();
-		}
-
-		ImageManagerListener imageManagerListener = getImageManagerListenerWithCallback(listener, options);
-		performImageRequest(imageView, url, options, imageManagerListener);
 	}
 
+	// TODO: Have a load image call that accepts a resource ID rather than making the user stop the load manually.
 	/**
 	 * This call prevents any previous loadImage call from loading a Bitmap into the provided ImageView.
 	 * 
@@ -166,19 +186,6 @@ public class ImageLoader {
 	 */
 	public void stopLoadingImage(ImageView imageView) {
 		mViewMapper.removeListener(imageView);
-	}
-
-	/**
-	 * If the image for the provided URL is on disk, this method will return a Point containing the dimensions of that image.
-	 * 
-	 * @param url
-	 *            URL of the image. This is only used for figuring out where the image is on disk. This method will not pull the image from the web.
-	 * @return Returns a point containing the dimensions of the image. Point.x is the width, Point.y is the height.
-	 * @throws FileNotFoundException
-	 *             If the image is not already cached, this method will throw this exception.
-	 */
-	public Dimensions getImageDimensions(String url) throws FileNotFoundException {
-		return ImageCacher.getInstance(mApplicationContext).getImageDimensions(url);
 	}
 
 	/**
@@ -231,8 +238,6 @@ public class ImageLoader {
 		}
 	}
 
-	// TODO: Explain the different use cases for the precaching calls
-
 	/**
 	 * This method must be called from the UI thread.
 	 * 
@@ -246,7 +251,7 @@ public class ImageLoader {
 	 * @throws CalledFromWrongThreadException
 	 *             This is thrown if the method is called from off the UI thread.
 	 */
-	public static void precacheImage(String url, Context applicationContext) {
+	public static void precacheImageToDisk(String url, Context applicationContext) {
 		ThreadChecker.throwErrorIfOffUiThread();
 
 		ImageCacher.getInstance(applicationContext).precacheImage(url);
@@ -274,7 +279,8 @@ public class ImageLoader {
 	 * @throws CalledFromWrongThreadException
 	 *             This is thrown if the method is called from off the UI thread.
 	 */
-	public void precacheImageToMemory(String url, Context applicationContext, Integer width, Integer height) {
+	public void precacheImageToDiskAndMemory(String url, Context applicationContext, Integer width, Integer height) {
+		// TODO: Replace the width and height with options?
 		ThreadChecker.throwErrorIfOffUiThread();
 
 		ScalingInfo scalingInfo = new ScalingInfo();
@@ -422,6 +428,7 @@ public class ImageLoader {
 
 	/**
 	 * Stub ImageManagerListener used for pre-caching images.
+	 * 
 	 * @return
 	 */
 	private ImageManagerListener getBlankImageManagerListener() {

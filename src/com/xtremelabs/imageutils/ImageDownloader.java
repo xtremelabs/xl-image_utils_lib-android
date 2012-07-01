@@ -20,6 +20,9 @@ class ImageDownloader implements ImageNetworkInterface {
 	private ImageDownloadObserver mImageDownloadObserver;
 	private HashMap<String, ImageDownloadingRunnable> mUrlToRunnableMap = new HashMap<String, ImageDownloadingRunnable>();
 
+	/*
+	 * TODO: Research into lowering the number of available threads for the network
+	 */
 	private LifoThreadPool mThreadPool = new LifoThreadPool(8);
 
 	public ImageDownloader(NetworkToDiskInterface networkToDiskInterface, ImageDownloadObserver imageDownloadObserver) {
