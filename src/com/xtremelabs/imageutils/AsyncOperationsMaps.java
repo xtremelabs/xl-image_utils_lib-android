@@ -118,16 +118,11 @@ class AsyncOperationsMaps {
 		if (url != null) {
 			List<NetworkRequestParameters> parametersList = mUrlToListenersMapForNetwork.get(url);
 			if (parametersList != null) {
-				NetworkRequestParameters networkRequestParameters = null;
-				for (NetworkRequestParameters parameter : parametersList) {
-					if (parameter.mImageCacherListener == imageCacherListener) {
-						networkRequestParameters = parameter;
-						break;
+				for (NetworkRequestParameters networkRequestParameters : parametersList) {
+					if (networkRequestParameters.mImageCacherListener == imageCacherListener) {
+						removeQueuedListenerForDownload(networkRequestParameters);
+						return;
 					}
-				}
-				if (networkRequestParameters != null) {
-					removeQueuedListenerForDownload(networkRequestParameters);
-					return;
 				}
 			}
 		}
