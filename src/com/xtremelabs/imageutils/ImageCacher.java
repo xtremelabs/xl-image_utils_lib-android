@@ -1,7 +1,5 @@
 package com.xtremelabs.imageutils;
 
-import java.io.FileNotFoundException;
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Build;
@@ -82,12 +80,6 @@ class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOp
 			sampleSize = mDiskCache.getSampleSize(url, scalingInfo.width, scalingInfo.height);
 		}
 		return sampleSize;
-	}
-
-	// TODO: Trigger a network request for the image. We may want to move this into the database...
-	// FIXME: What happens during the error condition?
-	public Dimensions getImageDimensions(String url) throws FileNotFoundException {
-		return mDiskCache.getImageDimensions(url);
 	}
 
 	/**

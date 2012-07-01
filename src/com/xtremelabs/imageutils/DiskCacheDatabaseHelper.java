@@ -31,7 +31,7 @@ class DiskCacheDatabaseHelper extends SQLiteOpenHelper {
 
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-		// TODO: Fill this in. Kinda important...
+		// TODO: On Reset, we must delete the files in the disk cache.
 		resetTable(db);
 	}
 

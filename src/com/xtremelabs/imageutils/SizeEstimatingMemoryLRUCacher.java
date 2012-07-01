@@ -6,7 +6,7 @@ import java.util.LinkedList;
 import android.graphics.Bitmap;
 
 class SizeEstimatingMemoryLRUCacher implements ImageMemoryCacherInterface {
-	private long mMaximumSizeInBytes = 18 * 1024 * 1024; // 12MB default
+	private long mMaximumSizeInBytes = 12 * 1024 * 1024; // 12MB default
 	private long mSize = 0;
 
 	private HashMap<DecodeOperationParameters, Bitmap> mCache = new HashMap<DecodeOperationParameters, Bitmap>();
