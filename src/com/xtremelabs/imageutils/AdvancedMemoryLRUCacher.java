@@ -18,11 +18,15 @@ package com.xtremelabs.imageutils;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.NoSuchElementException;
 
+import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 
+@SuppressLint("NewApi")
 class AdvancedMemoryLRUCacher implements ImageMemoryCacherInterface {
-	private long mMaximumSizeInBytes = 12 * 1024 * 1024; // 12MB default
+	// TODO: Finalize this value.
+	private long mMaximumSizeInBytes = 20 * 1024 * 1024; // 20MB default
 	private long mSize = 0;
 
 	private HashMap<DecodeOperationParameters, Bitmap> mCache = new HashMap<DecodeOperationParameters, Bitmap>();
@@ -59,7 +63,7 @@ class AdvancedMemoryLRUCacher implements ImageMemoryCacherInterface {
 		mMaximumSizeInBytes = size;
 		performEvictions();
 	}
-	
+
 	private synchronized void onEntryHit(String url, int sampleSize) {
 		EvictionQueueContainer container = new EvictionQueueContainer(url, sampleSize);
 
@@ -71,12 +75,16 @@ class AdvancedMemoryLRUCacher implements ImageMemoryCacherInterface {
 			performEvictions();
 		}
 	}
-	
+
 	private synchronized void performEvictions() {
 		while (mSize > mMaximumSizeInBytes) {
-			EvictionQueueContainer container = mEvictionQueue.removeFirst();
-			Bitmap bitmap = mCache.remove(new DecodeOperationParameters(container.getUrl(), container.getSampleSize()));
-			mSize -= bitmap.getByteCount();
+			try {
+				EvictionQueueContainer container = mEvictionQueue.removeFirst();
+				Bitmap bitmap = mCache.remove(new DecodeOperationParameters(container.getUrl(), container.getSampleSize()));
+				mSize -= bitmap.getByteCount();
+			} catch (NoSuchElementException e) {
+				mSize = 0;
+			}
 		}
 	}
 }

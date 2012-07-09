@@ -29,6 +29,9 @@ import android.widget.ImageView;
 
 import com.xtremelabs.imageutils.ThreadChecker.CalledFromWrongThreadException;
 
+// TODO: Remove the author from all files.
+// TODO: Apply the plugin that has ifdef.
+
 /**
  * This class simplifies the task of loading images from a URL into an {@link ImageView} on Android.
  * 
@@ -41,8 +44,6 @@ import com.xtremelabs.imageutils.ThreadChecker.CalledFromWrongThreadException;
  * 
  * When used with a {@link Fragment}, instantiate your ImageLoader in the onCreateView() method. Make sure you call the ImageLoader's onDestroy method in the
  * onDestroyView method.
- * 
- * @author James Halpern
  */
 public class ImageLoader {
 	// TODO: Add optional logging levels.
@@ -54,6 +55,12 @@ public class ImageLoader {
 	private Object mKey;
 
 	private boolean destroyed = false;
+
+	// TODO: Use an Application.ActivityLifecycleCallbacks.
+	// TODO: Have the initialization of the ImageLoader take in an Application object along with the Activity or Fragment.
+	// TODO: Have an API call that can get a bitmap without an ImageView.
+	// TODO: Have an API call that can take a Bitmap without a network request?
+	// TODO: Make a loadImage call that operates off the UI thread, or make the loadImage calls compatible with non-UI threads.
 
 	/**
 	 * Instantiates a new {@link ImageLoader} that maps all requests to the provided {@link Activity}.
@@ -117,6 +124,8 @@ public class ImageLoader {
 			}
 		}
 	}
+
+	// TODO: API call that will set a "default" options. This will be on an Activity/Fragment basis.
 
 	/**
 	 * This method must be called from the UI thread.
@@ -189,7 +198,13 @@ public class ImageLoader {
 		}
 	}
 
+	// TODO: Make an API call that will load the bitmap into place with an animation
+
 	// TODO: Have a load image call that accepts a resource ID rather than making the user stop the load manually.
+
+	// TODO: Return a boolean indicating whether an image load was actually stopped.
+	// TODO: Think about this call.
+	// TODO: Have an isLoadingImage call.
 	/**
 	 * This call prevents any previous loadImage call from loading a Bitmap into the provided ImageView.
 	 * 
@@ -408,7 +423,13 @@ public class ImageLoader {
 			public void onImageReceived(Bitmap bitmap, ImageReturnedFrom returnedFrom) {
 				ImageView imageView = mViewMapper.removeImageView(this);
 				if (imageView != null) {
+					if (Logger.isProfiling()) {
+						Profiler.init("Setting image bitmap for default listener");
+					}
 					imageView.setImageBitmap(bitmap);
+					if (Logger.isProfiling()) {
+						Profiler.report("Setting image bitmap for default listener");
+					}
 				}
 			}
 		};

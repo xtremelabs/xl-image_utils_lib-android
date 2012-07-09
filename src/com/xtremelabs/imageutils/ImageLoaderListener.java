@@ -35,6 +35,7 @@ public interface ImageLoaderListener {
 	 */
 	public void onImageAvailable(ImageView imageView, Bitmap bitmap, ImageReturnedFrom returnedFrom);
 
+	// TODO: Include an error type enum in the error response.
 	/**
 	 * Called in the event the bitmap could not be retreived.
 	 */

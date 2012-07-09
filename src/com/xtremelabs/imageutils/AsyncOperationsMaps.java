@@ -25,9 +25,8 @@ import android.graphics.Bitmap;
 
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
 
-class AsyncOperationsMaps {
-	@SuppressWarnings("unused")
-	private static final String TAG = "AsyncOperationsMap";
+public class AsyncOperationsMaps {
+	private static final String PREFIX = "MAPS - ";
 
 	public enum AsyncOperationState {
 		QUEUED_FOR_NETWORK_REQUEST, QUEUED_FOR_DECODE_REQUEST, NOT_QUEUED
@@ -48,24 +47,78 @@ class AsyncOperationsMaps {
 	public synchronized boolean isNetworkRequestPendingForUrl(String url) {
 		return mUrlToListenersMapForNetwork.containsKey(url);
 	}
+	
+	public synchronized boolean isDecodeRequestPendingForUrlAndScalingInfo(String url, ScalingInfo scalingInfo) {
+		DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, mAsyncOperationsObserver.getSampleSize(url, scalingInfo));
+		return mDecodeParamsToListenersMap.containsKey(decodeOperationParameters);
+	}
 
 	public synchronized AsyncOperationState queueListenerIfRequestPending(ImageCacherListener imageCacherListener, String url, ScalingInfo scalingInfo) {
 		if (isNetworkRequestPendingForUrl(url)) {
-			registerListenerForNetworkRequest(imageCacherListener, url, scalingInfo);
-			return AsyncOperationState.QUEUED_FOR_NETWORK_REQUEST;
+			if (mAsyncOperationsObserver.isNetworkRequestPendingForUrl(url)) {
+				registerListenerForNetworkRequest(imageCacherListener, url, scalingInfo);
+				if (Logger.logMaps()) {
+					List<NetworkRequestParameters> list = mUrlToListenersMapForNetwork.get(url);
+					int size = list == null ? 0 : list.size();
+					int valueSize = mListenerToUrlMapForNetwork.values().size();
+					Logger.d(PREFIX + "Queued request for network. Requests in queue: " + mUrlToListenersMapForNetwork.size() + ", requests in list: " + size);
+					Logger.d(PREFIX + "Size report: " + mUrlToListenersMapForNetwork.size() + " -- " + valueSize);
+				}
+				return AsyncOperationState.QUEUED_FOR_NETWORK_REQUEST;
+			} else {
+				/*
+				 * FIXME: There is a race condition where a download can finish but the entry is not removed from the map. This is a hack that fixes the
+				 * problem, but is not very pretty.
+				 */
+				List<NetworkRequestParameters> parameters = mUrlToListenersMapForNetwork.remove(url);
+				if (parameters != null) {
+					for (NetworkRequestParameters parameter : parameters) {
+						mListenerToUrlMapForNetwork.remove(parameter.mImageCacherListener);
+					}
+				}
+			}
 		}
 
 		int sampleSize = mAsyncOperationsObserver.getSampleSize(url, scalingInfo);
 		DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, sampleSize);
 		if (isDecodeRequestPendingForParams(decodeOperationParameters)) {
-			queueForDecodeRequest(imageCacherListener, decodeOperationParameters);
-			return AsyncOperationState.QUEUED_FOR_DECODE_REQUEST;
+			if (mAsyncOperationsObserver.isDecodeRequestPending(decodeOperationParameters)) {
+				queueForDecodeRequest(imageCacherListener, decodeOperationParameters);
+				if (Logger.logMaps()) {
+					List<ImageCacherListener> list = mDecodeParamsToListenersMap.get(decodeOperationParameters);
+					int size = list == null ? 0 : list.size();
+					int valueSize = mListenerToDecodeParamsMap.values().size();
+					Logger.d(PREFIX + "Queued request for decode. Requests in queue: " + mDecodeParamsToListenersMap.size() + ", requests in list: " + size);
+					Logger.d(PREFIX + "Size report: " + mDecodeParamsToListenersMap.size() + " -- " + valueSize);
+				}
+
+				return AsyncOperationState.QUEUED_FOR_DECODE_REQUEST;
+			} else {
+				/*
+				 * FIXME: There is a race condition where a decode can finish but the entry is not removed from the map. This is a hack that fixes the problem,
+				 * but is not very pretty.
+				 */
+				List<ImageCacherListener> list = mDecodeParamsToListenersMap.remove(decodeOperationParameters);
+				if (list != null) {
+					for (ImageCacherListener listener : list) {
+						mListenerToDecodeParamsMap.remove(listener);
+					}
+				}
+			}
 		}
 
+		if (Logger.logMaps()) {
+			Logger.d(PREFIX + "Request not queued.");
+		}
 		return AsyncOperationState.NOT_QUEUED;
 	}
 
 	public synchronized void registerListenerForNetworkRequest(ImageCacherListener imageCacherListener, String url, ScalingInfo scalingInfo) {
+
+		if (Logger.logMaps()) {
+			Logger.d(PREFIX + "Registering listener for URL: " + url);
+		}
+
 		NetworkRequestParameters networkRequestParameters = new NetworkRequestParameters(imageCacherListener, scalingInfo);
 
 		List<NetworkRequestParameters> networkRequestParametersList = mUrlToListenersMapForNetwork.get(url);
@@ -79,17 +132,25 @@ class AsyncOperationsMaps {
 	}
 
 	public synchronized void registerListenerForDecode(ImageCacherListener imageCacherListener, String url, int sampleSize) {
+		if (Logger.logMaps()) {
+			Logger.d(PREFIX + "Registering listener for decode: " + url);
+		}
+
 		DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, sampleSize);
 		queueForDecodeRequest(imageCacherListener, decodeOperationParameters);
 	}
 
 	public void onDecodeSuccess(Bitmap bitmap, String url, int sampleSize, ImageReturnedFrom returnedFrom) {
+		if (Logger.logMaps()) {
+			Logger.d(PREFIX + "Image decoded: " + url + ", sample size: " + sampleSize);
+		}
+
 		DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, sampleSize);
 
 		ImageCacherListener imageCacherListener;
 		while ((imageCacherListener = getListenerWaitingOnDecode(decodeOperationParameters)) != null) {
 			synchronized (imageCacherListener) {
-				if (removeQueuedListenerForDecode(decodeOperationParameters, imageCacherListener)) {
+				if (removeQueuedListenerForDecode(decodeOperationParameters, imageCacherListener, true)) {
 					imageCacherListener.onImageAvailable(bitmap, returnedFrom);
 				}
 			}
@@ -102,7 +163,7 @@ class AsyncOperationsMaps {
 		ImageCacherListener imageCacherListener;
 		while ((imageCacherListener = getListenerWaitingOnDecode(decodeOperationParameters)) != null) {
 			synchronized (imageCacherListener) {
-				if (removeQueuedListenerForDecode(decodeOperationParameters, imageCacherListener)) {
+				if (removeQueuedListenerForDecode(decodeOperationParameters, imageCacherListener, true)) {
 					imageCacherListener.onFailure("Disk decode failed.");
 				}
 			}
@@ -122,30 +183,54 @@ class AsyncOperationsMaps {
 		NetworkRequestParameters networkRequestParameters;
 		while ((networkRequestParameters = getListenerWaitingOnDownload(url)) != null) {
 			synchronized (networkRequestParameters.mImageCacherListener) {
-				if (removeQueuedListenerForDownload(networkRequestParameters)) {
+				if (removeQueuedListenerForDownload(networkRequestParameters, true)) {
 					networkRequestParameters.mImageCacherListener.onFailure("Failed to download image.");
 				}
 			}
 		}
 	}
 
-	public synchronized void cancelPendingRequest(ImageCacherListener imageCacherListener) {
-		String url = mListenerToUrlMapForNetwork.get(imageCacherListener);
-		if (url != null) {
-			List<NetworkRequestParameters> parametersList = mUrlToListenersMapForNetwork.get(url);
-			if (parametersList != null) {
-				for (NetworkRequestParameters networkRequestParameters : parametersList) {
-					if (networkRequestParameters.mImageCacherListener == imageCacherListener) {
-						removeQueuedListenerForDownload(networkRequestParameters);
-						return;
+	public void cancelPendingRequest(ImageCacherListener imageCacherListener) {
+		NetworkRequestParameters targetParameters = null;
+		synchronized (this) {
+			if (Logger.logMaps()) {
+				Logger.d(PREFIX + "Cancelling a request.");
+			}
+
+			String url = mListenerToUrlMapForNetwork.get(imageCacherListener);
+			if (url != null) {
+				List<NetworkRequestParameters> parametersList = mUrlToListenersMapForNetwork.get(url);
+				if (parametersList != null) {
+					for (NetworkRequestParameters networkRequestParameters : parametersList) {
+						if (networkRequestParameters.mImageCacherListener == imageCacherListener) {
+							targetParameters = networkRequestParameters;
+							break;
+						}
 					}
 				}
 			}
 		}
 
-		DecodeOperationParameters decodeOperationParameters = mListenerToDecodeParamsMap.get(imageCacherListener);
+		if (targetParameters != null) {
+			synchronized (targetParameters.mImageCacherListener) {
+				if (!removeQueuedListenerForDownload(targetParameters, false)) {
+					if (Logger.logMaps()) {
+						Logger.w(PREFIX + "Was unable to remove the request!");
+					}
+				}
+			}
+			return;
+		}
+
+		DecodeOperationParameters decodeOperationParameters = null;
+		synchronized (this) {
+			decodeOperationParameters = mListenerToDecodeParamsMap.get(imageCacherListener);
+		}
+
 		if (decodeOperationParameters != null) {
-			removeQueuedListenerForDecode(decodeOperationParameters, imageCacherListener);
+			synchronized (imageCacherListener) {
+				removeQueuedListenerForDecode(decodeOperationParameters, imageCacherListener, false);
+			}
 		}
 	}
 
@@ -185,14 +270,21 @@ class AsyncOperationsMaps {
 	 * 
 	 * @param decodeOperationParameters
 	 * @param imageCacherListener
+	 * @param deleteMapIfEmpty
+	 *            TODO
 	 * @return
 	 */
-	private synchronized boolean removeQueuedListenerForDecode(DecodeOperationParameters decodeOperationParameters, ImageCacherListener imageCacherListener) {
+	private synchronized boolean removeQueuedListenerForDecode(DecodeOperationParameters decodeOperationParameters, ImageCacherListener imageCacherListener,
+			boolean deleteMapIfEmpty) {
 		List<ImageCacherListener> imageCacherListeners = mDecodeParamsToListenersMap.get(decodeOperationParameters);
 		if (imageCacherListeners != null) {
 			imageCacherListeners.remove(imageCacherListener);
-			if (imageCacherListeners.size() == 0) {
-				mDecodeParamsToListenersMap.remove(decodeOperationParameters);
+			if (deleteMapIfEmpty && imageCacherListeners.size() == 0) {
+				if (mDecodeParamsToListenersMap.remove(decodeOperationParameters) == null) {
+					if (Logger.logMaps()) {
+						Logger.w(PREFIX + "Did not remove entry from the decode map.");
+					}
+				}
 			}
 
 			mListenerToDecodeParamsMap.remove(imageCacherListener);
@@ -201,16 +293,24 @@ class AsyncOperationsMaps {
 		return false;
 	}
 
-	private synchronized boolean removeQueuedListenerForDownload(NetworkRequestParameters networkRequestParameters) {
-		String url = mListenerToUrlMapForNetwork.remove(networkRequestParameters);
+	private synchronized boolean removeQueuedListenerForDownload(NetworkRequestParameters networkRequestParameters, boolean deleteMapIfEmpty) {
+		String url = mListenerToUrlMapForNetwork.remove(networkRequestParameters.mImageCacherListener);
 		if (url != null) {
 			List<NetworkRequestParameters> networkRequestParametersList = mUrlToListenersMapForNetwork.get(url);
 			if (networkRequestParametersList != null) {
 				boolean result = networkRequestParametersList.remove(networkRequestParameters);
-				if (networkRequestParametersList.size() == 0) {
+				if (deleteMapIfEmpty && networkRequestParametersList.size() == 0) {
 					mUrlToListenersMapForNetwork.remove(url);
 				}
 				return result;
+			} else {
+				if (Logger.logMaps()) {
+					Logger.i(PREFIX + "No list was available for the URL.");
+				}
+			}
+		} else {
+			if (Logger.logMaps()) {
+				Logger.i(PREFIX + "URL was null when trying to remove a listener.");
 			}
 		}
 		return false;

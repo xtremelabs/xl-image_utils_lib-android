@@ -18,11 +18,13 @@ package com.xtremelabs.imageutils;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.NoSuchElementException;
 
 import android.graphics.Bitmap;
 
+// TODO: Research into using the official Android LRU.
 class SizeEstimatingMemoryLRUCacher implements ImageMemoryCacherInterface {
-	private long mMaximumSizeInBytes = 12 * 1024 * 1024; // 12MB default
+	private long mMaximumSizeInBytes = 6 * 1024 * 1024; // 6MB default
 	private long mSize = 0;
 
 	private HashMap<DecodeOperationParameters, Bitmap> mCache = new HashMap<DecodeOperationParameters, Bitmap>();
@@ -59,7 +61,7 @@ class SizeEstimatingMemoryLRUCacher implements ImageMemoryCacherInterface {
 		mMaximumSizeInBytes = size;
 		performEvictions();
 	}
-	
+
 	private synchronized void onEntryHit(String url, int sampleSize) {
 		EvictionQueueContainer container = new EvictionQueueContainer(url, sampleSize);
 
@@ -71,15 +73,19 @@ class SizeEstimatingMemoryLRUCacher implements ImageMemoryCacherInterface {
 			performEvictions();
 		}
 	}
-	
+
 	private synchronized void performEvictions() {
 		while (mSize > mMaximumSizeInBytes) {
-			EvictionQueueContainer container = mEvictionQueue.removeFirst();
-			Bitmap bitmap = mCache.remove(new DecodeOperationParameters(container.getUrl(), container.getSampleSize()));
-			mSize -= getBitmapSize(bitmap);
+			try {
+				EvictionQueueContainer container = mEvictionQueue.removeFirst();
+				Bitmap bitmap = mCache.remove(new DecodeOperationParameters(container.getUrl(), container.getSampleSize()));
+				mSize -= getBitmapSize(bitmap);
+			} catch (NoSuchElementException e) {
+				mSize = 0;
+			}
 		}
 	}
-	
+
 	private long getBitmapSize(Bitmap bitmap) {
 		return bitmap.getWidth() * bitmap.getHeight() * 4;
 	}

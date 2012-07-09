@@ -30,9 +30,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
-class DiskLRUCacher implements DiskCacherInterface {
-	@SuppressWarnings("unused")
-	private static final String TAG = "DefaultImageDiskCacher";
+class DiskLRUCacher implements ImageDiskCacherInterface {
 	private long mMaximumCacheSizeInBytes = 30 * 1024 * 1024; // 30MB
 	private DiskManager mDiskManager;
 	private DiskCacheDatabaseHelper mDatabaseHelper;
@@ -40,7 +38,7 @@ class DiskLRUCacher implements DiskCacherInterface {
 	private CachedImagesMap mCachedImagesMap = new CachedImagesMap();
 	private HashMap<DecodeOperationParameters, Runnable> mRequestToRunnableMap = new HashMap<DecodeOperationParameters, Runnable>();
 
-	private LifoThreadPool mThreadPool = new LifoThreadPool(5);
+	private LifoThreadPool mThreadPool = new LifoThreadPool(1);
 
 	public DiskLRUCacher(Context appContext, ImageDecodeObserver imageDecodeObserver) {
 		mDiskManager = new DiskManager("img", appContext);
@@ -71,11 +69,6 @@ class DiskLRUCacher implements DiskCacherInterface {
 	}
 
 	@Override
-	public void cancelRequest(String url, int sampleSize) {
-		// TODO: Cancel pending disk requests here.
-	}
-
-	@Override
 	public void getBitmapAsynchronouslyFromDisk(final String url, final int sampleSize, final ImageReturnedFrom returnedFrom,
 			final boolean noPreviousNetworkRequest) {
 		final DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, sampleSize);
@@ -103,9 +96,9 @@ class DiskLRUCacher implements DiskCacherInterface {
 			}
 		};
 
-		mapRunnableToParameters(runnable, decodeOperationParameters);
-
-		mThreadPool.execute(runnable);
+		if (mapRunnableToParameters(runnable, decodeOperationParameters)) {
+			mThreadPool.execute(runnable);
+		}
 	}
 
 	@Override
@@ -143,9 +136,14 @@ class DiskLRUCacher implements DiskCacherInterface {
 		return dimensions;
 	}
 
-	private void mapRunnableToParameters(Runnable runnable, DecodeOperationParameters parameters) {
+	private boolean mapRunnableToParameters(Runnable runnable, DecodeOperationParameters parameters) {
 		synchronized (mRequestToRunnableMap) {
-			mRequestToRunnableMap.put(parameters, runnable);
+			if (!mRequestToRunnableMap.containsKey(parameters)) {
+				mRequestToRunnableMap.put(parameters, runnable);
+				return true;
+			} else {
+				return false;
+			}
 		}
 	}
 
@@ -242,5 +240,10 @@ class DiskLRUCacher implements DiskCacherInterface {
 		 * 
 		 */
 		private static final long serialVersionUID = -2180782787028503586L;
+	}
+
+	@Override
+	public synchronized boolean isDecodeRequestPending(DecodeOperationParameters decodeOperationParameters) {
+		return mRequestToRunnableMap.containsKey(decodeOperationParameters);
 	}
 }

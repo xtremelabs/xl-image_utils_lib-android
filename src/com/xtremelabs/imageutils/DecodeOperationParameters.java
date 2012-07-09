@@ -16,7 +16,7 @@
 
 package com.xtremelabs.imageutils;
 
-class DecodeOperationParameters {
+public class DecodeOperationParameters {
 	String mUrl;
 	int mSampleSize;
 

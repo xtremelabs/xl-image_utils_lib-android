@@ -26,8 +26,6 @@ import com.xtremelabs.imageutils.LifecycleReferenceManager.ImageManagerCacheList
  * This class maintains three sets of mappings which ensure that any Activity that is being destroyed has all references to it released.
  *
  * The {@link Object} "key" in this class refers to either an Activity or a Fragment.
- * 
- * @author Jamie Halpern
  */
 class LifecycleKeyListenerMapper {
 	private HashMap<Object, List<ImageManagerListener>> mKeyToListenersMap = new HashMap<Object, List<ImageManagerListener>>();

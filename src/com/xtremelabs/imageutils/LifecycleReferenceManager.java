@@ -34,14 +34,11 @@ import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
  * 
  * Finally, this class is responsible for ensuring that all calls back to listeners in the ImageLoader occur on the UI thread. This prevents race conditions in
  * the ImageLoader and simplifies loading the bitmaps back to image views.
- * 
- * @author Jamie Halpern
  */
 // TODO: It may be worthwhile to use a WeakHashMap rather than actively forcing the user to call onDestroy.
 // Look into using a ReferenceQueue
 class LifecycleReferenceManager {
-	@SuppressWarnings("unused")
-	private static final String TAG = "LifecycleReferenceManager";
+	private static final String PREFIX = "REFERENCE MANAGER - ";
 
 	private static LifecycleReferenceManager referenceManager;
 
@@ -89,6 +86,9 @@ class LifecycleReferenceManager {
 	}
 
 	public void cancelRequest(ImageManagerListener imageManagerListener) {
+		if (Logger.logAll()) {
+			Logger.d(PREFIX + "Cancelling a request.");
+		}
 		mListenerHelper.unregisterListener(imageManagerListener).cancelRequest();
 	}
 
@@ -111,9 +111,29 @@ class LifecycleReferenceManager {
 			mUiThreadHandler.post(new Runnable() {
 				@Override
 				public void run() {
+					if (Logger.isProfiling()) {
+						Profiler.init("End-of-call on UI thread - success");
+						Profiler.init("End-of-call  --  Removing the listener.");
+					}
+
 					ImageManagerListener listener = mListenerHelper.getAndRemoveListener(ImageManagerCacheListener.this);
+					
+					if (Logger.isProfiling()) {
+						Profiler.report("End-of-call  --  Removing the listener.");
+					}
+					
 					if (listener != null) {
+						if (Logger.isProfiling()) {
+							Profiler.init("End-of-call  --  On Image Received (success)");
+						}
 						listener.onImageReceived(bitmap, returnedFrom);
+						if (Logger.isProfiling()) {
+							Profiler.report("End-of-call  --  On Image Received (success)");
+						}
+					}
+
+					if (Logger.isProfiling()) {
+						Profiler.report("End-of-call on UI thread - success");
 					}
 				}
 			});
@@ -124,15 +144,26 @@ class LifecycleReferenceManager {
 			mUiThreadHandler.post(new Runnable() {
 				@Override
 				public void run() {
+					if (Logger.isProfiling()) {
+						Profiler.init("End-of-call on UI thread - failure");
+					}
+					
 					ImageManagerListener listener = mListenerHelper.getAndRemoveListener(ImageManagerCacheListener.this);
 					if (listener != null) {
 						listener.onLoadImageFailed();
+					}
+					
+					if (Logger.isProfiling()) {
+						Profiler.init("End-of-call on UI thread - failure");
 					}
 				}
 			});
 		}
 
 		public void cancelRequest() {
+			if (Logger.logAll()) {
+				Logger.d(PREFIX + "Cancelling request from within listener.");
+			}
 			mImageCacher.cancelRequestForBitmap(this);
 		}
 	}

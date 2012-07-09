@@ -20,8 +20,6 @@ import android.widget.ImageView;
 
 /**
  * This class is responsible for mapping responses from the LifecycleReferenceManager back to the ImageViews that were originally passed in.
- * 
- * @author Jamie Halpern
  */
 class ImageViewReferenceMapper {
 	private TwoWayHashMap<ImageView, ImageManagerListener> map = new TwoWayHashMap<ImageView, ImageManagerListener>();
@@ -31,7 +29,17 @@ class ImageViewReferenceMapper {
 	}
 
 	public synchronized ImageView removeImageView(ImageManagerListener listener) {
-		return map.removeSecondaryItem(listener);
+		if (Logger.isProfiling()) {
+			Profiler.init("Removing image view and listener from map");
+		}
+		
+		ImageView view = map.removeSecondaryItem(listener);
+		
+		if (Logger.isProfiling()) {
+			Profiler.report("Removing image view and listener from map");
+		}
+		
+		return view;
 	}
 
 	public synchronized ImageManagerListener removeListener(ImageView view) {

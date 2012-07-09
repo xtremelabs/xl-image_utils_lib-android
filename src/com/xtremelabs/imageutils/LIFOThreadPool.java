@@ -21,6 +21,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import android.annotation.SuppressLint;
 import android.os.AsyncTask;
 import android.os.Build;
 
@@ -59,12 +60,16 @@ class LifoThreadPool {
 		}
 	}
 
+	@SuppressLint("NewApi")
 	private class LifoBlockingStack extends LinkedBlockingDeque<Runnable> {
 		private static final long serialVersionUID = -4854985351588039351L;
 
 		@Override
 		public boolean offer(Runnable runnable) {
-			return super.offerFirst(runnable);
+			if (!contains(runnable)) {
+				return super.offerFirst(runnable);
+			}
+			return false;
 		}
 
 		@Override
@@ -83,7 +88,7 @@ class LifoThreadPool {
 		}
 
 		public void bump(Runnable runnable) {
-			if (runnable != null && super.remove(runnable)) {
+			if (Build.VERSION.SDK_INT >= 9 && runnable != null && super.remove(runnable)) {
 				super.offerFirst(runnable);
 			}
 		}

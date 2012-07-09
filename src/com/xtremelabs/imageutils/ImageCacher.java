@@ -19,6 +19,7 @@ package com.xtremelabs.imageutils;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Build;
+import android.util.Log;
 
 import com.xtremelabs.imageutils.AsyncOperationsMaps.AsyncOperationState;
 
@@ -27,15 +28,13 @@ import com.xtremelabs.imageutils.AsyncOperationsMaps.AsyncOperationState;
  * ImageNetworkInterface and the AsyncOperationsMaps.
  * 
  * The job of this class is to "route" messages appropriately in order to ensure synchronized handling of image downloading and caching operations.
- * 
- * @author Jamie Halpern
  */
-class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOperationsObserver {
-	@SuppressWarnings("unused")
-	private static final String TAG = "ImageCacher";
+public class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOperationsObserver {
+	private static final String PREFIX = "IMAGE CACHER - ";
+
 	private static ImageCacher mImageCacher;
 
-	private DiskCacherInterface mDiskCache;
+	private ImageDiskCacherInterface mDiskCache;
 	private ImageMemoryCacherInterface mMemoryCache;
 	private ImageNetworkInterface mNetworkInterface;
 
@@ -61,29 +60,115 @@ class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOp
 	}
 
 	public Bitmap getBitmap(String url, ImageCacherListener imageCacherListener, ScalingInfo scalingInfo) {
+		if (Logger.isProfiling()) {
+			Profiler.init("getBitmap");
+		}
+
 		throwExceptionIfNeeded(url, imageCacherListener, scalingInfo);
 
+		if (Logger.isProfiling()) {
+			Profiler.init("Queuing");
+		}
+
 		AsyncOperationState asyncOperationState = mAsyncOperationsMap.queueListenerIfRequestPending(imageCacherListener, url, scalingInfo);
+
+		if (Logger.isProfiling()) {
+			Profiler.report("Queuing");
+		}
 		switch (asyncOperationState) {
 		case QUEUED_FOR_NETWORK_REQUEST:
 			mNetworkInterface.bump(url);
+
+			if (Logger.logAll()) {
+				Logger.d(PREFIX + "Queued for network request.");
+			}
+
+			if (Logger.isProfiling()) {
+				Profiler.report("getBitmap");
+			}
 			return null;
 		case QUEUED_FOR_DECODE_REQUEST:
 			mDiskCache.bumpInQueue(url, getSampleSize(url, scalingInfo));
+
+			if (Logger.logAll()) {
+				Logger.d(PREFIX + "Queued for decode request.");
+			}
+
+			if (Logger.isProfiling()) {
+				Profiler.report("getBitmap");
+			}
 			return null;
 		}
 
+		Log.d(ImageLoader.TAG, "Image has not been queued.");
+
+		if (Logger.isProfiling()) {
+			Profiler.init("memory or disk");
+			Profiler.init("getting sample size");
+		}
+
 		int sampleSize = getSampleSize(url, scalingInfo);
+
+		if (Logger.isProfiling()) {
+			Profiler.report("getting sample size");
+			Profiler.init("checking cached");
+		}
+
+		// TODO: Look into removing the sampleSize check.
+
 		if (mDiskCache.isCached(url) && sampleSize != -1) {
+			if (Logger.isProfiling()) {
+				Profiler.report("checking cached");
+			}
 			Bitmap bitmap;
 			if ((bitmap = mMemoryCache.getBitmap(url, sampleSize)) != null) {
+
+				if (Logger.isProfiling()) {
+					Profiler.report("memory or disk");
+					Profiler.report("getBitmap");
+					Profiler.report("memory or disk");
+				}
+
+				if (Logger.logAll()) {
+					Logger.d(PREFIX + "Returning bitmap from memory.");
+				}
+
 				return bitmap;
 			} else {
+				if (Logger.logAll()) {
+					Logger.d(PREFIX + "Requesting decode from disk.");
+				}
+
+				if (Logger.isProfiling()) {
+					Profiler.init("decoding from disk");
+				}
 				decodeBitmapFromDisk(url, imageCacherListener, sampleSize);
+				if (Logger.isProfiling()) {
+					Profiler.report("decoding from disk");
+				}
 			}
 		} else {
+			if (Logger.isProfiling()) {
+				Profiler.report("checking cached");
+			}
+			if (Logger.logAll()) {
+				Logger.d(PREFIX + "Downloading image from network.");
+			}
+
+			if (Logger.isProfiling()) {
+				Profiler.init("downloading from network");
+			}
 			downloadImageFromNetwork(url, imageCacherListener, scalingInfo);
+			if (Logger.isProfiling()) {
+				Profiler.report("downloading from network");
+			}
 		}
+
+		if (Logger.isProfiling()) {
+			Profiler.report("memory or disk");
+			Profiler.report("getBitmap");
+		}
+
 		return null;
 	}
 
@@ -122,6 +207,9 @@ class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOp
 	}
 
 	public void cancelRequestForBitmap(ImageCacherListener imageCacherListener) {
+		if (Logger.logAll()) {
+			Logger.d(PREFIX + "Cancelling a request.");
+		}
 		mAsyncOperationsMap.cancelPendingRequest(imageCacherListener);
 	}
 
@@ -185,5 +273,15 @@ class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOp
 	@Override
 	public void onImageDecodeRequired(String url, int sampleSize) {
 		mDiskCache.getBitmapAsynchronouslyFromDisk(url, sampleSize, ImageReturnedFrom.NETWORK, false);
+	}
+
+	@Override
+	public boolean isNetworkRequestPendingForUrl(String url) {
+		return mNetworkInterface.isNetworkRequestPendingForUrl(url);
+	}
+
+	@Override
+	public boolean isDecodeRequestPending(DecodeOperationParameters decodeOperationParameters) {
+		return mDiskCache.isDecodeRequestPending(decodeOperationParameters);
 	}
 }

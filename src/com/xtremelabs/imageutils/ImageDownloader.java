@@ -16,6 +16,7 @@
 
 package com.xtremelabs.imageutils;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -39,7 +40,7 @@ class ImageDownloader implements ImageNetworkInterface {
 	/*
 	 * TODO: Research into lowering the number of available threads for the network
 	 */
-	private LifoThreadPool mThreadPool = new LifoThreadPool(8);
+	private LifoThreadPool mThreadPool = new LifoThreadPool(2);
 
 	public ImageDownloader(NetworkToDiskInterface networkToDiskInterface, ImageDownloadObserver imageDownloadObserver) {
 		mNetworkToDiskInterface = networkToDiskInterface;
@@ -57,21 +58,21 @@ class ImageDownloader implements ImageNetworkInterface {
 	@Override
 	public synchronized void downloadImageToDisk(final String url) {
 		ImageDownloadingRunnable runnable = new ImageDownloadingRunnable(url);
-		mUrlToRunnableMap.put(url, runnable);
-		mThreadPool.execute(runnable);
+		if (!mUrlToRunnableMap.containsKey(url)) {
+			mUrlToRunnableMap.put(url, runnable);
+			mThreadPool.execute(runnable);
+		}
 	}
-
-	@Override
-	public synchronized void cancelRequest(String url) {
-		ImageDownloadingRunnable runnable = mUrlToRunnableMap.remove(url);
-		runnable.cancel();
+	
+	private synchronized void removeUrlFromMap(String url) {
+		mUrlToRunnableMap.remove(url);
 	}
 
 	class ImageDownloadingRunnable implements Runnable {
 		private String mUrl;
-		private boolean mCancelled = false;
-		private boolean failed = false;
+		private boolean mFailed = false;
 		private InputStream mInputStream = null;
+		private HttpEntity mEntity;
 
 		public ImageDownloadingRunnable(String url) {
 			mUrl = url;
@@ -83,42 +84,52 @@ class ImageDownloader implements ImageNetworkInterface {
 				executeNetworkRequest();
 				passInputStreamToImageLoader();
 			} catch (IOException e) {
-				failed = true;
+				mFailed = true;
+			} finally {
+				try {
+					if (mEntity != null) {
+						mEntity.consumeContent();
+					}
+				} catch (IOException e) {
+				}
+				try {
+					if (mInputStream != null) {
+						mInputStream.close();
+					}
+				} catch (IOException e) {
+				}
 			}
 			checkLoadCompleteAndRemoveListeners();
 		}
 
 		private synchronized void checkLoadCompleteAndRemoveListeners() {
-			if (!mCancelled) {
-				if (failed) {
-					mImageDownloadObserver.onImageDownloadFailed(mUrl);
-				} else {
-					mImageDownloadObserver.onImageDownloaded(mUrl);
-				}
+			removeUrlFromMap(mUrl);
+			if (mFailed) {
+				mImageDownloadObserver.onImageDownloadFailed(mUrl);
+			} else {
+				mImageDownloadObserver.onImageDownloaded(mUrl);
 			}
 		}
 
-		public synchronized void cancel() {
-			mCancelled = true;
-			if (mInputStream != null) {
-				try {
-					mInputStream.close();
-				} catch (IOException e) {
-				}
-			}
-		}
-
+		// TODO: Look into Android HTTP client (May be SDK version dependent).
+		// TODO: Use a buffered InputStream (around the InputStream).
+		// TODO: Look into HttpConnection.
+		// FIXME: HttpClient.getConnectionManager().closeExpiredConnections();
+		// FIXME: Call ^ before and after the request.
 		public synchronized void executeNetworkRequest() throws ClientProtocolException, IOException {
 			HttpClient client = new DefaultHttpClient();
+			client.getConnectionManager().closeExpiredConnections();
 			HttpUriRequest request = new HttpGet(mUrl);
 			HttpResponse response = client.execute(request);
-			HttpEntity entity = response.getEntity();
-			if (entity != null) {
-				mInputStream = entity.getContent();
+			mEntity = response.getEntity();
+			if (mEntity != null) {
+				mInputStream = new BufferedInputStream(mEntity.getContent());
 			}
-			if (entity == null || mInputStream == null) {
-				failed = true;
+			if (mEntity == null || mInputStream == null) {
+				mFailed = true;
 			}
+			client.getConnectionManager().closeExpiredConnections();
+			// mInputStream = new URL(mUrl).openConnection().getInputStream();
 		}
 
 		public void passInputStreamToImageLoader() throws IOException {
@@ -126,5 +137,10 @@ class ImageDownloader implements ImageNetworkInterface {
 				mNetworkToDiskInterface.downloadImageFromInputStream(mUrl, mInputStream);
 			}
 		}
+	}
+
+	@Override
+	public synchronized boolean isNetworkRequestPendingForUrl(String url) {
+		return mUrlToRunnableMap.containsKey(url);
 	}
 }

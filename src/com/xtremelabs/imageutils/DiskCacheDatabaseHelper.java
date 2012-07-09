@@ -27,6 +27,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 class DiskCacheDatabaseHelper extends SQLiteOpenHelper {
+	// TODO: Map columns to indices (Bug Josh).
 	private String[] columns = { "url", "sizeondisk", "width", "height", "lastaccess" };
 
 	private final static int DATABASE_VERSION = 2;
