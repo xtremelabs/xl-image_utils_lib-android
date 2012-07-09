@@ -47,7 +47,7 @@ public class AsyncOperationsMaps {
 	public synchronized boolean isNetworkRequestPendingForUrl(String url) {
 		return mUrlToListenersMapForNetwork.containsKey(url);
 	}
-	
+
 	public synchronized boolean isDecodeRequestPendingForUrlAndScalingInfo(String url, ScalingInfo scalingInfo) {
 		DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, mAsyncOperationsObserver.getSampleSize(url, scalingInfo));
 		return mDecodeParamsToListenersMap.containsKey(decodeOperationParameters);
@@ -55,61 +55,17 @@ public class AsyncOperationsMaps {
 
 	public synchronized AsyncOperationState queueListenerIfRequestPending(ImageCacherListener imageCacherListener, String url, ScalingInfo scalingInfo) {
 		if (isNetworkRequestPendingForUrl(url)) {
-			if (mAsyncOperationsObserver.isNetworkRequestPendingForUrl(url)) {
-				registerListenerForNetworkRequest(imageCacherListener, url, scalingInfo);
-				if (Logger.logMaps()) {
-					List<NetworkRequestParameters> list = mUrlToListenersMapForNetwork.get(url);
-					int size = list == null ? 0 : list.size();
-					int valueSize = mListenerToUrlMapForNetwork.values().size();
-					Logger.d(PREFIX + "Queued request for network. Requests in queue: " + mUrlToListenersMapForNetwork.size() + ", requests in list: " + size);
-					Logger.d(PREFIX + "Size report: " + mUrlToListenersMapForNetwork.size() + " -- " + valueSize);
-				}
-				return AsyncOperationState.QUEUED_FOR_NETWORK_REQUEST;
-			} else {
-				/*
-				 * FIXME: There is a race condition where a download can finish but the entry is not removed from the map. This is a hack that fixes the
-				 * problem, but is not very pretty.
-				 */
-				List<NetworkRequestParameters> parameters = mUrlToListenersMapForNetwork.remove(url);
-				if (parameters != null) {
-					for (NetworkRequestParameters parameter : parameters) {
-						mListenerToUrlMapForNetwork.remove(parameter.mImageCacherListener);
-					}
-				}
-			}
+			registerListenerForNetworkRequest(imageCacherListener, url, scalingInfo);
+			return AsyncOperationState.QUEUED_FOR_NETWORK_REQUEST;
 		}
 
 		int sampleSize = mAsyncOperationsObserver.getSampleSize(url, scalingInfo);
 		DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, sampleSize);
 		if (isDecodeRequestPendingForParams(decodeOperationParameters)) {
-			if (mAsyncOperationsObserver.isDecodeRequestPending(decodeOperationParameters)) {
-				queueForDecodeRequest(imageCacherListener, decodeOperationParameters);
-				if (Logger.logMaps()) {
-					List<ImageCacherListener> list = mDecodeParamsToListenersMap.get(decodeOperationParameters);
-					int size = list == null ? 0 : list.size();
-					int valueSize = mListenerToDecodeParamsMap.values().size();
-					Logger.d(PREFIX + "Queued request for decode. Requests in queue: " + mDecodeParamsToListenersMap.size() + ", requests in list: " + size);
-					Logger.d(PREFIX + "Size report: " + mDecodeParamsToListenersMap.size() + " -- " + valueSize);
-				}
-
-				return AsyncOperationState.QUEUED_FOR_DECODE_REQUEST;
-			} else {
-				/*
-				 * FIXME: There is a race condition where a decode can finish but the entry is not removed from the map. This is a hack that fixes the problem,
-				 * but is not very pretty.
-				 */
-				List<ImageCacherListener> list = mDecodeParamsToListenersMap.remove(decodeOperationParameters);
-				if (list != null) {
-					for (ImageCacherListener listener : list) {
-						mListenerToDecodeParamsMap.remove(listener);
-					}
-				}
-			}
+			queueForDecodeRequest(imageCacherListener, decodeOperationParameters);
+			return AsyncOperationState.QUEUED_FOR_DECODE_REQUEST;
 		}
 
-		if (Logger.logMaps()) {
-			Logger.d(PREFIX + "Request not queued.");
-		}
 		return AsyncOperationState.NOT_QUEUED;
 	}
 
@@ -234,6 +190,35 @@ public class AsyncOperationsMaps {
 		}
 	}
 
+	public synchronized int getNumPendingDownloads() {
+		return mUrlToListenersMapForNetwork.size();
+	}
+
+	public synchronized int getNumPendingDecodes() {
+		return mDecodeParamsToListenersMap.size();
+	}
+
+	public synchronized int getNumListenersForNetwork() {
+		return mListenerToUrlMapForNetwork.size();
+	}
+
+	public synchronized int getNumListenersForDecode() {
+		return mListenerToDecodeParamsMap.size();
+	}
+
+	public synchronized boolean isListenerWaitingOnNetwork(ImageCacherListener imageCacherListener) {
+		return mListenerToUrlMapForNetwork.containsKey(imageCacherListener);
+	}
+
+	public synchronized boolean isListenerWaitingOnDecode(ImageCacherListener imageCacherListener) {
+		return mListenerToDecodeParamsMap.containsKey(imageCacherListener);
+	}
+
+	public synchronized boolean areMapsEmpty() {
+		return mUrlToListenersMapForNetwork.size() == 0 && mListenerToUrlMapForNetwork.size() == 0 && mDecodeParamsToListenersMap.size() == 0
+				&& mListenerToDecodeParamsMap.size() == 0;
+	}
+
 	private synchronized void queueForDecodeRequest(ImageCacherListener imageCacherListener, DecodeOperationParameters decodeOperationParameters) {
 		List<ImageCacherListener> imageCacherListenerList = mDecodeParamsToListenersMap.get(decodeOperationParameters);
 		if (imageCacherListenerList == null) {
@@ -251,7 +236,7 @@ public class AsyncOperationsMaps {
 			HashSet<DecodeOperationParameters> diskRequestsToMake = new HashSet<DecodeOperationParameters>();
 
 			for (NetworkRequestParameters networkRequestParameters : networkRequestParametersList) {
-				mListenerToUrlMapForNetwork.remove(networkRequestParameters);
+				mListenerToUrlMapForNetwork.remove(networkRequestParameters.mImageCacherListener);
 
 				int sampleSize;
 				sampleSize = mAsyncOperationsObserver.getSampleSize(url, networkRequestParameters.mScalingInfo);
@@ -318,14 +303,24 @@ public class AsyncOperationsMaps {
 
 	private synchronized ImageCacherListener getListenerWaitingOnDecode(DecodeOperationParameters decodeOperationParameters) {
 		List<ImageCacherListener> imageCacherListeners = mDecodeParamsToListenersMap.get(decodeOperationParameters);
+
+		if (imageCacherListeners == null || imageCacherListeners.size() == 0) {
+			mDecodeParamsToListenersMap.remove(decodeOperationParameters);
+		}
+
 		if (imageCacherListeners != null && imageCacherListeners.size() > 0) {
 			return imageCacherListeners.get(0);
 		}
 		return null;
 	}
 
-	private NetworkRequestParameters getListenerWaitingOnDownload(String url) {
+	private synchronized NetworkRequestParameters getListenerWaitingOnDownload(String url) {
 		List<NetworkRequestParameters> networkRequestParametersList = mUrlToListenersMapForNetwork.get(url);
+		if (networkRequestParametersList == null || networkRequestParametersList.size() == 0) {
+			mUrlToListenersMapForNetwork.remove(url);
+			return null;
+		}
+
 		if (networkRequestParametersList != null && networkRequestParametersList.size() > 0) {
 			return networkRequestParametersList.get(0);
 		}
