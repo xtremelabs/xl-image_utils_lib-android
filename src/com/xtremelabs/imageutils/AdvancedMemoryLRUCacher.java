@@ -16,6 +16,7 @@
 
 package com.xtremelabs.imageutils;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
@@ -24,8 +25,7 @@ import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 
 @SuppressLint("NewApi")
-class AdvancedMemoryLRUCacher implements ImageMemoryCacherInterface {
-	// TODO: Finalize this value.
+public class AdvancedMemoryLRUCacher implements ImageMemoryCacherInterface {
 	private long mMaximumSizeInBytes = 20 * 1024 * 1024; // 20MB default
 	private long mSize = 0;
 
@@ -62,6 +62,23 @@ class AdvancedMemoryLRUCacher implements ImageMemoryCacherInterface {
 	public synchronized void setMaximumCacheSize(long size) {
 		mMaximumSizeInBytes = size;
 		performEvictions();
+	}
+	
+	public int getNumImagesInCache() {
+		return mCache.size();
+	}
+	
+	public long getSize() {
+		return mSize;
+	}
+	
+	public long getCurrentActualSize() {
+		long size = 0;
+		Collection<Bitmap> bitmaps = mCache.values();
+		for (Bitmap bitmap : bitmaps) {
+			size += bitmap.getByteCount();
+		}
+		return size;
 	}
 
 	private synchronized void onEntryHit(String url, int sampleSize) {

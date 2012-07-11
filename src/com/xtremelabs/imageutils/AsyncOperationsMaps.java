@@ -256,7 +256,6 @@ public class AsyncOperationsMaps {
 	 * @param decodeOperationParameters
 	 * @param imageCacherListener
 	 * @param deleteMapIfEmpty
-	 *            TODO
 	 * @return
 	 */
 	private synchronized boolean removeQueuedListenerForDecode(DecodeOperationParameters decodeOperationParameters, ImageCacherListener imageCacherListener,

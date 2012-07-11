@@ -40,7 +40,7 @@ class ImageDownloader implements ImageNetworkInterface {
 	/*
 	 * TODO: Research into lowering the number of available threads for the network
 	 */
-	private LifoThreadPool mThreadPool = new LifoThreadPool(2);
+	private LifoThreadPool mThreadPool = new LifoThreadPool(3);
 
 	public ImageDownloader(NetworkToDiskInterface networkToDiskInterface, ImageDownloadObserver imageDownloadObserver) {
 		mNetworkToDiskInterface = networkToDiskInterface;
@@ -111,11 +111,6 @@ class ImageDownloader implements ImageNetworkInterface {
 			}
 		}
 
-		// TODO: Look into Android HTTP client (May be SDK version dependent).
-		// TODO: Use a buffered InputStream (around the InputStream).
-		// TODO: Look into HttpConnection.
-		// FIXME: HttpClient.getConnectionManager().closeExpiredConnections();
-		// FIXME: Call ^ before and after the request.
 		public synchronized void executeNetworkRequest() throws ClientProtocolException, IOException {
 			HttpClient client = new DefaultHttpClient();
 			client.getConnectionManager().closeExpiredConnections();
@@ -129,7 +124,6 @@ class ImageDownloader implements ImageNetworkInterface {
 				mFailed = true;
 			}
 			client.getConnectionManager().closeExpiredConnections();
-			// mInputStream = new URL(mUrl).openConnection().getInputStream();
 		}
 
 		public void passInputStreamToImageLoader() throws IOException {

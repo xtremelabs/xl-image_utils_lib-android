@@ -26,23 +26,30 @@ import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
 
+import com.xtremelabs.imageutils.DiskDatabaseHelper.DiskDatabaseHelperObserver;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
-class DiskLRUCacher implements ImageDiskCacherInterface {
+public class DiskLRUCacher implements ImageDiskCacherInterface {
 	private long mMaximumCacheSizeInBytes = 30 * 1024 * 1024; // 30MB
 	private DiskManager mDiskManager;
-	private DiskCacheDatabaseHelper mDatabaseHelper;
+	private DiskDatabaseHelper mDatabaseHelper;
 	private ImageDecodeObserver mImageDecodeObserver;
 	private CachedImagesMap mCachedImagesMap = new CachedImagesMap();
 	private HashMap<DecodeOperationParameters, Runnable> mRequestToRunnableMap = new HashMap<DecodeOperationParameters, Runnable>();
 
+	/*
+	 * WARNING: Increasing the number of threads for image decoding will lag the UI thread.
+	 * 
+	 * It is highly recommended to leave the number of decode threads at one. Increasing this number too high will cause performance problems.
+	 */
 	private LifoThreadPool mThreadPool = new LifoThreadPool(1);
 
 	public DiskLRUCacher(Context appContext, ImageDecodeObserver imageDecodeObserver) {
 		mDiskManager = new DiskManager("img", appContext);
-		mDatabaseHelper = new DiskCacheDatabaseHelper(appContext);
+		mDatabaseHelper = new DiskDatabaseHelper(appContext, mDiskDatabaseHelperObserver);
 		mImageDecodeObserver = imageDecodeObserver;
 
 		List<FileEntry> entries = mDatabaseHelper.getAllEntries();
@@ -186,7 +193,7 @@ class DiskLRUCacher implements ImageDiskCacherInterface {
 	 *            The dimensions of the image, as decoded from the full image on disk.
 	 * @return The calculated sample size. 1 if both height and width are null.
 	 */
-	private int calculateSampleSize(Integer width, Integer height, Dimensions imageDimensions) {
+	public int calculateSampleSize(Integer width, Integer height, Dimensions imageDimensions) {
 		if (width == null && height == null) {
 			return 1;
 		}
@@ -246,4 +253,11 @@ class DiskLRUCacher implements ImageDiskCacherInterface {
 	public synchronized boolean isDecodeRequestPending(DecodeOperationParameters decodeOperationParameters) {
 		return mRequestToRunnableMap.containsKey(decodeOperationParameters);
 	}
+
+	private DiskDatabaseHelperObserver mDiskDatabaseHelperObserver = new DiskDatabaseHelperObserver() {
+		@Override
+		public void onDatabaseWiped() {
+			mDiskManager.clearDirectory();
+		}
+	};
 }

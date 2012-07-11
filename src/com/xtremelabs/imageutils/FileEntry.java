@@ -16,7 +16,7 @@
 
 package com.xtremelabs.imageutils;
 
-class FileEntry {
+public class FileEntry {
 	private String url;
 	private long lastAccessTime;
 	private int width;

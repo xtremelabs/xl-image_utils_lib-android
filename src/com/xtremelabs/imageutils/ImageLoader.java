@@ -29,7 +29,6 @@ import android.widget.ImageView;
 
 import com.xtremelabs.imageutils.ThreadChecker.CalledFromWrongThreadException;
 
-// TODO: Remove the author from all files.
 // TODO: Apply the plugin that has ifdef.
 
 /**
@@ -53,11 +52,10 @@ public class ImageLoader {
 	private LifecycleReferenceManager mReferenceManager;
 	private Context mApplicationContext;
 	private Object mKey;
-
 	private boolean destroyed = false;
 
-	// TODO: Use an Application.ActivityLifecycleCallbacks.
-	// TODO: Have the initialization of the ImageLoader take in an Application object along with the Activity or Fragment.
+	private Options mDefaultOptions = new Options();
+
 	// TODO: Have an API call that can get a bitmap without an ImageView.
 	// TODO: Have an API call that can take a Bitmap without a network request?
 	// TODO: Make a loadImage call that operates off the UI thread, or make the loadImage calls compatible with non-UI threads.
@@ -125,7 +123,47 @@ public class ImageLoader {
 		}
 	}
 
-	// TODO: API call that will set a "default" options. This will be on an Activity/Fragment basis.
+	/**
+	 * The ImageLoader will default to the options provided here if no other options are provided.
+	 * 
+	 * @param options
+	 *            If set to null, the ImageLoader will automatically select the system's default options set.
+	 */
+	public void setDefaultOptions(Options options) {
+		if (options == null) {
+			mDefaultOptions = new Options();
+		} else {
+			mDefaultOptions = options;
+		}
+	}
+
+	/**
+	 * This method must be called from the UI thread.
+	 * 
+	 * Loads the image located at the provided URL into the provided {@link ImageView}. The image will be cached in both the disk cache and in the RAM cache.
+	 * 
+	 * If called multiple times for the same ImageView, only the last requested image will be loaded into the view.
+	 * 
+	 * This method uses the ImageLoader's default options. The default options can be changed using the "setDefaultOptions" method.
+	 * 
+	 * @param imageView
+	 *            The view object that will receive the image requested.
+	 * @param url
+	 *            Location of the image on the web.
+	 * 
+	 * @throws CalledFromWrongThreadException
+	 *             This is thrown if the method is called from off the UI thread.
+	 */
+	public void loadImage(ImageView imageView, String url) {
+		if (!destroyed) {
+			ThreadChecker.throwErrorIfOffUiThread();
+
+			ImageManagerListener imageManagerListener = getDefaultImageManagerListener(mDefaultOptions);
+			performImageRequest(imageView, url, mDefaultOptions, imageManagerListener);
+		} else {
+			Log.w(TAG, "WARNING: loadImage was called after the ImageLoader was destroyed.");
+		}
+	}
 
 	/**
 	 * This method must be called from the UI thread.
@@ -139,8 +177,7 @@ public class ImageLoader {
 	 * @param url
 	 *            Location of the image on the web.
 	 * @param options
-	 *            If options is set to null, the {@link ImageLoader} will automatically try to optimize the image it returns with the default {@link Options}
-	 *            settings. See the {@link Options} docs for additional details.
+	 *            If options is set to null, the {@link ImageLoader} will use the default options. See the {@link Options} docs for additional details.
 	 * 
 	 * @throws CalledFromWrongThreadException
 	 *             This is thrown if the method is called from off the UI thread.
@@ -150,7 +187,7 @@ public class ImageLoader {
 			ThreadChecker.throwErrorIfOffUiThread();
 
 			if (options == null) {
-				options = new Options();
+				options = mDefaultOptions;
 			}
 
 			ImageManagerListener imageManagerListener = getDefaultImageManagerListener(options);
@@ -173,8 +210,7 @@ public class ImageLoader {
 	 * @param url
 	 *            Location of the image on the web.
 	 * @param options
-	 *            If options is set to null, the {@link ImageLoader} will automatically try to optimize the image it returns with the default {@link Options}
-	 *            settings. See the {@link Options} docs for additional details.
+	 *            If options is set to null, the {@link ImageLoader} will use the default options. See the {@link Options} docs for additional details.
 	 * 
 	 * @throws CalledFromWrongThreadException
 	 *             This is thrown if the method is called from off the UI thread.
@@ -188,13 +224,29 @@ public class ImageLoader {
 			}
 
 			if (options == null) {
-				options = new Options();
+				options = mDefaultOptions;
 			}
 
 			ImageManagerListener imageManagerListener = getImageManagerListenerWithCallback(listener, options);
 			performImageRequest(imageView, url, options, imageManagerListener);
 		} else {
 			Log.w(TAG, "WARNING: loadImage was called after the ImageLoader was destroyed.");
+		}
+	}
+
+	/**
+	 * This method will load the selected resource into the {@link ImageView} and cancel any previous requests that have been made with the provided
+	 * {@link ImageView}.
+	 * 
+	 * @param imageView
+	 * @param resourceId
+	 */
+	public void loadImageFromResource(ImageView imageView, int resourceId) {
+		if (!destroyed) {
+			ThreadChecker.throwErrorIfOffUiThread();
+
+			mViewMapper.removeListener(imageView);
+			imageView.setImageResource(resourceId);
 		}
 	}
 
@@ -214,9 +266,10 @@ public class ImageLoader {
 	 * resource file's image, you would call this method.
 	 * 
 	 * @param imageView
+	 * @returns True if an image load was stopped. False on failure.
 	 */
-	public void stopLoadingImage(ImageView imageView) {
-		mViewMapper.removeListener(imageView);
+	public boolean stopLoadingImage(ImageView imageView) {
+		return mViewMapper.removeListener(imageView) != null;
 	}
 
 	/**
@@ -354,20 +407,23 @@ public class ImageLoader {
 	 *            The Options lets us know what scaling information we need to retreive, if any.
 	 * @return Returns the information the imageCacher needs to figure out how to decode the downloaded image.
 	 */
-	private ScalingInfo getScalingInfo(ImageView imageView, final Options options) {
+	public ScalingInfo getScalingInfo(ImageView imageView, final Options options) {
 		ScalingInfo scalingInfo = new ScalingInfo();
 		if (options.overrideSampleSize != null) {
 			scalingInfo.sampleSize = options.overrideSampleSize;
 			return scalingInfo;
 		}
 
+		/*
+		 * FIXME: It appears as though the width and height bound constraints are not being followed exactly. Review this implementation.
+		 */
 		Integer width = options.widthBounds;
 		Integer height = options.heightBounds;
 
 		if (options.useScreenSizeAsBounds) {
-			Point screenSize = DisplayUtility.getDisplaySize(mApplicationContext);
-			width = Math.min(screenSize.x, width == null ? screenSize.x : width);
-			height = Math.min(screenSize.y, height == null ? screenSize.y : height);
+			Dimensions screenSize = DisplayUtility.getDisplaySize(mApplicationContext);
+			width = Math.min(screenSize.getWidth(), width == null ? screenSize.getWidth() : width);
+			height = Math.min(screenSize.getHeight(), height == null ? screenSize.getHeight() : height);
 		}
 
 		if (options.autoDetectBounds) {
@@ -380,7 +436,6 @@ public class ImageLoader {
 				}
 			}
 			if (imageBounds.y != -1) {
-				height = imageBounds.y;
 				if (height == null) {
 					height = imageBounds.y;
 				} else {
@@ -484,8 +539,6 @@ public class ImageLoader {
 	 * This class provides all the options that can be set when making loadImage calls.
 	 * 
 	 * See the Javadocs for the individual fields for more detail.
-	 * 
-	 * @author James Halpern
 	 */
 	public static class Options {
 		/**
