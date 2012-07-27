@@ -115,6 +115,7 @@ public class ImageLoader {
 
 		destroyed = true;
 
+		// TODO: Call "cancel" on the pending listeners.
 		List<ImageManagerListener> listeners = mReferenceManager.removeListenersForKey(mKey);
 		if (listeners != null) {
 			for (ImageManagerListener listener : listeners) {

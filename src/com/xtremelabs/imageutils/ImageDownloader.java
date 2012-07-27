@@ -111,6 +111,9 @@ class ImageDownloader implements ImageNetworkInterface {
 			}
 		}
 
+		/*
+		 * TODO: Use the same HttpClient for all requests.
+		 */
 		public synchronized void executeNetworkRequest() throws ClientProtocolException, IOException {
 			HttpClient client = new DefaultHttpClient();
 			client.getConnectionManager().closeExpiredConnections();
