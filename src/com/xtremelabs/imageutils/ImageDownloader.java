@@ -29,6 +29,8 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.DefaultHttpClient;
 
+import android.util.Log;
+
 class ImageDownloader implements ImageNetworkInterface {
 	@SuppressWarnings("unused")
 	private static final String TAG = "DefaultImageDownloader";
@@ -84,6 +86,8 @@ class ImageDownloader implements ImageNetworkInterface {
 				executeNetworkRequest();
 				passInputStreamToImageLoader();
 			} catch (IOException e) {
+				mFailed = true;
+			} catch (IllegalArgumentException e) {
 				mFailed = true;
 			} finally {
 				try {
