@@ -23,6 +23,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.os.Build;
+import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.widget.ImageView;
@@ -52,7 +53,7 @@ public class ImageLoader {
 	private LifecycleReferenceManager mReferenceManager;
 	private Context mApplicationContext;
 	private Object mKey;
-	private boolean destroyed = false;
+	private boolean mDestroyed = false;
 
 	private Options mDefaultOptions = new Options();
 
@@ -113,7 +114,7 @@ public class ImageLoader {
 	public void destroy() {
 		ThreadChecker.throwErrorIfOffUiThread();
 
-		destroyed = true;
+		mDestroyed = true;
 
 		List<ImageManagerListener> listeners = mReferenceManager.removeListenersForKey(mKey);
 		if (listeners != null) {
@@ -155,11 +156,9 @@ public class ImageLoader {
 	 *             This is thrown if the method is called from off the UI thread.
 	 */
 	public void loadImage(ImageView imageView, String url) {
-		if (!destroyed) {
-			ThreadChecker.throwErrorIfOffUiThread();
-
+		if (!mDestroyed) {
 			ImageManagerListener imageManagerListener = getDefaultImageManagerListener(mDefaultOptions);
-			performImageRequest(imageView, url, mDefaultOptions, imageManagerListener);
+			performImageRequestOnUiThread(imageView, url, mDefaultOptions, imageManagerListener);
 		} else {
 			Log.w(TAG, "WARNING: loadImage was called after the ImageLoader was destroyed.");
 		}
@@ -183,15 +182,13 @@ public class ImageLoader {
 	 *             This is thrown if the method is called from off the UI thread.
 	 */
 	public void loadImage(ImageView imageView, String url, Options options) {
-		if (!destroyed) {
-			ThreadChecker.throwErrorIfOffUiThread();
-
+		if (!mDestroyed) {
 			if (options == null) {
 				options = mDefaultOptions;
 			}
 
 			ImageManagerListener imageManagerListener = getDefaultImageManagerListener(options);
-			performImageRequest(imageView, url, options, imageManagerListener);
+			performImageRequestOnUiThread(imageView, url, options, imageManagerListener);
 		} else {
 			Log.w(TAG, "WARNING: loadImage was called after the ImageLoader was destroyed.");
 		}
@@ -216,9 +213,7 @@ public class ImageLoader {
 	 *             This is thrown if the method is called from off the UI thread.
 	 */
 	public void loadImage(ImageView imageView, String url, Options options, final ImageLoaderListener listener) {
-		if (!destroyed) {
-			ThreadChecker.throwErrorIfOffUiThread();
-
+		if (!mDestroyed) {
 			if (listener == null) {
 				throw new IllegalArgumentException("You cannot pass in a null ImageLoadingListener.");
 			}
@@ -228,7 +223,7 @@ public class ImageLoader {
 			}
 
 			ImageManagerListener imageManagerListener = getImageManagerListenerWithCallback(listener, options);
-			performImageRequest(imageView, url, options, imageManagerListener);
+			performImageRequestOnUiThread(imageView, url, options, imageManagerListener);
 		} else {
 			Log.w(TAG, "WARNING: loadImage was called after the ImageLoader was destroyed.");
 		}
@@ -242,7 +237,7 @@ public class ImageLoader {
 	 * @param resourceId
 	 */
 	public void loadImageFromResource(ImageView imageView, int resourceId) {
-		if (!destroyed) {
+		if (!mDestroyed) {
 			ThreadChecker.throwErrorIfOffUiThread();
 
 			mViewMapper.removeListener(imageView);
@@ -377,6 +372,21 @@ public class ImageLoader {
 		mApplicationContext = applicationContext;
 		mKey = key;
 		mReferenceManager = LifecycleReferenceManager.getInstance(applicationContext);
+	}
+	
+	private void performImageRequestOnUiThread(final ImageView imageView, final String url, final Options options, final ImageManagerListener imageManagerListener) {
+		if (ThreadChecker.isOnUiThread())
+			performImageRequest(imageView, url, options, imageManagerListener);
+		else {
+			new Handler(mApplicationContext.getMainLooper()).post(new Runnable() {
+
+				@Override
+				public void run() {
+					if (!mDestroyed)
+						performImageRequest(imageView, url, options, imageManagerListener);
+				}
+			});
+		}
 	}
 
 	private void performImageRequest(ImageView imageView, String url, Options options, ImageManagerListener imageManagerListener) {
