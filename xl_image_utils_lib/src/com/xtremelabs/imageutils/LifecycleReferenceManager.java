@@ -73,7 +73,7 @@ class LifecycleReferenceManager {
 	 */
 	public void getBitmap(Object key, String url, ImageManagerListener imageManagerListener, ScalingInfo scalingInfo) {
 		if (GeneralUtils.isStringBlank(url)) {
-			imageManagerListener.onLoadImageFailed();
+			imageManagerListener.onLoadImageFailed("Blank url");
 			return;
 		}
 		ImageManagerCacheListener cacheListener = generateRegisteredListener(key, url, imageManagerListener);
@@ -140,7 +140,7 @@ class LifecycleReferenceManager {
 		}
 
 		@Override
-		public void onFailure(String message) {
+		public void onFailure(final String message) {
 			mUiThreadHandler.post(new Runnable() {
 				@Override
 				public void run() {
@@ -150,7 +150,7 @@ class LifecycleReferenceManager {
 					
 					ImageManagerListener listener = mListenerHelper.getAndRemoveListener(ImageManagerCacheListener.this);
 					if (listener != null) {
-						listener.onLoadImageFailed();
+						listener.onLoadImageFailed(message);
 					}
 					
 					if (Logger.isProfiling()) {

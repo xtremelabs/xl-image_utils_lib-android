@@ -84,13 +84,16 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 			@Override
 			public void run() {
 				boolean failed = false;
+				String errorMessage = null;
 				Bitmap bitmap = null;
 				try {
 					bitmap = getBitmapSynchronouslyFromDisk(url, sampleSize);
 				} catch (FileNotFoundException e) {
 					failed = true;
+					errorMessage = "Disk decode failed with error message: " + e.getMessage();
 				} catch (FileFormatException e) {
 					failed = true;
+					errorMessage = "Disk decode failed with error message: " + e.getMessage();
 				}
 				removeRequestFromMap(decodeOperationParameters);
 
@@ -98,7 +101,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 					mImageDecodeObserver.onImageDecoded(bitmap, url, sampleSize, returnedFrom);
 				} else {
 					mDiskManager.deleteFile(encode(url));
-					mImageDecodeObserver.onImageDecodeFailed(url, sampleSize);
+					mImageDecodeObserver.onImageDecodeFailed(url, sampleSize, errorMessage);
 				}
 			}
 		};

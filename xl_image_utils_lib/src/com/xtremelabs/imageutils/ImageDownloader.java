@@ -80,13 +80,16 @@ class ImageDownloader implements ImageNetworkInterface {
 
 		@Override
 		public void run() {
+			String errorMessage = null;
 			try {
 				executeNetworkRequest();
 				passInputStreamToImageLoader();
 			} catch (IOException e) {
 				mFailed = true;
+				errorMessage = "Failed to download image with error message: " + e.getMessage();
 			} catch (IllegalArgumentException e) {
 				mFailed = true;
+				errorMessage = "Failed to download image with error message: " + e.getMessage();
 			} finally {
 				try {
 					if (mEntity != null) {
@@ -101,13 +104,14 @@ class ImageDownloader implements ImageNetworkInterface {
 				} catch (IOException e) {
 				}
 			}
-			checkLoadCompleteAndRemoveListeners();
+			checkLoadCompleteAndRemoveListeners(errorMessage);
 		}
 
-		private synchronized void checkLoadCompleteAndRemoveListeners() {
+		private synchronized void checkLoadCompleteAndRemoveListeners(String errorMessage) {
 			removeUrlFromMap(mUrl);
 			if (mFailed) {
-				mImageDownloadObserver.onImageDownloadFailed(mUrl);
+				assert(errorMessage != null);
+				mImageDownloadObserver.onImageDownloadFailed(mUrl,errorMessage);
 			} else {
 				mImageDownloadObserver.onImageDownloaded(mUrl);
 			}

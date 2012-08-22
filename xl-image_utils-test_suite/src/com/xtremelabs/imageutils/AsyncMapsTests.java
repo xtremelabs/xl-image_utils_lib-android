@@ -2,14 +2,10 @@ package com.xtremelabs.imageutils;
 
 import android.graphics.Bitmap;
 import android.test.ActivityInstrumentationTestCase2;
+import android.util.Log;
 
-import com.xtremelabs.imageutils.AsyncOperationsMaps;
 import com.xtremelabs.imageutils.AsyncOperationsMaps.AsyncOperationState;
-import com.xtremelabs.imageutils.AsyncOperationsObserver;
-import com.xtremelabs.imageutils.DecodeOperationParameters;
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
-import com.xtremelabs.imageutils.ImageReturnedFrom;
-import com.xtremelabs.imageutils.ScalingInfo;
 import com.xtremelabs.testactivity.MainActivity;
 
 public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivity> {
@@ -86,7 +82,7 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 		assertTrue(mMaps.isNetworkRequestPendingForUrl(url));
 		assertFalse(mMaps.isDecodeRequestPendingForUrlAndScalingInfo(url, scalingInfo));
 
-		mMaps.onDownloadFailed(url);
+		mMaps.onDownloadFailed(url, "Forced download failure");
 		assertFalse(mMaps.isNetworkRequestPendingForUrl(url));
 
 		assertTrue(mAsyncPassed);
@@ -159,7 +155,7 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 		assertEquals(mMaps.getNumPendingDownloads(), 1);
 		assertEquals(mMaps.getNumPendingDecodes(), 0);
 
-		mMaps.onDownloadFailed(url);
+		mMaps.onDownloadFailed(url, "Forced download failure");
 		assertFalse(mMaps.isNetworkRequestPendingForUrl(url));
 		assertFalse(mMaps.isDecodeRequestPendingForUrlAndScalingInfo(url, scalingInfo1));
 		assertFalse(mMaps.isDecodeRequestPendingForUrlAndScalingInfo(url, scalingInfo2));
@@ -188,7 +184,7 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 		generateAndValidateNetworkRequest(url, imageCacherListener, scalingInfo);
 		mMaps.cancelPendingRequest(imageCacherListener);
 		assertTrue(mMaps.isNetworkRequestPendingForUrl(url));
-		mMaps.onDownloadFailed(url);
+		mMaps.onDownloadFailed(url, "Forced download failure");
 		assertFalse(mMaps.isNetworkRequestPendingForUrl(url));
 		assertEquals(mMaps.getNumPendingDownloads(), 0);
 		assertEquals(mMaps.getNumPendingDecodes(), 0);
@@ -220,7 +216,7 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 
 		generateAndValidateDecodeRequest(url, imageCacherListener, scalingInfo);
 
-		mMaps.onDecodeFailed(url, scalingInfo.sampleSize);
+		mMaps.onDecodeFailed(url, scalingInfo.sampleSize, "Forced decode failure");
 		assertEquals(mMaps.getNumPendingDownloads(), 0);
 		assertEquals(mMaps.getNumPendingDecodes(), 0);
 		assertFalse(mMaps.isDecodeRequestPendingForUrlAndScalingInfo(url, scalingInfo));
@@ -338,6 +334,7 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 
 			@Override
 			public void onFailure(String message) {
+				Log.d("BlankImageCacherListener", "on failure: " + message);
 			}
 		};
 	}
@@ -351,6 +348,7 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 
 			@Override
 			public void onFailure(String message) {
+				Log.d("PassingImageCacherListener", "on failure: " + message);
 				mAsyncFailed = true;
 			}
 		};
@@ -365,6 +363,7 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 
 			@Override
 			public void onFailure(String message) {
+				Log.d("FailingImageCacherListener", "on failure: " + message);
 				mAsyncPassed = true;
 			}
 		};

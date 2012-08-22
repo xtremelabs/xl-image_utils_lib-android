@@ -113,14 +113,14 @@ public class AsyncOperationsMaps {
 		}
 	}
 
-	public void onDecodeFailed(String url, int sampleSize) {
+	public void onDecodeFailed(String url, int sampleSize, String message) {
 		DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, sampleSize);
 
 		ImageCacherListener imageCacherListener;
 		while ((imageCacherListener = getListenerWaitingOnDecode(decodeOperationParameters)) != null) {
 			synchronized (imageCacherListener) {
 				if (removeQueuedListenerForDecode(decodeOperationParameters, imageCacherListener, true)) {
-					imageCacherListener.onFailure("Disk decode failed.");
+					imageCacherListener.onFailure(message);
 				}
 			}
 		}
@@ -135,12 +135,12 @@ public class AsyncOperationsMaps {
 		}
 	}
 
-	public void onDownloadFailed(String url) {
+	public void onDownloadFailed(String url, String message) {
 		NetworkRequestParameters networkRequestParameters;
 		while ((networkRequestParameters = getListenerWaitingOnDownload(url)) != null) {
 			synchronized (networkRequestParameters.mImageCacherListener) {
 				if (removeQueuedListenerForDownload(networkRequestParameters, true)) {
-					networkRequestParameters.mImageCacherListener.onFailure("Failed to download image.");
+					networkRequestParameters.mImageCacherListener.onFailure(message);
 				}
 			}
 		}

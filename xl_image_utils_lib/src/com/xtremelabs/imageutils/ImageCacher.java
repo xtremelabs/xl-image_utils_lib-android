@@ -256,8 +256,8 @@ public class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, 
 	}
 
 	@Override
-	public void onImageDecodeFailed(String url, int sampleSize) {
-		mAsyncOperationsMap.onDecodeFailed(url, sampleSize);
+	public void onImageDecodeFailed(String url, int sampleSize, String message) {
+		mAsyncOperationsMap.onDecodeFailed(url, sampleSize, message);
 	}
 
 	@Override
@@ -266,8 +266,8 @@ public class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, 
 	}
 
 	@Override
-	public void onImageDownloadFailed(String url) {
-		mAsyncOperationsMap.onDownloadFailed(url);
+	public void onImageDownloadFailed(String url, String message) {
+		mAsyncOperationsMap.onDownloadFailed(url, message);
 	}
 
 	@Override

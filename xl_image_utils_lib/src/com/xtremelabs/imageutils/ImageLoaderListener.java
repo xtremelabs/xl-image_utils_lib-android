@@ -39,5 +39,5 @@ public interface ImageLoaderListener {
 	/**
 	 * Called in the event the bitmap could not be retreived.
 	 */
-	public void onImageLoadError();
+	public void onImageLoadError(String error);
 }

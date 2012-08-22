@@ -151,9 +151,6 @@ public class ImageLoader {
 	 *            The view object that will receive the image requested.
 	 * @param url
 	 *            Location of the image on the web.
-	 * 
-	 * @throws CalledFromWrongThreadException
-	 *             This is thrown if the method is called from off the UI thread.
 	 */
 	public void loadImage(ImageView imageView, String url) {
 		if (!mDestroyed) {
@@ -177,9 +174,6 @@ public class ImageLoader {
 	 *            Location of the image on the web.
 	 * @param options
 	 *            If options is set to null, the {@link ImageLoader} will use the default options. See the {@link Options} docs for additional details.
-	 * 
-	 * @throws CalledFromWrongThreadException
-	 *             This is thrown if the method is called from off the UI thread.
 	 */
 	public void loadImage(ImageView imageView, String url, Options options) {
 		if (!mDestroyed) {
@@ -208,9 +202,6 @@ public class ImageLoader {
 	 *            Location of the image on the web.
 	 * @param options
 	 *            If options is set to null, the {@link ImageLoader} will use the default options. See the {@link Options} docs for additional details.
-	 * 
-	 * @throws CalledFromWrongThreadException
-	 *             This is thrown if the method is called from off the UI thread.
 	 */
 	public void loadImage(ImageView imageView, String url, Options options, final ImageLoaderListener listener) {
 		if (!mDestroyed) {
@@ -235,6 +226,9 @@ public class ImageLoader {
 	 * 
 	 * @param imageView
 	 * @param resourceId
+	 *
+	 * @throws CalledFromWrongThreadException
+	 * 			   This is thrown if the method is called from off the UI thread.
 	 */
 	public void loadImageFromResource(ImageView imageView, int resourceId) {
 		if (!mDestroyed) {
@@ -477,7 +471,7 @@ public class ImageLoader {
 	private ImageManagerListener getDefaultImageManagerListener(final Options options) {
 		return new ImageManagerListener() {
 			@Override
-			public void onLoadImageFailed() {
+			public void onLoadImageFailed(String error) {
 				ImageView imageView = mViewMapper.removeImageView(this);
 				if (imageView != null && options.unsuccessfulLoadResourceId != null) {
 					imageView.setImageResource(options.unsuccessfulLoadResourceId);
@@ -510,12 +504,12 @@ public class ImageLoader {
 	private ImageManagerListener getImageManagerListenerWithCallback(final ImageLoaderListener listener, final Options listenerOptions) {
 		return new ImageManagerListener() {
 			@Override
-			public void onLoadImageFailed() {
+			public void onLoadImageFailed(String error) {
 				ImageView imageView = mViewMapper.removeImageView(this);
 				if (imageView != null && listenerOptions.unsuccessfulLoadResourceId != null) {
 					imageView.setImageResource(listenerOptions.unsuccessfulLoadResourceId);
 				}
-				listener.onImageLoadError();
+				listener.onImageLoadError(error);
 			}
 
 			@Override
@@ -536,7 +530,7 @@ public class ImageLoader {
 	private ImageManagerListener getBlankImageManagerListener() {
 		return new ImageManagerListener() {
 			@Override
-			public void onLoadImageFailed() {
+			public void onLoadImageFailed(String error) {
 			}
 
 			@Override

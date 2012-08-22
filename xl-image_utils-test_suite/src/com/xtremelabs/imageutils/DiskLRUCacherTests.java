@@ -22,7 +22,7 @@ public class DiskLRUCacherTests extends ActivityInstrumentationTestCase2<MainAct
 			}
 			
 			@Override
-			public void onImageDecodeFailed(String url, int sampleSize) {
+			public void onImageDecodeFailed(String url, int sampleSize, String error) {
 			}
 		});
 	}
