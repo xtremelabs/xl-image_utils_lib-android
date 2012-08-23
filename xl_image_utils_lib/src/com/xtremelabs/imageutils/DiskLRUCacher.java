@@ -226,23 +226,21 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		return sampleSize;
 	}
 
-	private void clearLeastUsedFilesInCache() throws NullLRUException {
+	private synchronized void clearLeastUsedFilesInCache() throws NullLRUException {
 		Log.d("clearLeastUsed", "Total size: " + mDatabaseHelper.getTotalSizeOnDisk() + " Maximum cache size: " + mMaximumCacheSizeInBytes);
 		while (mDatabaseHelper.getTotalSizeOnDisk() > mMaximumCacheSizeInBytes) {
 			FileEntry fileEntry = mDatabaseHelper.getLRU();
 
-			synchronized (this) {
-				if (fileEntry != null) {
-					String url = fileEntry.getUrl();
-					mDiskManager.deleteFile(encode(url));
-					mDatabaseHelper.removeFile(url);
-					mCachedImagesMap.removeDimensions(url);
-				} else {
-					mDiskManager.clearDirectory();
-					mDatabaseHelper.clearFiles();
-					mCachedImagesMap.clearDimensions();
-					throw new NullLRUException();
-				}
+			if (fileEntry != null) {
+				String url = fileEntry.getUrl();
+				mDiskManager.deleteFile(encode(url));
+				mDatabaseHelper.removeFile(url);
+				mCachedImagesMap.removeDimensions(url);
+			} else {
+				mDiskManager.clearDirectory();
+				mDatabaseHelper.clearFiles();
+				mCachedImagesMap.clearDimensions();
+				throw new NullLRUException();
 			}
 		}
 	}
