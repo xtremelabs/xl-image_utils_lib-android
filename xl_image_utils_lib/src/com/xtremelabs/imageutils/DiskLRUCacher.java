@@ -26,11 +26,12 @@ import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
 
-import com.xtremelabs.imageutils.DiskDatabaseHelper.DiskDatabaseHelperObserver;
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Log;
+
+import com.xtremelabs.imageutils.DiskDatabaseHelper.DiskDatabaseHelperObserver;
 
 public class DiskLRUCacher implements ImageDiskCacherInterface {
 	private long mMaximumCacheSizeInBytes = 30 * 1024 * 1024; // 30MB
@@ -112,13 +113,24 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public void downloadImageFromInputStream(String url, InputStream inputStream) throws IOException {
+	public void downloadImageFromInputStream(String url, InputStream inputStream) throws IOException, NullLRUException {
+		addImageToDisk(url, inputStream);
+
+		try {
+			clearLeastUsedFilesInCache();
+		} catch (NullLRUException e) {
+			e.printStackTrace();
+			addImageToDisk(url, inputStream);
+			throw e;
+		}
+	}
+
+	public synchronized void addImageToDisk(String url, InputStream inputStream) throws IOException, FileNotFoundException {
 		mDiskManager.loadStreamToFile(inputStream, encode(url));
 		File file = mDiskManager.getFile(encode(url));
 		Dimensions dimensions = getImageDimensionsFromDisk(url);
 		mCachedImagesMap.putDimensions(url, dimensions);
 		mDatabaseHelper.addOrUpdateFile(url, file.length(), dimensions.getWidth(), dimensions.getHeight());
-		clearLeastUsedFilesInCache();
 	}
 
 	@Override
@@ -137,7 +149,12 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	@Override
 	public void setDiskCacheSize(long sizeInBytes) {
 		mMaximumCacheSizeInBytes = sizeInBytes;
-		clearLeastUsedFilesInCache();
+
+		try {
+			clearLeastUsedFilesInCache();
+		} catch (NullLRUException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -209,12 +226,24 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		return sampleSize;
 	}
 
-	private void clearLeastUsedFilesInCache() {
+	private void clearLeastUsedFilesInCache() throws NullLRUException {
+		Log.d("clearLeastUsed", "Total size: " + mDatabaseHelper.getTotalSizeOnDisk() + " Maximum cache size: " + mMaximumCacheSizeInBytes);
 		while (mDatabaseHelper.getTotalSizeOnDisk() > mMaximumCacheSizeInBytes) {
-			String url = mDatabaseHelper.getLRU().getUrl();
-			mDiskManager.deleteFile(encode(url));
-			mDatabaseHelper.removeFile(url);
-			mCachedImagesMap.removeDimensions(url);
+			FileEntry fileEntry = mDatabaseHelper.getLRU();
+
+			synchronized (this) {
+				if (fileEntry != null) {
+					String url = fileEntry.getUrl();
+					mDiskManager.deleteFile(encode(url));
+					mDatabaseHelper.removeFile(url);
+					mCachedImagesMap.removeDimensions(url);
+				} else {
+					mDiskManager.clearDirectory();
+					mDatabaseHelper.clearFiles();
+					mCachedImagesMap.clearDimensions();
+					throw new NullLRUException();
+				}
+			}
 		}
 	}
 
@@ -250,6 +279,16 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		 * 
 		 */
 		private static final long serialVersionUID = -2180782787028503586L;
+	}
+
+	public static class NullLRUException extends Exception {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -1623248970948372548L;
+		public NullLRUException () {
+			super("Tried to clear least used files in cache; returned LRU was null. This is a fairly serious issue, please tell the maintainer.");
+		}
 	}
 
 	@Override

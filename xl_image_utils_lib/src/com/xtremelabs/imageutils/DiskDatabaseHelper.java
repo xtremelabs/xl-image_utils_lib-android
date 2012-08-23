@@ -117,6 +117,11 @@ public class DiskDatabaseHelper extends SQLiteOpenHelper {
 		return 1 == getWritableDatabase().delete(DICTIONARY_TABLE_NAME, columns[0] + " = ?", args);
 	}
 
+	public boolean clearFiles() {
+		mDatabaseCache = new DatabaseCache();
+		return 1 == getWritableDatabase().delete(DICTIONARY_TABLE_NAME, null, null);
+	}
+
 	/*
 	 * TODO: Have the LRU information cached in memory. The database updates can take time.
 	 */
@@ -157,15 +162,6 @@ public class DiskDatabaseHelper extends SQLiteOpenHelper {
 	}
 
 	public FileEntry getLRU() {
-//		Cursor cursor = getReadableDatabase().rawQuery(
-//				"SELECT * FROM " + DICTIONARY_TABLE_NAME + " WHERE " + columns[4] + " = (SELECT min(" + columns[4] + ") AS min FROM " + DICTIONARY_TABLE_NAME
-//						+ ")", null);
-//		if (cursor.getCount() == 0) {
-//			return null;
-//		}
-//		cursor.moveToFirst();
-//		FileEntry entry = createFileEntry(cursor);
-//		cursor.close();
 		return getFileEntry(mDatabaseCache.getLRU());
 	}
 

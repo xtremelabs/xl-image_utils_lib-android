@@ -33,6 +33,10 @@ class CachedImagesMap {
 		imageDimensionsMap.remove(url);
 	}
 	
+	public synchronized void clearDimensions() {
+		imageDimensionsMap.clear();
+	}
+
 	public synchronized boolean isCached(String url) {
 		return imageDimensionsMap.containsKey(url);
 	}

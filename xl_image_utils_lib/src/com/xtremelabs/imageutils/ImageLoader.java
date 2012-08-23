@@ -239,8 +239,6 @@ public class ImageLoader {
 		}
 	}
 
-	// TODO: Make an API call that will load the bitmap into place with an animation
-
 	// TODO: Have a load image call that accepts a resource ID rather than making the user stop the load manually.
 
 	// TODO: Return a boolean indicating whether an image load was actually stopped.

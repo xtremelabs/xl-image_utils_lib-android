@@ -19,6 +19,8 @@ package com.xtremelabs.imageutils;
 import java.io.IOException;
 import java.io.InputStream;
 
+import com.xtremelabs.imageutils.DiskLRUCacher.NullLRUException;
+
 interface NetworkToDiskInterface {
-	public void downloadImageFromInputStream(String url, InputStream inputStream) throws IOException;
+	public void downloadImageFromInputStream(String url, InputStream inputStream) throws IOException, NullLRUException;
 }

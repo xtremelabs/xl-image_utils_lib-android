@@ -29,6 +29,8 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.DefaultHttpClient;
 
+import com.xtremelabs.imageutils.DiskLRUCacher.NullLRUException;
+
 class ImageDownloader implements ImageNetworkInterface {
 	@SuppressWarnings("unused")
 	private static final String TAG = "DefaultImageDownloader";
@@ -37,9 +39,7 @@ class ImageDownloader implements ImageNetworkInterface {
 	private ImageDownloadObserver mImageDownloadObserver;
 	private HashMap<String, ImageDownloadingRunnable> mUrlToRunnableMap = new HashMap<String, ImageDownloadingRunnable>();
 
-	/*
-	 * TODO: Research into lowering the number of available threads for the network
-	 */
+	// Tested for optimal thread number - 3
 	private LifoThreadPool mThreadPool = new LifoThreadPool(3);
 
 	public ImageDownloader(NetworkToDiskInterface networkToDiskInterface, ImageDownloadObserver imageDownloadObserver) {
@@ -90,6 +90,9 @@ class ImageDownloader implements ImageNetworkInterface {
 			} catch (IllegalArgumentException e) {
 				mFailed = true;
 				errorMessage = "Failed to download image with error message: " + e.getMessage();
+			} catch (NullLRUException e) {
+				mFailed = true;
+				errorMessage = "Failed to load image because the disk was in an inconsistent state when trying to clean up old items from the cache - the cache has now been completely cleared.";
 			} finally {
 				try {
 					if (mEntity != null) {
@@ -132,7 +135,7 @@ class ImageDownloader implements ImageNetworkInterface {
 			client.getConnectionManager().closeExpiredConnections();
 		}
 
-		public void passInputStreamToImageLoader() throws IOException {
+		public void passInputStreamToImageLoader() throws IOException, NullLRUException {
 			if (mInputStream != null) {
 				mNetworkToDiskInterface.downloadImageFromInputStream(mUrl, mInputStream);
 			}

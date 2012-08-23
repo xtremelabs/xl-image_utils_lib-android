@@ -22,7 +22,6 @@ import java.util.NoSuchElementException;
 
 import android.graphics.Bitmap;
 
-// TODO: Research into using the official Android LRU.
 class SizeEstimatingMemoryLRUCacher implements ImageMemoryCacherInterface {
 	private long mMaximumSizeInBytes = 6 * 1024 * 1024; // 6MB default
 	private long mSize = 0;
