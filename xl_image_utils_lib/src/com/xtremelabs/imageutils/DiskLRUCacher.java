@@ -209,7 +209,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		return sampleSize;
 	}
 
-	private void clearLeastUsedFilesInCache() {
+	private synchronized void clearLeastUsedFilesInCache() {
 		while (mDatabaseHelper.getTotalSizeOnDisk() > mMaximumCacheSizeInBytes) {
 			String url = mDatabaseHelper.getLRU().getUrl();
 			mDiskManager.deleteFile(encode(url));
