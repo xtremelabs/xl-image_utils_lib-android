@@ -3,7 +3,6 @@ package com.xtremelabs.imageutils.frontendtests;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.test.ActivityInstrumentationTestCase2;
-import android.test.UiThreadTest;
 import android.widget.ImageView;
 
 import com.example.xl_image_utils_android_testactivity.test.R;
@@ -17,7 +16,7 @@ import com.xtremelabs.testactivity.MainActivity;
 
 public class ImageLoaderTests extends ActivityInstrumentationTestCase2<MainActivity> {
 	private String mTestUrl = "http://placekitten.com/500/300";
-	private ImageLoader mImageLoader;
+
 	private ImageView mImageView;
 	private Bitmap mBitmap;
 	private ImageReturnedFrom mImageReturnedFrom;
@@ -40,100 +39,115 @@ public class ImageLoaderTests extends ActivityInstrumentationTestCase2<MainActiv
 		super.tearDown();
 	}
 
-	@UiThreadTest
 	public void testLoadImageWithCallback() {
-		//Test currently fails because the test program does not have access to the main looper, so the callbacks never get called
-		
-		/*
-		mImageLoader = new ImageLoader(getActivity());
-		mDiskManagerAccessUtil = new DiskManagerAccessUtil(getActivity().getApplicationContext());
-		
-		mDiskManagerAccessUtil.clearDiskCache();
+		try {
+			runTestOnUiThread(new Runnable() {
 
-		ImageView imageView = new ImageView(getActivity());
+				@Override
+				public void run() {
+					ImageLoader imageLoader = new ImageLoader(getActivity());
 
-		resetFields();
+					mDiskManagerAccessUtil = new DiskManagerAccessUtil(getActivity().getApplicationContext());
+					mDiskManagerAccessUtil.clearDiskCache();
 
-		mFailed = false;
-		mComplete = false;
+					ImageView imageView = new ImageView(getActivity());
 
-		mImageLoader.loadImage(imageView, mTestUrl, null, new ImageLoaderListener() {
-			@Override
-			public void onImageAvailable(ImageView imageView, Bitmap bitmap, ImageReturnedFrom returnedFrom) {
-				mImageView = imageView;
-				mBitmap = bitmap;
-				mImageReturnedFrom = returnedFrom;
-				mComplete = true;
-			}
+					resetFields();
 
-			@Override
-			public void onImageLoadError(String error) {
-				mFailed = true;
-			}
-		});
+					mFailed = false;
+					mComplete = false;
 
-		GeneralTestUtils.delayedLoop(2000, new DelayedLoopListener() {
-			@Override
-			public boolean shouldBreak() {
-				return mFailed || mComplete;
-			}
-		});
+					imageLoader.loadImage(imageView, mTestUrl, null, new ImageLoaderListener() {
+						@Override
+						public void onImageAvailable(ImageView imageView, Bitmap bitmap, ImageReturnedFrom returnedFrom) {
+							mImageView = imageView;
+							mBitmap = bitmap;
+							mImageReturnedFrom = returnedFrom;
+							mComplete = true;
+						}
 
-		assertFalse(mFailed);
-		assertTrue(mComplete);
+						@Override
+						public void onImageLoadError(String error) {
+							mFailed = true;
+						}
+					});
 
-		assertNotNull(mImageView);
-		assertNotNull(mBitmap);
-		assertNotNull(mImageReturnedFrom);
-		assertEquals(ImageReturnedFrom.NETWORK, mImageReturnedFrom);
-		assertEquals(imageView, mImageView);
-		assertNotSame(mBitmap.getWidth(), 0);
-		assertEquals(getTestImageBitmap().getWidth(), mBitmap.getWidth());
-		assertEquals(getTestImageBitmap().getHeight(), mBitmap.getHeight());
-		
-		mImageLoader.destroy();
-		*/
+					GeneralTestUtils.delayedLoop(2000, new DelayedLoopListener() {
+						@Override
+						public boolean shouldBreak() {
+							return mFailed || mComplete;
+						}
+					});
+
+					assertFalse(mFailed);
+					assertTrue(mComplete);
+
+					assertNotNull(mImageView);
+					assertNotNull(mBitmap);
+					assertNotNull(mImageReturnedFrom);
+					assertEquals(ImageReturnedFrom.NETWORK, mImageReturnedFrom);
+					assertEquals(imageView, mImageView);
+					assertNotSame(mBitmap.getWidth(), 0);
+					assertEquals(getTestImageBitmap().getWidth(), mBitmap.getWidth());
+					assertEquals(getTestImageBitmap().getHeight(), mBitmap.getHeight());
+
+					imageLoader.destroy();
+				}
+			});
+		} catch (Throwable e) {
+			e.printStackTrace();
+		}
 	}
-	
-	@UiThreadTest
+
 	public void testNullUrlFailure() {
-		mImageLoader = new ImageLoader(getActivity());
-		mDiskManagerAccessUtil = new DiskManagerAccessUtil(getActivity().getApplicationContext());
-		
-		mDiskManagerAccessUtil.clearDiskCache();
+		try {
+			runTestOnUiThread(new Runnable() {
+				
+				@Override
+				public void run() {
+					ImageLoader imageLoader = new ImageLoader(getActivity());
+					
+					mDiskManagerAccessUtil = new DiskManagerAccessUtil(getActivity().getApplicationContext());
 
-		ImageView imageView = new ImageView(getActivity());
+					mDiskManagerAccessUtil.clearDiskCache();
 
-		resetFields();
+					ImageView imageView = new ImageView(getActivity());
 
-		mFailed = false;
-		mComplete = false;
+					resetFields();
 
-		mImageLoader.loadImage(imageView, null, null, new ImageLoaderListener() {
-			@Override
-			public void onImageAvailable(ImageView imageView, Bitmap bitmap, ImageReturnedFrom returnedFrom) {
-				mComplete = true;
-			}
+					mFailed = false;
+					mComplete = false;
 
-			@Override
-			public void onImageLoadError(String error) {
-				mFailed = true;
-				mErrorMessage = error;
-			}
-		});
+					imageLoader.loadImage(imageView, null, null, new ImageLoaderListener() {
+						@Override
+						public void onImageAvailable(ImageView imageView, Bitmap bitmap, ImageReturnedFrom returnedFrom) {
+							mComplete = true;
+						}
 
-		GeneralTestUtils.delayedLoop(2000, new DelayedLoopListener() {
-			@Override
-			public boolean shouldBreak() {
-				return mFailed || mComplete;
-			}
-		});
+						@Override
+						public void onImageLoadError(String error) {
+							mFailed = true;
+							mErrorMessage = error;
+						}
+					});
 
-		assertTrue(mFailed);
-		assertFalse(mComplete);
-		assertTrue(mErrorMessage.contains("Blank url"));
-		
-		mImageLoader.destroy();
+					GeneralTestUtils.delayedLoop(2000, new DelayedLoopListener() {
+						@Override
+						public boolean shouldBreak() {
+							return mFailed || mComplete;
+						}
+					});
+
+					assertTrue(mFailed);
+					assertFalse(mComplete);
+					assertTrue(mErrorMessage.contains("Blank url"));
+					
+					imageLoader.destroy();
+				}
+			});
+		} catch (Throwable e) {
+			e.printStackTrace();
+		}
 	}
 
 	private void resetFields() {

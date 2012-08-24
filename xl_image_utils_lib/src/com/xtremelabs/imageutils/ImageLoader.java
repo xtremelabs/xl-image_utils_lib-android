@@ -456,7 +456,6 @@ public class ImageLoader {
 	private void mapImageView(ImageView view, ImageManagerListener listener) {
 		ImageManagerListener oldListener = mViewMapper.removeListener(view);
 		if (oldListener != null) {
-			// FIXME: Get the cancel call working!
 			mReferenceManager.cancelRequest(oldListener);
 		}
 		mViewMapper.registerImageViewToListener(view, listener);
