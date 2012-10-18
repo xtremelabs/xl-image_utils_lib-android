@@ -33,14 +33,14 @@ class ImageDownloader implements ImageNetworkInterface {
 	@SuppressWarnings("unused")
 	private static final String TAG = "DefaultImageDownloader";
 
-	private NetworkToDiskInterface mNetworkToDiskInterface;
-	private ImageDownloadObserver mImageDownloadObserver;
-	private HashMap<String, ImageDownloadingRunnable> mUrlToRunnableMap = new HashMap<String, ImageDownloadingRunnable>();
+	private final NetworkToDiskInterface mNetworkToDiskInterface;
+	private final ImageDownloadObserver mImageDownloadObserver;
+	private final HashMap<RequestIdentifier, ImageDownloadingRunnable> mRequestIdentifierToRunnableMap = new HashMap<RequestIdentifier, ImageDownloadingRunnable>();
 
 	/*
 	 * TODO: Research into lowering the number of available threads for the network
 	 */
-	private LifoThreadPool mThreadPool = new LifoThreadPool(3);
+	private final LifoThreadPool mThreadPool = new LifoThreadPool(3);
 
 	public ImageDownloader(NetworkToDiskInterface networkToDiskInterface, ImageDownloadObserver imageDownloadObserver) {
 		mNetworkToDiskInterface = networkToDiskInterface;
@@ -48,34 +48,34 @@ class ImageDownloader implements ImageNetworkInterface {
 	}
 
 	@Override
-	public synchronized void bump(String url) {
-		ImageDownloadingRunnable runnable = mUrlToRunnableMap.get(url);
+	public synchronized void bump(RequestIdentifier requestIdentifier) {
+		ImageDownloadingRunnable runnable = mRequestIdentifierToRunnableMap.get(requestIdentifier);
 		if (runnable != null) {
 			mThreadPool.bump(runnable);
 		}
 	}
 
 	@Override
-	public synchronized void downloadImageToDisk(final String url) {
-		ImageDownloadingRunnable runnable = new ImageDownloadingRunnable(url);
-		if (!mUrlToRunnableMap.containsKey(url)) {
-			mUrlToRunnableMap.put(url, runnable);
+	public synchronized void downloadImageToDisk(final RequestIdentifier requestIdentifier) {
+		ImageDownloadingRunnable runnable = new ImageDownloadingRunnable(requestIdentifier);
+		if (!mRequestIdentifierToRunnableMap.containsKey(requestIdentifier)) {
+			mRequestIdentifierToRunnableMap.put(requestIdentifier, runnable);
 			mThreadPool.execute(runnable);
 		}
 	}
-	
-	private synchronized void removeUrlFromMap(String url) {
-		mUrlToRunnableMap.remove(url);
+
+	private synchronized void removeUrlFromMap(RequestIdentifier requestIdentifier) {
+		mRequestIdentifierToRunnableMap.remove(requestIdentifier);
 	}
 
 	class ImageDownloadingRunnable implements Runnable {
-		private String mUrl;
+		private final RequestIdentifier mRequestIdentifier;
 		private boolean mFailed = false;
 		private InputStream mInputStream = null;
 		private HttpEntity mEntity;
 
-		public ImageDownloadingRunnable(String url) {
-			mUrl = url;
+		public ImageDownloadingRunnable(RequestIdentifier requestIdentifier) {
+			mRequestIdentifier = requestIdentifier;
 		}
 
 		@Override
@@ -108,19 +108,19 @@ class ImageDownloader implements ImageNetworkInterface {
 		}
 
 		private synchronized void checkLoadCompleteAndRemoveListeners(String errorMessage) {
-			removeUrlFromMap(mUrl);
+			removeUrlFromMap(mRequestIdentifier);
 			if (mFailed) {
-				assert(errorMessage != null);
-				mImageDownloadObserver.onImageDownloadFailed(mUrl,errorMessage);
+				assert (errorMessage != null);
+				mImageDownloadObserver.onImageDownloadFailed(mRequestIdentifier, errorMessage);
 			} else {
-				mImageDownloadObserver.onImageDownloaded(mUrl);
+				mImageDownloadObserver.onImageDownloaded(mRequestIdentifier);
 			}
 		}
 
 		public synchronized void executeNetworkRequest() throws ClientProtocolException, IOException {
 			HttpClient client = new DefaultHttpClient();
 			client.getConnectionManager().closeExpiredConnections();
-			HttpUriRequest request = new HttpGet(mUrl);
+			HttpUriRequest request = new HttpGet(mRequestIdentifier.getUrlOrFilename());
 			HttpResponse response = client.execute(request);
 			mEntity = response.getEntity();
 			if (mEntity != null) {
@@ -134,13 +134,13 @@ class ImageDownloader implements ImageNetworkInterface {
 
 		public void passInputStreamToImageLoader() throws IOException {
 			if (mInputStream != null) {
-				mNetworkToDiskInterface.downloadImageFromInputStream(mUrl, mInputStream);
+				mNetworkToDiskInterface.downloadImageFromInputStream(mRequestIdentifier, mInputStream);
 			}
 		}
 	}
 
 	@Override
-	public synchronized boolean isNetworkRequestPendingForUrl(String url) {
-		return mUrlToRunnableMap.containsKey(url);
+	public synchronized boolean isNetworkRequestPendingForUrl(RequestIdentifier requestIdentifier) {
+		return mRequestIdentifierToRunnableMap.containsKey(requestIdentifier);
 	}
 }

@@ -26,48 +26,52 @@ import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
 
-import com.xtremelabs.imageutils.DiskDatabaseHelper.DiskDatabaseHelperObserver;
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
+import com.xtremelabs.imageutils.DiskDatabaseHelper.DiskDatabaseHelperObserver;
+
 public class DiskLRUCacher implements ImageDiskCacherInterface {
 	private long mMaximumCacheSizeInBytes = 30 * 1024 * 1024; // 30MB
-	private DiskManager mDiskManager;
-	private DiskDatabaseHelper mDatabaseHelper;
-	private ImageDecodeObserver mImageDecodeObserver;
-	private CachedImagesMap mCachedImagesMap = new CachedImagesMap();
-	private HashMap<DecodeOperationParameters, Runnable> mRequestToRunnableMap = new HashMap<DecodeOperationParameters, Runnable>();
+	private final DiskLRUFilesManager mDiskLRUManager;
+	private final PermanentStorageDiskManager mPermanentStorageDiskManager;
+	private final DiskDatabaseHelper mDatabaseHelper;
+	private final ImageDecodeObserver mImageDecodeObserver;
+	private final CachedImagesMap mCachedImagesMap = new CachedImagesMap();
+	private final HashMap<DecodeOperationParameters, Runnable> mRequestToRunnableMap = new HashMap<DecodeOperationParameters, Runnable>();
 
 	/*
 	 * WARNING: Increasing the number of threads for image decoding will lag the UI thread.
 	 * 
 	 * It is highly recommended to leave the number of decode threads at one. Increasing this number too high will cause performance problems.
 	 */
-	private LifoThreadPool mThreadPool = new LifoThreadPool(1);
+	private final LifoThreadPool mThreadPool = new LifoThreadPool(1);
 
-	public DiskLRUCacher(Context appContext, ImageDecodeObserver imageDecodeObserver) {
-		mDiskManager = new DiskManager("img", appContext);
-		mDatabaseHelper = new DiskDatabaseHelper(appContext, mDiskDatabaseHelperObserver);
+	public DiskLRUCacher(Context applicationContext, ImageDecodeObserver imageDecodeObserver) {
 		mImageDecodeObserver = imageDecodeObserver;
+
+		mDiskLRUManager = new DiskLRUFilesManager("img", applicationContext);
+		mPermanentStorageDiskManager = new PermanentStorageDiskManager(applicationContext);
+
+		mDatabaseHelper = new DiskDatabaseHelper(applicationContext, mDiskDatabaseHelperObserver);
 
 		List<FileEntry> entries = mDatabaseHelper.getAllEntries();
 		for (FileEntry entry : entries) {
-			if (mDiskManager.isOnDisk(encode(entry.getUrl()))) {
+			if (mDiskLRUManager.isOnDisk(encode(entry.getUrl()))) {
 				mCachedImagesMap.putDimensions(entry.getUrl(), entry.getDimensions());
 			}
 		}
 	}
 
 	@Override
-	public boolean isCached(String url) {
-		return mCachedImagesMap.isCached(url);
+	public boolean isCached(RequestIdentifier requestIdentifier) {
+		return mCachedImagesMap.isCached(requestIdentifier);
 	}
 
 	@Override
-	public int getSampleSize(String url, Integer width, Integer height) {
-		Dimensions dimensions = getImageDimensions(url);
+	public int getSampleSize(RequestIdentifier requestIdentifier, Integer width, Integer height) {
+		Dimensions dimensions = getImageDimensions(requestIdentifier);
 		if (dimensions == null) {
 			return -1;
 		}
@@ -76,9 +80,8 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public void getBitmapAsynchronouslyFromDisk(final String url, final int sampleSize, final ImageReturnedFrom returnedFrom,
-			final boolean noPreviousNetworkRequest) {
-		final DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, sampleSize);
+	public void getBitmapAsynchronouslyFromDisk(final RequestIdentifier requestIdentifier, final int sampleSize, final ImageReturnedFrom returnedFrom, final boolean noPreviousNetworkRequest) {
+		final DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(requestIdentifier, sampleSize);
 
 		Runnable runnable = new Runnable() {
 			@Override
@@ -87,7 +90,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 				String errorMessage = null;
 				Bitmap bitmap = null;
 				try {
-					bitmap = getBitmapSynchronouslyFromDisk(url, sampleSize);
+					bitmap = getBitmapSynchronouslyFromDisk(requestIdentifier, sampleSize);
 				} catch (FileNotFoundException e) {
 					failed = true;
 					errorMessage = "Disk decode failed with error message: " + e.getMessage();
@@ -98,10 +101,10 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 				removeRequestFromMap(decodeOperationParameters);
 
 				if (!failed) {
-					mImageDecodeObserver.onImageDecoded(bitmap, url, sampleSize, returnedFrom);
+					mImageDecodeObserver.onImageDecoded(bitmap, requestIdentifier, sampleSize, returnedFrom);
 				} else {
-					mDiskManager.deleteFile(encode(url));
-					mImageDecodeObserver.onImageDecodeFailed(url, sampleSize, errorMessage);
+					mDiskLRUManager.deleteFile(encode(requestIdentifier));
+					mImageDecodeObserver.onImageDecodeFailed(requestIdentifier, sampleSize, errorMessage);
 				}
 			}
 		};
@@ -112,23 +115,23 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public void downloadImageFromInputStream(String url, InputStream inputStream) throws IOException {
-		mDiskManager.loadStreamToFile(inputStream, encode(url));
-		File file = mDiskManager.getFile(encode(url));
-		Dimensions dimensions = getImageDimensionsFromDisk(url);
-		mCachedImagesMap.putDimensions(url, dimensions);
-		mDatabaseHelper.addOrUpdateFile(url, file.length(), dimensions.getWidth(), dimensions.getHeight());
+	public void downloadImageFromInputStream(RequestIdentifier requestIdentifier, InputStream inputStream) throws IOException {
+		mDiskLRUManager.loadStreamToFile(inputStream, encode(requestIdentifier));
+		File file = mDiskLRUManager.getFile(encode(requestIdentifier));
+		Dimensions dimensions = getImageDimensionsFromDisk(requestIdentifier);
+		mCachedImagesMap.putDimensions(requestIdentifier, dimensions);
+		mDatabaseHelper.addOrUpdateFile(requestIdentifier, file.length(), dimensions.getWidth(), dimensions.getHeight());
 		clearLeastUsedFilesInCache();
 	}
 
 	@Override
-	public void bumpOnDisk(String url) {
-		mDatabaseHelper.updateFile(url);
+	public void bumpOnDisk(RequestIdentifier requestIdentifier) {
+		mDatabaseHelper.updateFile(requestIdentifier);
 	}
 
 	@Override
-	public void bumpInQueue(String url, int sampleSize) {
-		DecodeOperationParameters parameters = new DecodeOperationParameters(url, sampleSize);
+	public void bumpInStack(RequestIdentifier requestIdentifier, int sampleSize) {
+		DecodeOperationParameters parameters = new DecodeOperationParameters(requestIdentifier, sampleSize);
 		synchronized (mRequestToRunnableMap) {
 			mThreadPool.bump(mRequestToRunnableMap.get(parameters));
 		}
@@ -141,8 +144,8 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public Dimensions getImageDimensions(String url) {
-		Dimensions dimensions = mCachedImagesMap.getImageDimensions(url);
+	public Dimensions getImageDimensions(RequestIdentifier requestIdentifier) {
+		Dimensions dimensions = mCachedImagesMap.getImageDimensions(requestIdentifier);
 		return dimensions;
 	}
 
@@ -163,8 +166,8 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		}
 	}
 
-	private Bitmap getBitmapSynchronouslyFromDisk(String url, int sampleSize) throws FileNotFoundException, FileFormatException {
-		File file = getFile(url);
+	private Bitmap getBitmapSynchronouslyFromDisk(RequestIdentifier requestIdentifier, int sampleSize) throws FileNotFoundException, FileFormatException {
+		File file = getFile(requestIdentifier);
 		FileInputStream fileInputStream = null;
 		fileInputStream = new FileInputStream(file);
 		BitmapFactory.Options opts = new BitmapFactory.Options();
@@ -185,8 +188,8 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	}
 
 	/**
-	 * This calculates the sample size be dividing the width and the height until the first point at which information is lost. Then, it takes one step back and
-	 * returns the last sample size that did not lead to any loss of information.
+	 * This calculates the sample size be dividing the width and the height until the first point at which information is lost. Then, it takes one step back and returns the last sample size that did not lead to any loss
+	 * of information.
 	 * 
 	 * @param width
 	 *            The image will not be scaled down to be smaller than this width. Null for no scaling by width.
@@ -211,30 +214,30 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 
 	private synchronized void clearLeastUsedFilesInCache() {
 		while (mDatabaseHelper.getTotalSizeOnDisk() > mMaximumCacheSizeInBytes) {
-			String url = mDatabaseHelper.getLRU().getUrl();
-			mDiskManager.deleteFile(encode(url));
-			mDatabaseHelper.removeFile(url);
-			mCachedImagesMap.removeDimensions(url);
+			RequestIdentifier requestIdentifier = mDatabaseHelper.getLRU().getUrl();
+			mDiskLRUManager.deleteFile(encode(requestIdentifier));
+			mDatabaseHelper.removeFile(requestIdentifier);
+			mCachedImagesMap.removeDimensions(requestIdentifier);
 		}
 	}
 
-	private File getFile(String url) {
-		return mDiskManager.getFile(encode(url));
+	private File getFile(RequestIdentifier requestIdentifier) {
+		return mDiskLRUManager.getFile(encode(requestIdentifier));
 	}
 
-	private String encode(String url) {
+	private String encode(RequestIdentifier requestIdentifier) {
 		try {
-			return URLEncoder.encode(url, "UTF-8");
+			return URLEncoder.encode(requestIdentifier, "UTF-8");
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
 		return null;
 	}
 
-	private Dimensions getImageDimensionsFromDisk(String url) throws FileNotFoundException {
+	private Dimensions getImageDimensionsFromDisk(RequestIdentifier requestIdentifier) throws FileNotFoundException {
 		try {
 			FileInputStream fileInputStream;
-			fileInputStream = new FileInputStream(getFile(url));
+			fileInputStream = new FileInputStream(getFile(requestIdentifier));
 			BitmapFactory.Options o = new BitmapFactory.Options();
 			o.inJustDecodeBounds = true;
 			BitmapFactory.decodeStream(fileInputStream, null, o);
@@ -257,10 +260,10 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		return mRequestToRunnableMap.containsKey(decodeOperationParameters);
 	}
 
-	private DiskDatabaseHelperObserver mDiskDatabaseHelperObserver = new DiskDatabaseHelperObserver() {
+	private final DiskDatabaseHelperObserver mDiskDatabaseHelperObserver = new DiskDatabaseHelperObserver() {
 		@Override
 		public void onDatabaseWiped() {
-			mDiskManager.clearDirectory();
+			mDiskLRUManager.clearDirectory();
 		}
 	};
 }

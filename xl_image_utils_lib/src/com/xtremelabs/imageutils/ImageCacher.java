@@ -19,13 +19,11 @@ package com.xtremelabs.imageutils;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Build;
-import android.util.Log;
 
 import com.xtremelabs.imageutils.AsyncOperationsMaps.AsyncOperationState;
 
 /**
- * This class defensively handles requests from four locations: LifecycleReferenceManager, ImageMemoryCacherInterface, ImageDiskCacherInterface,
- * ImageNetworkInterface and the AsyncOperationsMaps.
+ * This class defensively handles requests from four locations: LifecycleReferenceManager, ImageMemoryCacherInterface, ImageDiskCacherInterface, ImageNetworkInterface and the AsyncOperationsMaps.
  * 
  * The job of this class is to "route" messages appropriately in order to ensure synchronized handling of image downloading and caching operations.
  */
@@ -34,11 +32,11 @@ public class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, 
 
 	private static ImageCacher mImageCacher;
 
-	private ImageDiskCacherInterface mDiskCache;
+	private final ImageDiskCacherInterface mDiskCache;
 	private ImageMemoryCacherInterface mMemoryCache;
-	private ImageNetworkInterface mNetworkInterface;
+	private final ImageNetworkInterface mNetworkInterface;
 
-	private AsyncOperationsMaps mAsyncOperationsMap;
+	private final AsyncOperationsMaps mAsyncOperationsMap;
 
 	private ImageCacher(Context appContext) {
 		if (Build.VERSION.SDK_INT <= 11) {
@@ -59,126 +57,41 @@ public class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, 
 		return mImageCacher;
 	}
 
-	public Bitmap getBitmap(String url, ImageCacherListener imageCacherListener, ScalingInfo scalingInfo) {
-		if (Logger.isProfiling()) {
-			Profiler.init("getBitmap");
-		}
+	public Bitmap getBitmap(RequestIdentifier requestIdentifier, ImageCacherListener imageCacherListener, ScalingInfo scalingInfo) {
+		throwExceptionIfNeeded(requestIdentifier, imageCacherListener, scalingInfo);
 
-		throwExceptionIfNeeded(url, imageCacherListener, scalingInfo);
+		AsyncOperationState asyncOperationState = mAsyncOperationsMap.queueListenerIfRequestPending(requestIdentifier, imageCacherListener, scalingInfo);
 
-		if (Logger.isProfiling()) {
-			Profiler.init("Queuing");
-		}
-
-		AsyncOperationState asyncOperationState = mAsyncOperationsMap.queueListenerIfRequestPending(imageCacherListener, url, scalingInfo);
-
-		if (Logger.isProfiling()) {
-			Profiler.report("Queuing");
-		}
 		switch (asyncOperationState) {
 		case QUEUED_FOR_NETWORK_REQUEST:
-			mNetworkInterface.bump(url);
-
-			if (Logger.logAll()) {
-				Logger.d(PREFIX + "Queued for network request.");
-			}
-
-			if (Logger.isProfiling()) {
-				Profiler.report("getBitmap");
-			}
+			mNetworkInterface.bump(requestIdentifier);
 			return null;
 		case QUEUED_FOR_DECODE_REQUEST:
-			mDiskCache.bumpInQueue(url, getSampleSize(url, scalingInfo));
-
-			if (Logger.logAll()) {
-				Logger.d(PREFIX + "Queued for decode request.");
-			}
-
-			if (Logger.isProfiling()) {
-				Profiler.report("getBitmap");
-			}
+			mDiskCache.bumpInStack(requestIdentifier, getSampleSize(requestIdentifier, scalingInfo));
 			return null;
 		}
 
-		Log.d(ImageLoader.TAG, "Image has not been queued.");
-
-		if (Logger.isProfiling()) {
-			Profiler.init("memory or disk");
-			Profiler.init("getting sample size");
-		}
-
-		int sampleSize = getSampleSize(url, scalingInfo);
-
-		if (Logger.isProfiling()) {
-			Profiler.report("getting sample size");
-			Profiler.init("checking cached");
-		}
-
-		// TODO: Look into removing the sampleSize check.
-
-		if (mDiskCache.isCached(url) && sampleSize != -1) {
-			if (Logger.isProfiling()) {
-				Profiler.report("checking cached");
-			}
+		int sampleSize = getSampleSize(requestIdentifier, scalingInfo);
+		if (mDiskCache.isCached(requestIdentifier) && sampleSize != -1) {
 			Bitmap bitmap;
-			if ((bitmap = mMemoryCache.getBitmap(url, sampleSize)) != null) {
-
-				if (Logger.isProfiling()) {
-					Profiler.report("memory or disk");
-					Profiler.report("getBitmap");
-					Profiler.report("memory or disk");
-				}
-
-				if (Logger.logAll()) {
-					Logger.d(PREFIX + "Returning bitmap from memory.");
-				}
-
+			if ((bitmap = mMemoryCache.getBitmap(requestIdentifier, sampleSize)) != null) {
 				return bitmap;
 			} else {
-				if (Logger.logAll()) {
-					Logger.d(PREFIX + "Requesting decode from disk.");
-				}
-
-				if (Logger.isProfiling()) {
-					Profiler.init("decoding from disk");
-				}
-				decodeBitmapFromDisk(url, imageCacherListener, sampleSize);
-				if (Logger.isProfiling()) {
-					Profiler.report("decoding from disk");
-				}
+				decodeBitmapFromDisk(requestIdentifier, imageCacherListener, sampleSize);
 			}
 		} else {
-			if (Logger.isProfiling()) {
-				Profiler.report("checking cached");
-			}
-			if (Logger.logAll()) {
-				Logger.d(PREFIX + "Downloading image from network.");
-			}
-
-			if (Logger.isProfiling()) {
-				Profiler.init("downloading from network");
-			}
-			downloadImageFromNetwork(url, imageCacherListener, scalingInfo);
-			if (Logger.isProfiling()) {
-				Profiler.report("downloading from network");
-			}
+			downloadImageFromNetwork(requestIdentifier, imageCacherListener, scalingInfo);
 		}
-
-		if (Logger.isProfiling()) {
-			Profiler.report("memory or disk");
-			Profiler.report("getBitmap");
-		}
-
 		return null;
 	}
 
 	@Override
-	public int getSampleSize(String url, ScalingInfo scalingInfo) {
+	public int getSampleSize(RequestIdentifier requestIdentifier, ScalingInfo scalingInfo) {
 		int sampleSize;
 		if (scalingInfo.sampleSize != null) {
 			sampleSize = scalingInfo.sampleSize;
 		} else {
-			sampleSize = mDiskCache.getSampleSize(url, scalingInfo.width, scalingInfo.height);
+			sampleSize = mDiskCache.getSampleSize(requestIdentifier, scalingInfo.width, scalingInfo.height);
 		}
 		return sampleSize;
 	}
@@ -188,13 +101,13 @@ public class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, 
 	 * 
 	 * @param url
 	 */
-	public synchronized void precacheImage(String url) {
-		validateUrl(url);
+	public synchronized void precacheImage(RequestIdentifier requestIdentifier) {
+		validateUrl(requestIdentifier);
 
-		if (!mAsyncOperationsMap.isNetworkRequestPendingForUrl(url) && !mDiskCache.isCached(url)) {
-			mNetworkInterface.downloadImageToDisk(url);
+		if (!mAsyncOperationsMap.isNetworkRequestPendingForUrl(requestIdentifier) && !mDiskCache.isCached(requestIdentifier)) {
+			mNetworkInterface.downloadImageToDisk(requestIdentifier);
 		} else {
-			mDiskCache.bumpOnDisk(url);
+			mDiskCache.bumpOnDisk(requestIdentifier);
 		}
 	}
 
@@ -213,26 +126,26 @@ public class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, 
 		mAsyncOperationsMap.cancelPendingRequest(imageCacherListener);
 	}
 
-	private void downloadImageFromNetwork(String url, ImageCacherListener imageCacherListener, ScalingInfo scalingInfo) {
-		mAsyncOperationsMap.registerListenerForNetworkRequest(imageCacherListener, url, scalingInfo);
-		mNetworkInterface.downloadImageToDisk(url);
+	private void downloadImageFromNetwork(RequestIdentifier requestIdentifier, ImageCacherListener imageCacherListener, ScalingInfo scalingInfo) {
+		mAsyncOperationsMap.registerListenerForNetworkRequest(imageCacherListener, requestIdentifier, scalingInfo);
+		mNetworkInterface.downloadImageToDisk(requestIdentifier);
 	}
 
-	private void decodeBitmapFromDisk(String url, ImageCacherListener imageCacherListener, int sampleSize) {
-		mAsyncOperationsMap.registerListenerForDecode(imageCacherListener, url, sampleSize);
-		mDiskCache.getBitmapAsynchronouslyFromDisk(url, sampleSize, ImageReturnedFrom.DISK, true);
+	private void decodeBitmapFromDisk(RequestIdentifier requestIdentifier, ImageCacherListener imageCacherListener, int sampleSize) {
+		mAsyncOperationsMap.registerListenerForDecode(imageCacherListener, requestIdentifier, sampleSize);
+		mDiskCache.getBitmapAsynchronouslyFromDisk(requestIdentifier, sampleSize, ImageReturnedFrom.DISK, true);
 	}
 
-	private void validateUrl(String url) {
-		if (url == null || url.length() == 0) {
+	private void validateUrl(RequestIdentifier requestIdentifier) {
+		if (requestIdentifier == null || requestIdentifier.getUrlOrFilename() == null || requestIdentifier.getUrlOrFilename().length() == 0) {
 			throw new IllegalArgumentException("Null URL passed into the image system.");
 		}
 	}
 
-	private void throwExceptionIfNeeded(String url, ImageCacherListener imageCacherListener, ScalingInfo scalingInfo) {
+	private void throwExceptionIfNeeded(RequestIdentifier requestIdentifier, ImageCacherListener imageCacherListener, ScalingInfo scalingInfo) {
 		ThreadChecker.throwErrorIfOffUiThread();
 
-		validateUrl(url);
+		validateUrl(requestIdentifier);
 
 		if (imageCacherListener == null) {
 			throw new IllegalArgumentException("The ImageCacherListener must not be null.");
@@ -250,34 +163,34 @@ public class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, 
 	}
 
 	@Override
-	public void onImageDecoded(Bitmap bitmap, String url, int sampleSize, ImageReturnedFrom returnedFrom) {
-		mMemoryCache.cacheBitmap(bitmap, url, sampleSize);
-		mAsyncOperationsMap.onDecodeSuccess(bitmap, url, sampleSize, returnedFrom);
+	public void onImageDecoded(Bitmap bitmap, RequestIdentifier requestIdentifier, int sampleSize, ImageReturnedFrom returnedFrom) {
+		mMemoryCache.cacheBitmap(bitmap, requestIdentifier, sampleSize);
+		mAsyncOperationsMap.onDecodeSuccess(bitmap, requestIdentifier, sampleSize, returnedFrom);
 	}
 
 	@Override
-	public void onImageDecodeFailed(String url, int sampleSize, String message) {
-		mAsyncOperationsMap.onDecodeFailed(url, sampleSize, message);
+	public void onImageDecodeFailed(RequestIdentifier requestIdentifier, int sampleSize, String message) {
+		mAsyncOperationsMap.onDecodeFailed(requestIdentifier, sampleSize, message);
 	}
 
 	@Override
-	public void onImageDownloaded(String url) {
-		mAsyncOperationsMap.onDownloadComplete(url);
+	public void onImageDownloaded(RequestIdentifier requestIdentifier) {
+		mAsyncOperationsMap.onDownloadComplete(requestIdentifier);
 	}
 
 	@Override
-	public void onImageDownloadFailed(String url, String message) {
-		mAsyncOperationsMap.onDownloadFailed(url, message);
+	public void onImageDownloadFailed(RequestIdentifier requestIdentifier, String message) {
+		mAsyncOperationsMap.onDownloadFailed(requestIdentifier, message);
 	}
 
 	@Override
-	public void onImageDecodeRequired(String url, int sampleSize) {
-		mDiskCache.getBitmapAsynchronouslyFromDisk(url, sampleSize, ImageReturnedFrom.NETWORK, false);
+	public void onImageDecodeRequired(RequestIdentifier requestIdentifier, int sampleSize) {
+		mDiskCache.getBitmapAsynchronouslyFromDisk(requestIdentifier, sampleSize, ImageReturnedFrom.NETWORK, false);
 	}
 
 	@Override
-	public boolean isNetworkRequestPendingForUrl(String url) {
-		return mNetworkInterface.isNetworkRequestPendingForUrl(url);
+	public boolean isNetworkRequestPendingForUrl(RequestIdentifier requestIdentifier) {
+		return mNetworkInterface.isNetworkRequestPendingForUrl(requestIdentifier);
 	}
 
 	@Override

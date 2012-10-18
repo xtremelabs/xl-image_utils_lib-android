@@ -18,7 +18,7 @@ package com.xtremelabs.imageutils;
 
 import android.graphics.Bitmap;
 
-interface ImageManagerListener {
+interface ReferenceManagerListener {
 	public void onImageReceived(Bitmap bitmap, ImageReturnedFrom returnedFrom);
 	public void onLoadImageFailed(String error);
 }

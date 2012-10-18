@@ -19,10 +19,10 @@ package com.xtremelabs.imageutils;
 import android.graphics.Bitmap;
 
 public interface ImageMemoryCacherInterface {
-	Bitmap getBitmap(String url, int sampleSize);
+	Bitmap getBitmap(RequestIdentifier requestIdentifier, int sampleSize);
 
-	void cacheBitmap(Bitmap bitmap, String url, int sampleSize);
-	
+	void cacheBitmap(Bitmap bitmap, RequestIdentifier requestIdentifier, int sampleSize);
+
 	void clearCache();
 
 	void setMaximumCacheSize(long size);

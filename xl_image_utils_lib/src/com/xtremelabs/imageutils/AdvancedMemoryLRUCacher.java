@@ -29,26 +29,26 @@ public class AdvancedMemoryLRUCacher implements ImageMemoryCacherInterface {
 	private long mMaximumSizeInBytes = 20 * 1024 * 1024; // 20MB default
 	private long mSize = 0;
 
-	private HashMap<DecodeOperationParameters, Bitmap> mCache = new HashMap<DecodeOperationParameters, Bitmap>();
-	private LinkedList<EvictionQueueContainer> mEvictionQueue = new LinkedList<EvictionQueueContainer>();
+	private final HashMap<DecodeOperationParameters, Bitmap> mCache = new HashMap<DecodeOperationParameters, Bitmap>();
+	private final LinkedList<EvictionQueueContainer> mEvictionQueue = new LinkedList<EvictionQueueContainer>();
 
 	@Override
-	public synchronized Bitmap getBitmap(String url, int sampleSize) {
-		DecodeOperationParameters params = new DecodeOperationParameters(url, sampleSize);
+	public synchronized Bitmap getBitmap(RequestIdentifier requestIdentifier, int sampleSize) {
+		DecodeOperationParameters params = new DecodeOperationParameters(requestIdentifier, sampleSize);
 		Bitmap bitmap = mCache.get(params);
 		if (bitmap != null) {
-			onEntryHit(url, sampleSize);
+			onEntryHit(requestIdentifier, sampleSize);
 			return bitmap;
 		}
 		return null;
 	}
 
 	@Override
-	public synchronized void cacheBitmap(Bitmap bitmap, String url, int sampleSize) {
-		DecodeOperationParameters params = new DecodeOperationParameters(url, sampleSize);
+	public synchronized void cacheBitmap(Bitmap bitmap, RequestIdentifier requestIdentifier, int sampleSize) {
+		DecodeOperationParameters params = new DecodeOperationParameters(requestIdentifier, sampleSize);
 		mCache.put(params, bitmap);
 		mSize += bitmap.getByteCount();
-		onEntryHit(url, sampleSize);
+		onEntryHit(requestIdentifier, sampleSize);
 	}
 
 	@Override
@@ -63,15 +63,15 @@ public class AdvancedMemoryLRUCacher implements ImageMemoryCacherInterface {
 		mMaximumSizeInBytes = size;
 		performEvictions();
 	}
-	
+
 	public int getNumImagesInCache() {
 		return mCache.size();
 	}
-	
+
 	public long getSize() {
 		return mSize;
 	}
-	
+
 	public long getCurrentActualSize() {
 		long size = 0;
 		Collection<Bitmap> bitmaps = mCache.values();
@@ -81,8 +81,8 @@ public class AdvancedMemoryLRUCacher implements ImageMemoryCacherInterface {
 		return size;
 	}
 
-	private synchronized void onEntryHit(String url, int sampleSize) {
-		EvictionQueueContainer container = new EvictionQueueContainer(url, sampleSize);
+	private synchronized void onEntryHit(RequestIdentifier requestIdentifier, int sampleSize) {
+		EvictionQueueContainer container = new EvictionQueueContainer(requestIdentifier, sampleSize);
 
 		if (mEvictionQueue.contains(container)) {
 			mEvictionQueue.remove(container);
@@ -97,7 +97,7 @@ public class AdvancedMemoryLRUCacher implements ImageMemoryCacherInterface {
 		while (mSize > mMaximumSizeInBytes) {
 			try {
 				EvictionQueueContainer container = mEvictionQueue.removeFirst();
-				Bitmap bitmap = mCache.remove(new DecodeOperationParameters(container.getUrl(), container.getSampleSize()));
+				Bitmap bitmap = mCache.remove(new DecodeOperationParameters(container.getRequestIdentifier(), container.getSampleSize()));
 				mSize -= bitmap.getByteCount();
 			} catch (NoSuchElementException e) {
 				mSize = 0;

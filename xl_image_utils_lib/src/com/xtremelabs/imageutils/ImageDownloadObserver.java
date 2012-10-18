@@ -17,7 +17,7 @@
 package com.xtremelabs.imageutils;
 
 interface ImageDownloadObserver {
-	public void onImageDownloaded(String url);
+	public void onImageDownloaded(RequestIdentifier requestIdentifier);
 
-	public void onImageDownloadFailed(String url, String error);
+	public void onImageDownloadFailed(RequestIdentifier requestIdentifier, String error);
 }

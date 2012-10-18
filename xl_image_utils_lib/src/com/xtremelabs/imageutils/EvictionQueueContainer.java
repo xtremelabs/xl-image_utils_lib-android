@@ -17,35 +17,36 @@
 package com.xtremelabs.imageutils;
 
 class EvictionQueueContainer {
-	private String mUrl;
-	private int mSampleSize;
+	private final RequestIdentifier mRequestIdentifier;
+	private final int mSampleSize;
 
-	public EvictionQueueContainer(String url, int sampleSize) {
-		mUrl = url;
+	public EvictionQueueContainer(RequestIdentifier requestIdentifier, int sampleSize) {
+		mRequestIdentifier = requestIdentifier;
 		mSampleSize = sampleSize;
 	}
 
-	public String getUrl() {
-		return mUrl;
+	public RequestIdentifier getRequestIdentifier() {
+		return mRequestIdentifier;
 	}
 
 	public int getSampleSize() {
 		return mSampleSize;
 	}
 
+	@Override
 	public String toString() {
-		return "EvictionQueueContainer url, samplesize: (" + this.mUrl + ", " + this.mSampleSize + ")"; 
+		return "EvictionQueueContainer url, samplesize: (" + this.mRequestIdentifier + ", " + this.mSampleSize + ")";
 	}
-	
+
 	@Override
 	public boolean equals(Object o) {
 		if (o == null || !(o instanceof EvictionQueueContainer))
 			return false;
 
 		final EvictionQueueContainer evictionQueueContainer = (EvictionQueueContainer) o;
-		final String url = evictionQueueContainer.getUrl();
+		final RequestIdentifier requestIdentifier = evictionQueueContainer.getRequestIdentifier();
 		final int sampleSize = evictionQueueContainer.getSampleSize();
 
-		return (mUrl != null && mUrl.equals(url)) && sampleSize == mSampleSize;
+		return (mRequestIdentifier != null && mRequestIdentifier.equals(requestIdentifier)) && sampleSize == mSampleSize;
 	}
 }

@@ -19,7 +19,7 @@ package com.xtremelabs.imageutils;
 import android.graphics.Bitmap;
 
 public interface ImageDecodeObserver {
-	public void onImageDecoded(Bitmap bitmap, String url, int sampleSize, ImageReturnedFrom returnedFrom);
-	
-	public void onImageDecodeFailed(String url, int sampleSize, String error);
+	public void onImageDecoded(Bitmap bitmap, RequestIdentifier requestIdentifier, int sampleSize, ImageReturnedFrom returnedFrom);
+
+	public void onImageDecodeFailed(RequestIdentifier requestIdentifier, int sampleSize, String error);
 }

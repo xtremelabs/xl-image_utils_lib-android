@@ -17,9 +17,9 @@
 package com.xtremelabs.imageutils;
 
 interface ImageNetworkInterface {
-	void downloadImageToDisk(String url);
+	void downloadImageToDisk(RequestIdentifier requestIdentifier);
 
-	void bump(String url);
+	void bump(RequestIdentifier requestIdentifier);
 
-	boolean isNetworkRequestPendingForUrl(String url);
+	boolean isNetworkRequestPendingForUrl(RequestIdentifier requestIdentifier);
 }

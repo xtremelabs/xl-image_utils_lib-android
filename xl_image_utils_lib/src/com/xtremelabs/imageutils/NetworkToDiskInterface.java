@@ -20,5 +20,5 @@ import java.io.IOException;
 import java.io.InputStream;
 
 interface NetworkToDiskInterface {
-	public void downloadImageFromInputStream(String url, InputStream inputStream) throws IOException;
+	public void downloadImageFromInputStream(RequestIdentifier requestIdentifier, InputStream inputStream) throws IOException;
 }

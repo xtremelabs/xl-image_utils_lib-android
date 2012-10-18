@@ -17,32 +17,39 @@
 package com.xtremelabs.imageutils;
 
 public class DecodeOperationParameters {
-	String mUrl;
+	RequestIdentifier mRequestIdentifier;
 	int mSampleSize;
 
-	DecodeOperationParameters(String url, int sampleSize) {
-		mUrl = url;
+	DecodeOperationParameters(RequestIdentifier requestIdentifier, int sampleSize) {
+		mRequestIdentifier = requestIdentifier;
 		mSampleSize = sampleSize;
 	}
 
 	@Override
 	public int hashCode() {
-		int hash;
-		hash = 31 * mSampleSize + 17;
-		hash += mUrl.hashCode();
-		return hash;
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((mRequestIdentifier == null) ? 0 : mRequestIdentifier.hashCode());
+		result = prime * result + mSampleSize;
+		return result;
 	}
 
 	@Override
-	public boolean equals(Object o) {
-		if (!(o instanceof DecodeOperationParameters)) {
-			return false;
-		}
-
-		DecodeOperationParameters otherObject = (DecodeOperationParameters) o;
-		if (otherObject.mSampleSize == mSampleSize && otherObject.mUrl.equals(mUrl)) {
+	public boolean equals(Object obj) {
+		if (this == obj)
 			return true;
-		}
-		return false;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		DecodeOperationParameters other = (DecodeOperationParameters) obj;
+		if (mRequestIdentifier == null) {
+			if (other.mRequestIdentifier != null)
+				return false;
+		} else if (!mRequestIdentifier.equals(other.mRequestIdentifier))
+			return false;
+		if (mSampleSize != other.mSampleSize)
+			return false;
+		return true;
 	}
 }

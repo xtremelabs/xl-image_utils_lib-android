@@ -28,14 +28,14 @@ import com.xtremelabs.imageutils.LifecycleReferenceManager.ImageManagerCacheList
  * The {@link Object} "key" in this class refers to either an Activity or a Fragment.
  */
 class LifecycleKeyListenerMapper {
-	private HashMap<Object, List<ImageManagerListener>> mKeyToListenersMap = new HashMap<Object, List<ImageManagerListener>>();
-	private HashMap<ImageManagerListener, ListenerInfo> mListenerToInfoMap = new HashMap<ImageManagerListener, ListenerInfo>();
-	private HashMap<ImageManagerCacheListener, ImageManagerListener> mCacheListenerToImageReceivedListenerMap = new HashMap<ImageManagerCacheListener, ImageManagerListener>();
+	private HashMap<Object, List<ReferenceManagerListener>> mKeyToListenersMap = new HashMap<Object, List<ReferenceManagerListener>>();
+	private HashMap<ReferenceManagerListener, ListenerInfo> mListenerToInfoMap = new HashMap<ReferenceManagerListener, ListenerInfo>();
+	private HashMap<ImageManagerCacheListener, ReferenceManagerListener> mCacheListenerToImageReceivedListenerMap = new HashMap<ImageManagerCacheListener, ReferenceManagerListener>();
 
-	public synchronized void registerNewListener(ImageManagerListener imageManagerListener, Object key, ImageManagerCacheListener customImageListener) {
-		List<ImageManagerListener> imageManagerListenersList = mKeyToListenersMap.get(key);
+	public synchronized void registerNewListener(ReferenceManagerListener imageManagerListener, Object key, ImageManagerCacheListener customImageListener) {
+		List<ReferenceManagerListener> imageManagerListenersList = mKeyToListenersMap.get(key);
 		if (imageManagerListenersList == null) {
-			imageManagerListenersList = new ArrayList<ImageManagerListener>();
+			imageManagerListenersList = new ArrayList<ReferenceManagerListener>();
 			mKeyToListenersMap.put(key, imageManagerListenersList);
 		}
 		imageManagerListenersList.add(imageManagerListener);
@@ -46,10 +46,10 @@ class LifecycleKeyListenerMapper {
 		mCacheListenerToImageReceivedListenerMap.put(customImageListener, imageManagerListener);
 	}
 
-	public synchronized ImageManagerCacheListener unregisterListener(ImageManagerListener imageManagerListener) {
+	public synchronized ImageManagerCacheListener unregisterListener(ReferenceManagerListener imageManagerListener) {
 		ListenerInfo info = mListenerToInfoMap.remove(imageManagerListener);
 		if (info != null) {
-			List<ImageManagerListener> listenerList = mKeyToListenersMap.get(info.mKey);
+			List<ReferenceManagerListener> listenerList = mKeyToListenersMap.get(info.mKey);
 			if (listenerList != null) {
 				listenerList.remove(imageManagerListener);
 				if (listenerList.size() == 0) {
@@ -63,18 +63,18 @@ class LifecycleKeyListenerMapper {
 		}
 	}
 
-	public synchronized ImageManagerListener getAndRemoveListener(ImageManagerCacheListener cacheListener) {
-		ImageManagerListener listener = mCacheListenerToImageReceivedListenerMap.get(cacheListener);
+	public synchronized ReferenceManagerListener getAndRemoveListener(ImageManagerCacheListener cacheListener) {
+		ReferenceManagerListener listener = mCacheListenerToImageReceivedListenerMap.get(cacheListener);
 		if (listener != null) {
 			unregisterListener(listener);
 		}
 		return listener;
 	}
 
-	public synchronized List<ImageManagerListener> removeAllEntriesForKey(Object key) {
-		List<ImageManagerListener> listeners = mKeyToListenersMap.remove(key);
+	public synchronized List<ReferenceManagerListener> removeAllEntriesForKey(Object key) {
+		List<ReferenceManagerListener> listeners = mKeyToListenersMap.remove(key);
 		if (listeners != null) {
-			for (ImageManagerListener listener : listeners) {
+			for (ReferenceManagerListener listener : listeners) {
 				ListenerInfo info = mListenerToInfoMap.remove(listener);
 				if (info != null) {
 					mCacheListenerToImageReceivedListenerMap.remove(info.mCacheListener);
@@ -84,7 +84,7 @@ class LifecycleKeyListenerMapper {
 		return listeners;
 	}
 
-	public synchronized boolean isListenerRegistered(ImageManagerListener imageManagerListener) {
+	public synchronized boolean isListenerRegistered(ReferenceManagerListener imageManagerListener) {
 		return mListenerToInfoMap.containsKey(imageManagerListener);
 	}
 

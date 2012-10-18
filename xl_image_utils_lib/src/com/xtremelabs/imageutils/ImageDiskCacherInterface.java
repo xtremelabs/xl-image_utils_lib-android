@@ -16,24 +16,23 @@
 
 package com.xtremelabs.imageutils;
 
-
 /**
  * This interface defines the mechanisms that the ImageCacher uses to interract with the Disk Cache.
  */
 interface ImageDiskCacherInterface extends NetworkToDiskInterface {
-	boolean isCached(String url);
+	boolean isCached(RequestIdentifier returnedFrom);
 
-	int getSampleSize(String url, Integer width, Integer height);
+	int getSampleSize(RequestIdentifier returnedFrom, Integer width, Integer height);
 
-	void getBitmapAsynchronouslyFromDisk(String url, int sampleSize, ImageReturnedFrom returnedFrom, boolean noPreviousNetworkRequest);
+	void getBitmapAsynchronouslyFromDisk(RequestIdentifier requestIdentifier, int sampleSize, ImageReturnedFrom returnedFrom, boolean noPreviousNetworkRequest);
 
-	void bumpOnDisk(String url);
+	void bumpOnDisk(RequestIdentifier requestIdentifier);
 
 	void setDiskCacheSize(long sizeInBytes);
 
-	Dimensions getImageDimensions(String url);
+	Dimensions getImageDimensions(RequestIdentifier requestIdentifier);
 
-	void bumpInQueue(String url, int sampleSize);
+	void bumpInStack(RequestIdentifier requestIdentifier, int sampleSize);
 
 	boolean isDecodeRequestPending(DecodeOperationParameters decodeOperationParameters);
 }
