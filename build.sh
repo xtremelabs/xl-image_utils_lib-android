@@ -16,25 +16,17 @@ function print_header {
 function set_vars {
 	API_LEVEL=15
 	VERSION=1.0
-	TIMESTAMP=$(date "+%Y%m%d%H%M")-v$VERSION-publish
+	BUILD_TAG=v$VERSION
 	GIT_PROJECT=xtremelabs/xl-image_utils_lib-android
 	JAR_FILE_NAME=xtreme-image-cache-v$VERSION.jar
 	MANIFEST_FILE_NAME=xl-image-utils-lib-manifest.xml
-	# KEYSTORE_FILE=$WORKSPACE/wirelessgen.keystore
-	# KEYSTORE_ALIAS=androiddebugkey
-	# KEYSTORE_PASSWORD_FILE=~/keystores/wirelessgen.keystore.pwd
-	# DEPLOY_HOST=ubuntu@assets.xtremelabs.com
-	# DEPLOY_DIR=/opt/mobile/wirelessgen-android
-	# DEPLOY_KEY=~/.ssh/assets-keypair.pem
-	# DEPLOY_URL_BASE=http://assets.xtremelabs.com/wirelessgen-android
-	# BUILD_REPORT=$WORKSPACE/build-report.txt
-	 RESULTANT_APK_DIR=$WORKSPACE/$PROJECT_DIR
-	# DOWNLOAD_DIR=$WORKSPACE/bin/download
+	WORKSPACE=$(pwd)
 
-	# RESULTANT_DEBUG_URLS=()
-	# RESULTANT_RELEASE_URLS=()
-	# RESULTANT_MAPPING_FILE_URLS=()
-	# RESULTANT_UPLOADABLE_FILES=()
+	PROJECT_NAME=XtremeImageUtils
+	PROJECT_DIR=xl_image_utils_lib
+
+	 RESULTANT_APK_DIR=$WORKSPACE/$PROJECT_DIR
+
 }
 
 # for_each_project function that runs 'android update project' on the given project
@@ -132,13 +124,7 @@ function pre_build {
 		}
 	fi
 
-	## Copy the keystore file overtop of the developer's existing debug.keystore file
-	#if [ "$IS_BUILDING" ]; then
-	#	echo Copying keystore file over the existing debug.keystore file
-	#	cp wirelessgen.keystore ~/.android/debug.keystore || {
-	#		print_error "Could not copy keystore file!"
-	#	}
-	#fi
+
 }
 
 # Tags build and uploads APKs to the server
@@ -148,12 +134,13 @@ function publish_build {
 
 
 	echo
-	echo "Committing jar git to project"
+	echo "Committing jar and manifest git to project"
 	echo
 
-	git add $JAR_FILE_NAME.jar
+	git add $MANIFEST_FILE_NAME
+	git add $PROJECT_DIR/$JAR_FILE_NAME
 
-	git commit -m "Updated ${JAR_FILE_NAME} to version ${VERSION}"
+	git commit -m "Updated ${JAR_FILE_NAME} and manifest to version ${VERSION}"
 
 	git push origin master
 
@@ -163,7 +150,7 @@ function publish_build {
 
 
 	# Apply a git tag to the project
-	git tag -a "$TIMESTAMP" -m "Tag for week ${VERSION}" || {
+	git tag -a "$BUILD_TAG" -m "Tag for version ${VERSION}" || {
 		print_error "git tag failed"
 	}
 
@@ -174,26 +161,8 @@ function publish_build {
 
 	echo
 	echo "This build has been tagged with following tag in git and can be found here:"
-	echo "  https://github.com/$GIT_PROJECT/tree/$TIMESTAMP"
+	echo "  https://github.com/$GIT_PROJECT/tree/$BUILD_TAG"
 }
-
-
-# function set_build_tag {
-# 	BUILD_TAG=
-# 	# Don't accept an empty command line
-# 	if [ $# -eq 0 ]; then
-# 		print_usage
-# 		exit 1
-# 	fi
-
-# 	if [ "$LAST_ARG" = "publish" ]; then
-# 		BUILD_TAG=$ARG
-
-# 					# Show error if user has a 'publish' argument and doesn't specify a tag
-# 	if [ "$BUILD_PUBLISH" -a -z "$BUILD_TAG" ]; then
-# 		print_usage_error "Must specify a tag with 'publish' argument"
-# 	fi
-# }
 
 # Tags build and uploads APKs to the server
 function generate_manifest {
@@ -208,12 +177,8 @@ function generate_manifest {
 }
 
 
-WORKSPACE=$(pwd)
-# Project related settings.
-PROJECT_NAME=XtremeImageUtils
-PROJECT_DIR=xl_image_utils_lib
 
-# echo $PROJECT_DIR
+
 set_vars
 
 pre_build
@@ -229,21 +194,7 @@ cd $PROJECT_DIR
 
  build_library $PROJECT_NAME $PROJECT_DIR
 
-
 cd ..
 
+publish_build
 
-
-
-
-
-
-	# #print_header "Hack building lib '$PROJECT_NAME' with timestamp '$TIMESTAMP'"
-
-	# SOURCE_JAR_FILE=$PROJECT_DIR/bin/classes.jar
-	# TARGET_JAR_FILE=$PROJECT_DIR/bin/${PROJECT_NAME}.jar
-
-	# export CLASSPATH=
-	# ant clean debug || {
-	# 	print_build_error "Debug build failed"
-	# }
