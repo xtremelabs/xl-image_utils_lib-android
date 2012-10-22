@@ -18,6 +18,7 @@ function set_vars {
 	VERSION=1.0
 	TIMESTAMP=$(date "+%Y%m%d%H%M")-$BUILD_TAG
 	GIT_PROJECT=xtremelabs/xl-image_utils_lib-android
+	JAR_FILE_NAME=xtreme-image-cache
 	# KEYSTORE_FILE=$WORKSPACE/wirelessgen.keystore
 	# KEYSTORE_ALIAS=androiddebugkey
 	# KEYSTORE_PASSWORD_FILE=~/keystores/wirelessgen.keystore.pwd
@@ -100,7 +101,7 @@ function build_library {
 	print_header "Hack building lib '$PROJECT_NAME' with timestamp '$TIMESTAMP'"
 
 	SOURCE_JAR_FILE=$PROJECT_DIR/bin/classes.jar
-	TARGET_JAR_FILE=$PROJECT_DIR/bin/${PROJECT_NAME}.jar
+	TARGET_JAR_FILE=$PROJECT_DIR/bin/$JAR_FILE_NAME.jar
 
 	export CLASSPATH=
 	ant clean debug || {
