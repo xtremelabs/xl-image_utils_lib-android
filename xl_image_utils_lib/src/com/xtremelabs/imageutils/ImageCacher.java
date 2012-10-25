@@ -24,10 +24,12 @@ import android.util.Log;
 import com.xtremelabs.imageutils.AsyncOperationsMaps.AsyncOperationState;
 
 /**
- * This class defensively handles requests from four locations: LifecycleReferenceManager, ImageMemoryCacherInterface, ImageDiskCacherInterface,
- * ImageNetworkInterface and the AsyncOperationsMaps.
+ * This class defensively handles requests from four locations:
+ * LifecycleReferenceManager, ImageMemoryCacherInterface,
+ * ImageDiskCacherInterface, ImageNetworkInterface and the AsyncOperationsMaps.
  * 
- * The job of this class is to "route" messages appropriately in order to ensure synchronized handling of image downloading and caching operations.
+ * The job of this class is to "route" messages appropriately in order to ensure
+ * synchronized handling of image downloading and caching operations.
  */
 public class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOperationsObserver {
 	private static final String PREFIX = "IMAGE CACHER - ";
@@ -52,11 +54,59 @@ public class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, 
 		mAsyncOperationsMap = new AsyncOperationsMaps(this);
 	}
 
+	public void clearDiskCache() {
+		((DiskLRUCacher) mDiskCache).clearDiskCache();
+	}
+
 	public static synchronized ImageCacher getInstance(Context appContext) {
 		if (mImageCacher == null) {
 			mImageCacher = new ImageCacher(appContext);
 		}
 		return mImageCacher;
+	}
+
+	public ImageReturnValues getBitmapValues(String url, ImageCacherListener imageCacherListener, ScalingInfo scalingInfo, Dimensions dimensions) {
+		return getBitmapValues(url, imageCacherListener, scalingInfo);
+	}
+
+	public ImageReturnValues getBitmapValues(String url, ImageCacherListener imageCacherListener, ScalingInfo scalingInfo) {
+		throwExceptionIfNeeded(url, imageCacherListener, scalingInfo);
+
+		AsyncOperationState asyncOperationState = mAsyncOperationsMap.queueListenerIfRequestPending(imageCacherListener, url, scalingInfo);
+
+		switch (asyncOperationState) {
+		case QUEUED_FOR_NETWORK_REQUEST:
+			mNetworkInterface.bump(url);
+			return null;
+		case QUEUED_FOR_DECODE_REQUEST:
+			mDiskCache.bumpInQueue(url, getSampleSize(url, scalingInfo));
+			return null;
+		case NOT_QUEUED:
+			return getBitmapFromAppropriateModule(url, imageCacherListener, scalingInfo);
+		default:
+			return null;
+		}
+	}
+
+	private ImageReturnValues getBitmapFromAppropriateModule(String url, ImageCacherListener imageCacherListener, ScalingInfo scalingInfo) {
+		int sampleSize = getSampleSize(url, scalingInfo);
+		// TODO: Look into removing the sampleSize check.
+
+		if (mDiskCache.isCached(url) && sampleSize != -1) {
+			Bitmap bitmap;
+			if ((bitmap = mMemoryCache.getBitmap(url, sampleSize)) != null) {
+				ImageReturnValues imageValues = new ImageReturnValues();
+				imageValues.setBitmap(bitmap);
+				imageValues.setImageReturnFrom(ImageReturnedFrom.MEMORY);
+				imageValues.setDimensions(mDiskCache.getImageDimensions(url));
+				return imageValues;
+			} else {
+				decodeBitmapFromDisk(url, imageCacherListener, sampleSize);
+			}
+		} else {
+			downloadImageFromNetwork(url, imageCacherListener, scalingInfo);
+		}
+		return null;
 	}
 
 	public Bitmap getBitmap(String url, ImageCacherListener imageCacherListener, ScalingInfo scalingInfo) {
@@ -184,7 +234,8 @@ public class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, 
 	}
 
 	/**
-	 * Caches the image at the provided url to disk. If the image is already on disk, it gets bumped on the eviction queue.
+	 * Caches the image at the provided url to disk. If the image is already on
+	 * disk, it gets bumped on the eviction queue.
 	 * 
 	 * @param url
 	 */
@@ -246,6 +297,8 @@ public class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, 
 	public static abstract class ImageCacherListener {
 		public abstract void onImageAvailable(Bitmap bitmap, ImageReturnedFrom returnedFrom);
 
+		public abstract void onImageAvailable(ImageReturnValues imageValues);
+
 		public abstract void onFailure(String message);
 	}
 
@@ -253,6 +306,13 @@ public class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, 
 	public void onImageDecoded(Bitmap bitmap, String url, int sampleSize, ImageReturnedFrom returnedFrom) {
 		mMemoryCache.cacheBitmap(bitmap, url, sampleSize);
 		mAsyncOperationsMap.onDecodeSuccess(bitmap, url, sampleSize, returnedFrom);
+	}
+
+	@Override
+	public void onImageDecoded(ImageReturnValues imageValues, String url, int sampleSize) {
+		mMemoryCache.cacheBitmap(imageValues.getBitmap(), url, sampleSize);
+		mAsyncOperationsMap.onDecodeSuccess(imageValues, url, sampleSize);
+
 	}
 
 	@Override

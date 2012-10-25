@@ -112,6 +112,23 @@ public class AsyncOperationsMaps {
 			}
 		}
 	}
+	
+	public void onDecodeSuccess(ImageReturnValues imageValues, String url, int sampleSize) {
+		if (Logger.logMaps()) {
+			Logger.d(PREFIX + "Image decoded: " + url + ", sample size: " + sampleSize);
+		}
+
+		DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, sampleSize);
+
+		ImageCacherListener imageCacherListener;
+		while ((imageCacherListener = getListenerWaitingOnDecode(decodeOperationParameters)) != null) {
+			synchronized (imageCacherListener) {
+				if (removeQueuedListenerForDecode(decodeOperationParameters, imageCacherListener, true)) {
+					imageCacherListener.onImageAvailable(imageValues);
+				}
+			}
+		}
+	}
 
 	public void onDecodeFailed(String url, int sampleSize, String message) {
 		DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, sampleSize);

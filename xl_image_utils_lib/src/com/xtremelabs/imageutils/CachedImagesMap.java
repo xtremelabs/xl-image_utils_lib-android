@@ -19,21 +19,25 @@ package com.xtremelabs.imageutils;
 import java.util.HashMap;
 
 class CachedImagesMap {
-	private HashMap<String, Dimensions> imageDimensionsMap = new HashMap<String, Dimensions>();
+	private HashMap<String, Dimensions> mImageDimensionsMap = new HashMap<String, Dimensions>();
 	
 	public synchronized void putDimensions(String url, Dimensions dimensions) {
-		imageDimensionsMap.put(url, dimensions);
+		mImageDimensionsMap.put(url, dimensions);
 	}
 	
 	public synchronized Dimensions getImageDimensions(String url) {
-		return imageDimensionsMap.get(url);
+		return mImageDimensionsMap.get(url);
 	}
 	
 	public synchronized void removeDimensions(String url) {
-		imageDimensionsMap.remove(url);
+		mImageDimensionsMap.remove(url);
 	}
 	
 	public synchronized boolean isCached(String url) {
-		return imageDimensionsMap.containsKey(url);
+		return mImageDimensionsMap.containsKey(url);
+	}
+	
+	public synchronized void clear() {
+		mImageDimensionsMap.clear();
 	}
 }

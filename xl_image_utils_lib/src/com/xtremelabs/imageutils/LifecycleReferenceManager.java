@@ -77,8 +77,8 @@ class LifecycleReferenceManager {
 			return;
 		}
 		ImageManagerCacheListener cacheListener = generateRegisteredListener(key, url, imageManagerListener);
-		Bitmap bitmap = mImageCacher.getBitmap(url, cacheListener, scalingInfo);
-		returnImageIfValid(imageManagerListener, bitmap);
+		ImageReturnValues imageValues = mImageCacher.getBitmapValues(url, cacheListener, scalingInfo);
+		returnImageIfValid(imageManagerListener, imageValues);
 	}
 
 	public List<ImageManagerListener> removeListenersForKey(Object key) {
@@ -102,6 +102,11 @@ class LifecycleReferenceManager {
 	private void returnImageIfValid(ImageManagerListener listener, Bitmap bitmap) {
 		if (bitmap != null && mListenerHelper.unregisterListener(listener) != null) {
 			listener.onImageReceived(bitmap, ImageReturnedFrom.MEMORY);
+		}
+	}
+	private void returnImageIfValid(ImageManagerListener listener, ImageReturnValues imageValues) {
+		if (imageValues != null && imageValues.getBitmap() != null  && mListenerHelper.unregisterListener(listener) != null) {
+			listener.onImageReceived(imageValues);
 		}
 	}
 
@@ -165,6 +170,39 @@ class LifecycleReferenceManager {
 				Logger.d(PREFIX + "Cancelling request from within listener.");
 			}
 			mImageCacher.cancelRequestForBitmap(this);
+		}
+
+		@Override
+		public void onImageAvailable(final ImageReturnValues imageValues) {
+			mUiThreadHandler.post(new Runnable() {
+				@Override
+				public void run() {
+					if (Logger.isProfiling()) {
+						Profiler.init("End-of-call on UI thread - success");
+						Profiler.init("End-of-call  --  Removing the listener.");
+					}
+
+					ImageManagerListener listener = mListenerHelper.getAndRemoveListener(ImageManagerCacheListener.this);
+					
+					if (Logger.isProfiling()) {
+						Profiler.report("End-of-call  --  Removing the listener.");
+					}
+					
+					if (listener != null) {
+						if (Logger.isProfiling()) {
+							Profiler.init("End-of-call  --  On Image Received (success)");
+						}
+						listener.onImageReceived(imageValues);
+						if (Logger.isProfiling()) {
+							Profiler.report("End-of-call  --  On Image Received (success)");
+						}
+					}
+
+					if (Logger.isProfiling()) {
+						Profiler.report("End-of-call on UI thread - success");
+					}
+				}
+			});
 		}
 	}
 }

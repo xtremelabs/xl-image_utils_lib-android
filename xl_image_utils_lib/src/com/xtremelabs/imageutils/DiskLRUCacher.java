@@ -46,6 +46,12 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	 * It is highly recommended to leave the number of decode threads at one. Increasing this number too high will cause performance problems.
 	 */
 	private LifoThreadPool mThreadPool = new LifoThreadPool(1);
+	
+	public synchronized void clearDiskCache() {
+		mDiskManager.clearDirectory();
+		mCachedImagesMap.clear();
+		mDatabaseHelper.resetTable(mDatabaseHelper.getWritableDatabase());
+	}
 
 	public DiskLRUCacher(Context appContext, ImageDecodeObserver imageDecodeObserver) {
 		mDiskManager = new DiskManager("img", appContext);
@@ -86,8 +92,9 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 				boolean failed = false;
 				String errorMessage = null;
 				Bitmap bitmap = null;
+				Dimensions dimensions = new Dimensions(0, 0);
 				try {
-					bitmap = getBitmapSynchronouslyFromDisk(url, sampleSize);
+					bitmap = getBitmapSynchronouslyFromDisk(url, sampleSize, dimensions);
 				} catch (FileNotFoundException e) {
 					failed = true;
 					errorMessage = "Disk decode failed with error message: " + e.getMessage();
@@ -98,7 +105,11 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 				removeRequestFromMap(decodeOperationParameters);
 
 				if (!failed) {
-					mImageDecodeObserver.onImageDecoded(bitmap, url, sampleSize, returnedFrom);
+					ImageReturnValues imageValues = new ImageReturnValues();
+					imageValues.setBitmap(bitmap);
+					imageValues.setDimensions(dimensions);
+					imageValues.setImageReturnFrom(returnedFrom);
+					mImageDecodeObserver.onImageDecoded(imageValues, url, sampleSize);
 				} else {
 					mDiskManager.deleteFile(encode(url));
 					mImageDecodeObserver.onImageDecodeFailed(url, sampleSize, errorMessage);
@@ -163,13 +174,18 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		}
 	}
 
-	private Bitmap getBitmapSynchronouslyFromDisk(String url, int sampleSize) throws FileNotFoundException, FileFormatException {
+	private Bitmap getBitmapSynchronouslyFromDisk(String url, int sampleSize, Dimensions dimensions) throws FileNotFoundException, FileFormatException {
 		File file = getFile(url);
 		FileInputStream fileInputStream = null;
 		fileInputStream = new FileInputStream(file);
 		BitmapFactory.Options opts = new BitmapFactory.Options();
 		opts.inSampleSize = sampleSize;
 		Bitmap bitmap = BitmapFactory.decodeStream(fileInputStream, null, opts);
+		
+		Dimensions dms = mCachedImagesMap.getImageDimensions(url);
+		dimensions.setWidth(dms.getWidth());
+		dimensions.setHeight(dms.getHeight());
+		
 		if (fileInputStream != null) {
 			try {
 				fileInputStream.close();

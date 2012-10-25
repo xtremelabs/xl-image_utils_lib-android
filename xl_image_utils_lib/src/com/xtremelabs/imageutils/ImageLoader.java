@@ -203,7 +203,7 @@ public class ImageLoader {
 	 * @param options
 	 *            If options is set to null, the {@link ImageLoader} will use the default options. See the {@link Options} docs for additional details.
 	 */
-	public void loadImage(ImageView imageView, String url, Options options, final ImageLoaderListener listener) {
+	public void loadImage(ImageView imageView, String url, Options options, final ImageLoaderListener listener, final ImageLoaderValueListener valueListener) {
 		if (!mDestroyed) {
 			if (listener == null) {
 				throw new IllegalArgumentException("You cannot pass in a null ImageLoadingListener.");
@@ -213,13 +213,13 @@ public class ImageLoader {
 				options = mDefaultOptions;
 			}
 
-			ImageManagerListener imageManagerListener = getImageManagerListenerWithCallback(listener, options);
+			ImageManagerListener imageManagerListener = getImageManagerListenerWithCallback(listener, valueListener, options);
 			performImageRequestOnUiThread(imageView, url, options, imageManagerListener);
 		} else {
 			Log.w(TAG, "WARNING: loadImage was called after the ImageLoader was destroyed.");
 		}
 	}
-
+	
 	/**
 	 * This method will load the selected resource into the {@link ImageView} and cancel any previous requests that have been made with the provided
 	 * {@link ImageView}.
@@ -269,6 +269,10 @@ public class ImageLoader {
 	 */
 	public void clearMemCache() {
 		ImageCacher.getInstance(mApplicationContext).clearMemCache();
+	}
+	
+	public void clearDiskCache() {
+		ImageCacher.getInstance(mApplicationContext).clearDiskCache();
 	}
 
 	/**
@@ -490,6 +494,20 @@ public class ImageLoader {
 					}
 				}
 			}
+
+			@Override
+			public void onImageReceived(ImageReturnValues returnedFrom) {
+				ImageView imageView = mViewMapper.removeImageView(this);
+				if (imageView != null) {
+					if (Logger.isProfiling()) {
+						Profiler.init("Setting image bitmap for default listener");
+					}
+					imageView.setImageBitmap(returnedFrom.getBitmap());
+					if (Logger.isProfiling()) {
+						Profiler.report("Setting image bitmap for default listener");
+					}
+				}
+			}
 		};
 	}
 
@@ -500,7 +518,7 @@ public class ImageLoader {
 	 * @param listenerOptions
 	 * @return
 	 */
-	private ImageManagerListener getImageManagerListenerWithCallback(final ImageLoaderListener listener, final Options listenerOptions) {
+	private ImageManagerListener getImageManagerListenerWithCallback(final ImageLoaderListener listener, final ImageLoaderValueListener valueListener, final Options listenerOptions) {
 		return new ImageManagerListener() {
 			@Override
 			public void onLoadImageFailed(String error) {
@@ -518,9 +536,17 @@ public class ImageLoader {
 					listener.onImageAvailable(imageView, bitmap, returnedFrom);
 				}
 			}
+
+			@Override
+			public void onImageReceived(ImageReturnValues imageValues) {
+				ImageView imageView = mViewMapper.removeImageView(this);
+				if (imageView != null) {
+					valueListener.onImageAvailable(imageView, imageValues);
+				}
+			}
 		};
 	}
-
+	
 	/**
 	 * Stub ImageManagerListener used for pre-caching images.
 	 * 
@@ -534,6 +560,12 @@ public class ImageLoader {
 
 			@Override
 			public void onImageReceived(Bitmap bitmap, ImageReturnedFrom returnedFrom) {
+			}
+
+			@Override
+			public void onImageReceived(ImageReturnValues returnedFrom) {
+				// TODO Auto-generated method stub
+				
 			}
 		};
 	}
