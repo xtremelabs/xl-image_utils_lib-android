@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.xl_image_utils_android_testactivity"
+    package="com.xtreme.testactivity"
     android:versionCode="1"
     android:versionName="1.0" >
 
