@@ -1,0 +1,3 @@
+[submodule "tools"]
+	path = tools
+	url = https://github.com/xtremelabs/xlt-platform_tools-android.git
