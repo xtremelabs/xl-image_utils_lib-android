@@ -1,0 +1,9 @@
+<Manifest>
+	<API_LEVEL>15</API_LEVEL>
+	<VERSION>1.0</VERSION>
+	<GIT_PROJECT>xtremelabs/xl-image_utils_lib-android</GIT_PROJECT>
+	<JAR_FILE_NAME>xtreme-image-cache</JAR_FILE_NAME>
+	<PROJECT_NAME>XtremeImageUtils</PROJECT_NAME>
+	<PROJECT_DIR>xl_image_utils_lib</PROJECT_DIR>
+	<Library path="Xtreme-Rest/xtreme-rest-lib-v1.1.jar" />
+</Manifest>

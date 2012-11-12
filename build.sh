@@ -14,19 +14,32 @@ function print_header {
 }
 
 function set_vars {
-	API_LEVEL=15
-	VERSION=1.0
+	MANIFEST_FILE_NAME=xl-lib-manifest.xml
+	for param in `cat $MANIFEST_FILE_NAME`
+	do
+		tag=`echo "$param" | sed "s/<\([^>]*\)>.*/\1/"`
+		value=`echo "$param" | sed "s/^[^>]*>\([^<]*\).*/\1/"`
+		case "$tag" in
+			API_LEVEL) 	API_LEVEL=$value
+						;;
+			VERSION)	VERSION=$value
+						;;
+			GIT_PROJECT) GIT_PROJECT=$value
+						;;
+			JAR_FILE_NAME) JAR_FILE_PREFIX=$value
+						;;
+			PROJECT_NAME) PROJECT_NAME=$value
+						;;
+			PROJECT_DIR) PROJECT_DIR=$value
+						;;
+		esac
+	done
+
 	BUILD_TAG=v$VERSION
-	GIT_PROJECT=xtremelabs/xl-image_utils_lib-android
-	JAR_FILE_NAME=xtreme-image-cache-v$VERSION.jar
-	MANIFEST_FILE_NAME=xl-image-utils-lib-manifest.xml
+	JAR_FILE_NAME=$JAR_FILE_PREFIX-$BUILD_TAG.jar
 	WORKSPACE=$(pwd)
 
-	PROJECT_NAME=XtremeImageUtils
-	PROJECT_DIR=xl_image_utils_lib
-
-	 RESULTANT_APK_DIR=$WORKSPACE/$PROJECT_DIR
-
+	RESULTANT_APK_DIR=$WORKSPACE/$PROJECT_DIR
 }
 
 # for_each_project function that runs 'android update project' on the given project
@@ -167,34 +180,25 @@ function publish_build {
 # Tags build and uploads APKs to the server
 function generate_manifest {
 	print_header "Generating manifest"
-	
+
 	echo "<Manifest>" > $MANIFEST_FILE_NAME
+	echo "	<API_LEVEL>$API_LEVEL</API_LEVEL>" >> $MANIFEST_FILE_NAME
+	echo "	<VERSION>$VERSION</VERSION>" >> $MANIFEST_FILE_NAME
+	echo "	<GIT_PROJECT>$GIT_PROJECT</GIT_PROJECT>" >> $MANIFEST_FILE_NAME
+	echo "	<JAR_FILE_NAME>$JAR_FILE_PREFIX</JAR_FILE_NAME>" >> $MANIFEST_FILE_NAME
+	echo "	<PROJECT_NAME>$PROJECT_NAME</PROJECT_NAME>" >> $MANIFEST_FILE_NAME
+	echo "	<PROJECT_DIR>$PROJECT_DIR</PROJECT_DIR>" >> $MANIFEST_FILE_NAME
 	echo "	<Library path=\"$PROJECT_DIR/$JAR_FILE_NAME\" />" >> $MANIFEST_FILE_NAME
 	echo "</Manifest>">> $MANIFEST_FILE_NAME
-
-
-
 }
 
-
-
-
 set_vars
-
 pre_build
-
 generate_manifest 
-
 cd $PROJECT_DIR
- update_project $PROJECT_NAME
-
- clean_project $PROJECT_NAME
-
- set_as_library $PROJECT_NAME
-
- build_library $PROJECT_NAME $PROJECT_DIR
-
+update_project $PROJECT_NAME
+clean_project $PROJECT_NAME
+set_as_library $PROJECT_NAME
+build_library $PROJECT_NAME $PROJECT_DIR
 cd ..
-
 publish_build
-
