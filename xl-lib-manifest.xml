@@ -5,5 +5,5 @@
 	<JAR_FILE_NAME>xtreme-image-cache</JAR_FILE_NAME>
 	<PROJECT_NAME>XtremeImageUtils</PROJECT_NAME>
 	<PROJECT_DIR>xl_image_utils_lib</PROJECT_DIR>
-	<Library path="Xtreme-Rest/xtreme-rest-lib-v1.1.jar" />
+	<Library path="xl_image_utils_lib/xtreme-image-cache-v1.0.jar" />
 </Manifest>
