@@ -16,8 +16,13 @@
 
 package com.xtremelabs.imageutils;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.BitmapFactory.Options;
 import android.os.Build;
 
 import com.xtremelabs.imageutils.AsyncOperationsMaps.AsyncOperationState;
@@ -28,7 +33,13 @@ import com.xtremelabs.imageutils.AsyncOperationsMaps.AsyncOperationState;
  * The job of this class is to "route" messages appropriately in order to ensure synchronized handling of image downloading and caching operations.
  */
 public class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, AsyncOperationsObserver {
+	private static enum RequestType {
+		LOCAL_REQUEST, REMOTE_REQUEST
+	}
+
 	private static final String PREFIX = "IMAGE CACHER - ";
+
+	private static final String FILE_SYSTEM_HOST = "file";
 
 	private static ImageCacher mImageCacher;
 
@@ -57,36 +68,62 @@ public class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, 
 		return mImageCacher;
 	}
 
-	public Bitmap getBitmap(String url, ImageCacherListener imageCacherListener, ScalingInfo scalingInfo) {
-		throwExceptionIfNeeded(url, imageCacherListener, scalingInfo);
+	public Bitmap getBitmap(String uri, ImageCacherListener imageCacherListener, ScalingInfo scalingInfo) {
+		throwExceptionIfNeeded(uri, imageCacherListener, scalingInfo);
 
-		AsyncOperationState asyncOperationState = mAsyncOperationsMap.queueListenerIfRequestPending(imageCacherListener, url, scalingInfo);
+		RequestType requestType;
+		try {
+			requestType = getRequestType(uri, imageCacherListener);
+		} catch (URISyntaxException e) {
+			return null;
+		}
+
+		AsyncOperationState asyncOperationState = mAsyncOperationsMap.queueListenerIfRequestPending(imageCacherListener, uri, scalingInfo);
 
 		switch (asyncOperationState) {
 		case QUEUED_FOR_NETWORK_REQUEST:
-			mNetworkInterface.bump(url);
+			mNetworkInterface.bump(uri);
 			return null;
 		case QUEUED_FOR_DECODE_REQUEST:
-			mDiskCache.bumpInQueue(url, getSampleSize(url, scalingInfo));
+			mDiskCache.bumpInQueue(uri, getSampleSize(uri, scalingInfo));
 			return null;
 		}
 
-		int sampleSize = getSampleSize(url, scalingInfo);
+		int sampleSize = getSampleSize(uri, scalingInfo);
 
 		// TODO: Look into removing the sampleSize check.
 
-		if (mDiskCache.isCached(url) && sampleSize != -1) {
+		if (mDiskCache.isCached(uri) && sampleSize != -1) {
 			Bitmap bitmap;
-			if ((bitmap = mMemoryCache.getBitmap(url, sampleSize)) != null) {
+			if ((bitmap = mMemoryCache.getBitmap(uri, sampleSize)) != null) {
 				return bitmap;
 			} else {
-				decodeBitmapFromDisk(url, imageCacherListener, sampleSize);
+				decodeBitmapFromDisk(uri, imageCacherListener, sampleSize);
 			}
-		} else {
-			downloadImageFromNetwork(url, imageCacherListener, scalingInfo);
+		} else if (requestType == RequestType.REMOTE_REQUEST) {
+			downloadImageFromNetwork(uri, imageCacherListener, scalingInfo);
+		} else if (requestType == RequestType.LOCAL_REQUEST) {
+			decodeBitmapForLocalRequest(uri, imageCacherListener, scalingInfo);
 		}
 
 		return null;
+	}
+
+	private RequestType getRequestType(String uri, ImageCacherListener imageCacherListener) throws URISyntaxException {
+		RequestType requestType;
+		try {
+			URI convertedUri = new URI(uri);
+			if (convertedUri.getHost() == FILE_SYSTEM_HOST) {
+				requestType = RequestType.LOCAL_REQUEST;
+			} else {
+				requestType = RequestType.REMOTE_REQUEST;
+			}
+			return requestType;
+		} catch (URISyntaxException e) {
+			imageCacherListener.onFailure("An invalid URI was provided to the image system. URI provided: " + uri);
+			// TODO Make this a more meaningful exception.
+			throw e;
+		}
 	}
 
 	@Override
@@ -138,6 +175,22 @@ public class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, 
 	private void decodeBitmapFromDisk(String url, ImageCacherListener imageCacherListener, int sampleSize) {
 		mAsyncOperationsMap.registerListenerForDecode(imageCacherListener, url, sampleSize);
 		mDiskCache.getBitmapAsynchronouslyFromDisk(url, sampleSize, ImageReturnedFrom.DISK, true);
+	}
+
+	private void decodeBitmapForLocalRequest(String uri, ImageCacherListener imageCacherListener, ScalingInfo scalingInfo) {
+		int sampleSize = 1;
+		if (scalingInfo.sampleSize != null) {
+			sampleSize = scalingInfo.sampleSize;
+		} else if (scalingInfo.width != null || scalingInfo.height != null) {
+			Options options = new Options();
+			options.inJustDecodeBounds = true;
+			BitmapFactory.decodeFile(uri, options);
+			Dimensions dimensions = new Dimensions(options.outWidth, options.outHeight);
+			sampleSize = mDiskCache.calculateSampleSize(scalingInfo.width, scalingInfo.height, dimensions);
+		}
+
+		mAsyncOperationsMap.registerListenerForDecode(imageCacherListener, uri, sampleSize);
+		mDiskCache.getLocalBitmapAsynchronouslyFromDisk(uri, sampleSize, ImageReturnedFrom.DISK, true);
 	}
 
 	private void validateUrl(String url) {

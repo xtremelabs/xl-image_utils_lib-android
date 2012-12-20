@@ -53,14 +53,14 @@ public class AsyncOperationsMaps {
 		return mDecodeParamsToListenersMap.containsKey(decodeOperationParameters);
 	}
 
-	public synchronized AsyncOperationState queueListenerIfRequestPending(ImageCacherListener imageCacherListener, String url, ScalingInfo scalingInfo) {
-		if (isNetworkRequestPendingForUrl(url)) {
-			registerListenerForNetworkRequest(imageCacherListener, url, scalingInfo);
+	public synchronized AsyncOperationState queueListenerIfRequestPending(ImageCacherListener imageCacherListener, String uri, ScalingInfo scalingInfo) {
+		if (isNetworkRequestPendingForUrl(uri)) {
+			registerListenerForNetworkRequest(imageCacherListener, uri, scalingInfo);
 			return AsyncOperationState.QUEUED_FOR_NETWORK_REQUEST;
 		}
 
-		int sampleSize = mAsyncOperationsObserver.getSampleSize(url, scalingInfo);
-		DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, sampleSize);
+		int sampleSize = mAsyncOperationsObserver.getSampleSize(uri, scalingInfo);
+		DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(uri, sampleSize);
 		if (isDecodeRequestPendingForParams(decodeOperationParameters)) {
 			queueForDecodeRequest(imageCacherListener, decodeOperationParameters);
 			return AsyncOperationState.QUEUED_FOR_DECODE_REQUEST;

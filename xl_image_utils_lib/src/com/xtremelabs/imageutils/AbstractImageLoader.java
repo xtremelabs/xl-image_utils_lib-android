@@ -99,13 +99,13 @@ public abstract class AbstractImageLoader {
 	 * 
 	 * @param imageView
 	 *            The view object that will receive the image requested.
-	 * @param url
+	 * @param uri
 	 *            Location of the image on the web.
 	 */
-	public void loadImage(ImageView imageView, String url) {
+	public void loadImage(ImageView imageView, String uri) {
 		if (!mDestroyed) {
 			ImageManagerListener imageManagerListener = getDefaultImageManagerListener(mDefaultOptions);
-			performImageRequestOnUiThread(imageView, url, mDefaultOptions, imageManagerListener);
+			performImageRequestOnUiThread(imageView, uri, mDefaultOptions, imageManagerListener);
 		} else {
 			Log.w(TAG, "WARNING: loadImage was called after the ImageLoader was destroyed.");
 		}
@@ -120,19 +120,19 @@ public abstract class AbstractImageLoader {
 	 * 
 	 * @param imageView
 	 *            The view object that will receive the image requested.
-	 * @param url
+	 * @param uri
 	 *            Location of the image on the web.
 	 * @param options
 	 *            If options is set to null, the {@link ImageLoader} will use the default options. See the {@link Options} docs for additional details.
 	 */
-	public void loadImage(ImageView imageView, String url, Options options) {
+	public void loadImage(ImageView imageView, String uri, Options options) {
 		if (!mDestroyed) {
 			if (options == null) {
 				options = mDefaultOptions;
 			}
 
 			ImageManagerListener imageManagerListener = getDefaultImageManagerListener(options);
-			performImageRequestOnUiThread(imageView, url, options, imageManagerListener);
+			performImageRequestOnUiThread(imageView, uri, options, imageManagerListener);
 		} else {
 			Log.w(TAG, "WARNING: loadImage was called after the ImageLoader was destroyed.");
 		}
@@ -148,12 +148,12 @@ public abstract class AbstractImageLoader {
 	 * 
 	 * @param imageView
 	 *            The view object that will receive the image requested.
-	 * @param url
+	 * @param uri
 	 *            Location of the image on the web.
 	 * @param options
 	 *            If options is set to null, the {@link ImageLoader} will use the default options. See the {@link Options} docs for additional details.
 	 */
-	public void loadImage(ImageView imageView, String url, Options options, final ImageLoaderListener listener) {
+	public void loadImage(ImageView imageView, String uri, Options options, final ImageLoaderListener listener) {
 		if (!mDestroyed) {
 			if (listener == null) {
 				throw new IllegalArgumentException("You cannot pass in a null ImageLoadingListener.");
@@ -164,7 +164,7 @@ public abstract class AbstractImageLoader {
 			}
 
 			ImageManagerListener imageManagerListener = getImageManagerListenerWithCallback(listener, options);
-			performImageRequestOnUiThread(imageView, url, options, imageManagerListener);
+			performImageRequestOnUiThread(imageView, uri, options, imageManagerListener);
 		} else {
 			Log.w(TAG, "WARNING: loadImage was called after the ImageLoader was destroyed.");
 		}
