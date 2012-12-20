@@ -32,11 +32,11 @@ public class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, 
 
 	private static ImageCacher mImageCacher;
 
-	private ImageDiskCacherInterface mDiskCache;
+	private final ImageDiskCacherInterface mDiskCache;
 	private ImageMemoryCacherInterface mMemoryCache;
-	private ImageNetworkInterface mNetworkInterface;
+	private final ImageNetworkInterface mNetworkInterface;
 
-	private AsyncOperationsMaps mAsyncOperationsMap;
+	private final AsyncOperationsMaps mAsyncOperationsMap;
 
 	private ImageCacher(Context appContext) {
 		if (Build.VERSION.SDK_INT <= 11) {
@@ -199,5 +199,9 @@ public class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, 
 	@Override
 	public boolean isDecodeRequestPending(DecodeOperationParameters decodeOperationParameters) {
 		return mDiskCache.isDecodeRequestPending(decodeOperationParameters);
+	}
+
+	public void setNetworkRequestCreator(NetworkRequestCreator networkRequestCreator) {
+		mNetworkInterface.setNetworkRequestCreator(networkRequestCreator);
 	}
 }

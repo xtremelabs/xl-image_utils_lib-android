@@ -22,4 +22,6 @@ interface ImageNetworkInterface {
 	void bump(String url);
 
 	boolean isNetworkRequestPendingForUrl(String url);
+
+	void setNetworkRequestCreator(NetworkRequestCreator networkRequestImplementer);
 }

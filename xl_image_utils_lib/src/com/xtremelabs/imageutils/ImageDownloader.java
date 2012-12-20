@@ -16,33 +16,27 @@
 
 package com.xtremelabs.imageutils;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.impl.client.DefaultHttpClient;
-
 import android.util.Log;
+
+import com.xtremelabs.imageutils.NetworkRequestCreator.InputStreamListener;
 
 class ImageDownloader implements ImageNetworkInterface {
 	@SuppressWarnings("unused")
 	private static final String TAG = "DefaultImageDownloader";
 
-	private NetworkToDiskInterface mNetworkToDiskInterface;
-	private ImageDownloadObserver mImageDownloadObserver;
-	private HashMap<String, ImageDownloadingRunnable> mUrlToRunnableMap = new HashMap<String, ImageDownloadingRunnable>();
+	private final NetworkToDiskInterface mNetworkToDiskInterface;
+	private final ImageDownloadObserver mImageDownloadObserver;
+	private final HashMap<String, ImageDownloadingRunnable> mUrlToRunnableMap = new HashMap<String, ImageDownloadingRunnable>();
+	private NetworkRequestCreator mNetworkRequestCreator = new DefaultNetworkRequestCreator();
 
 	/*
 	 * TODO: Research into lowering the number of available threads for the network
 	 */
-	private LifoThreadPool mThreadPool = new LifoThreadPool(3);
+	private final LifoThreadPool mThreadPool = new LifoThreadPool(3);
 
 	public ImageDownloader(NetworkToDiskInterface networkToDiskInterface, ImageDownloadObserver imageDownloadObserver) {
 		mNetworkToDiskInterface = networkToDiskInterface;
@@ -66,15 +60,21 @@ class ImageDownloader implements ImageNetworkInterface {
 		}
 	}
 
+	@Override
+	public synchronized void setNetworkRequestCreator(NetworkRequestCreator networkRequestCreator) {
+		if (networkRequestCreator == null) {
+			mNetworkRequestCreator = new DefaultNetworkRequestCreator();
+		} else {
+			mNetworkRequestCreator = networkRequestCreator;
+		}
+	}
+
 	private synchronized void removeUrlFromMap(String url) {
 		mUrlToRunnableMap.remove(url);
 	}
 
 	class ImageDownloadingRunnable implements Runnable {
-		private String mUrl;
-		private boolean mFailed = false;
-		private InputStream mInputStream = null;
-		private HttpEntity mEntity;
+		private final String mUrl;
 
 		public ImageDownloadingRunnable(String url) {
 			mUrl = url;
@@ -82,73 +82,53 @@ class ImageDownloader implements ImageNetworkInterface {
 
 		@Override
 		public void run() {
+			mNetworkRequestCreator.getInputStream(mUrl, new InputStreamListener() {
+				@Override
+				public void onInputStreamReady(InputStream inputStream) {
+					String errorMessage = loadInputStreamToDisk(inputStream);
+					removeUrlFromMap(mUrl);
+					if (errorMessage != null) {
+						mImageDownloadObserver.onImageDownloadFailed(mUrl, errorMessage);
+					} else {
+						mImageDownloadObserver.onImageDownloaded(mUrl);
+					}
+				}
+
+				@Override
+				public void onFailure(String errorMessage) {
+					removeUrlFromMap(mUrl);
+					mImageDownloadObserver.onImageDownloadFailed(mUrl, errorMessage);
+				}
+			});
+		}
+
+		private String loadInputStreamToDisk(InputStream inputStream) {
 			String errorMessage = null;
-			try {
-				executeNetworkRequest();
-				passInputStreamToImageLoader();
-			} catch (IOException e) {
-				mFailed = true;
-				errorMessage = "Failed to download image with error message: " + e.getMessage();
-			} catch (IllegalArgumentException e) {
-				mFailed = true;
-				errorMessage = "Failed to download image with error message: " + e.getMessage();
-			} catch (IllegalStateException e) {
-				/*
-				 * NOTE: If a bad URL is passed in (for example, mUrl = "N/A", the client.execute() call will throw an IllegalStateException. We do not want this exception to crash the app. Rather, we
-				 * want to log the error and report a failure.
-				 */
-				Log.w(AbstractImageLoader.TAG, "IMAGE LOAD FAILED - An error occurred while performing the network request for the image. Stack trace below. URL: " + mUrl);
-				e.printStackTrace();
-				errorMessage = "Failed to download image. A stack trace has been output to the logs. Message: " + e.getMessage();
-				mFailed = true;
-			} finally {
+			if (inputStream != null) {
 				try {
-					if (mEntity != null) {
-						mEntity.consumeContent();
-					}
+					mNetworkToDiskInterface.downloadImageFromInputStream(mUrl, inputStream);
 				} catch (IOException e) {
-				}
-				try {
-					if (mInputStream != null) {
-						mInputStream.close();
+					errorMessage = "IOException when downloading image: " + mUrl + ", Exception type: " + e.getClass().getName() + ", Exception message: " + e.getMessage();
+				} catch (IllegalArgumentException e) {
+					errorMessage = "Failed to download image with error message: " + e.getMessage();
+				} catch (IllegalStateException e) {
+					/*
+					 * NOTE: If a bad URL is passed in (for example, mUrl = "N/A", the client.execute() call will throw an IllegalStateException. We do not want this exception to crash the app. Rather, we want to log the
+					 * error and report a failure.
+					 */
+					Log.w(AbstractImageLoader.TAG, "IMAGE LOAD FAILED - An error occurred while performing the network request for the image. Stack trace below. URL: " + mUrl);
+					e.printStackTrace();
+					errorMessage = "Failed to download image. A stack trace has been output to the logs. Message: " + e.getMessage();
+				} finally {
+					try {
+						if (inputStream != null) {
+							inputStream.close();
+						}
+					} catch (IOException e) {
 					}
-				} catch (IOException e) {
 				}
 			}
-			checkLoadCompleteAndRemoveListeners(errorMessage);
-		}
-
-		private synchronized void checkLoadCompleteAndRemoveListeners(String errorMessage) {
-			removeUrlFromMap(mUrl);
-			if (mFailed) {
-				assert (errorMessage != null);
-				mImageDownloadObserver.onImageDownloadFailed(mUrl, errorMessage);
-			} else {
-				mImageDownloadObserver.onImageDownloaded(mUrl);
-			}
-		}
-
-		public synchronized void executeNetworkRequest() throws ClientProtocolException, IOException {
-			HttpClient client = new DefaultHttpClient();
-			client.getConnectionManager().closeExpiredConnections();
-			HttpUriRequest request = new HttpGet(mUrl);
-			HttpResponse response = client.execute(request);
-			;
-
-			mEntity = response.getEntity();
-			if (mEntity != null) {
-				mInputStream = new BufferedInputStream(mEntity.getContent());
-			}
-			if (mEntity == null || mInputStream == null) {
-				mFailed = true;
-			}
-			client.getConnectionManager().closeExpiredConnections();
-		}
-
-		public void passInputStreamToImageLoader() throws IOException {
-			if (mInputStream != null) {
-				mNetworkToDiskInterface.downloadImageFromInputStream(mUrl, mInputStream);
-			}
+			return errorMessage;
 		}
 	}
 
