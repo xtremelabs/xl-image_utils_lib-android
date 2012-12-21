@@ -47,5 +47,5 @@ interface ImageDiskCacherInterface extends NetworkToDiskInterface {
 
 	int calculateSampleSize(Integer width, Integer height, Dimensions imageDimensions);
 
-	void getLocalBitmapAsynchronouslyFromDisk(String uri, int sampleSize, ImageReturnedFrom disk, boolean b);
+	void getLocalBitmapAsynchronouslyFromDisk(String uri, ScalingInfo scalingInfo, ImageReturnedFrom disk, boolean b);
 }

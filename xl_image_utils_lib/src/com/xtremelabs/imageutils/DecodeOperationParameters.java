@@ -17,11 +17,11 @@
 package com.xtremelabs.imageutils;
 
 public class DecodeOperationParameters {
-	String mUrl;
+	String mUri;
 	int mSampleSize;
 
-	DecodeOperationParameters(String url, int sampleSize) {
-		mUrl = url;
+	DecodeOperationParameters(String uri, int sampleSize) {
+		mUri = uri;
 		mSampleSize = sampleSize;
 	}
 
@@ -29,7 +29,7 @@ public class DecodeOperationParameters {
 	public int hashCode() {
 		int hash;
 		hash = 31 * mSampleSize + 17;
-		hash += mUrl.hashCode();
+		hash += mUri.hashCode();
 		return hash;
 	}
 
@@ -40,7 +40,7 @@ public class DecodeOperationParameters {
 		}
 
 		DecodeOperationParameters otherObject = (DecodeOperationParameters) o;
-		if (otherObject.mSampleSize == mSampleSize && otherObject.mUrl.equals(mUrl)) {
+		if (otherObject.mSampleSize == mSampleSize && otherObject.mUri.equals(mUri)) {
 			return true;
 		}
 		return false;
