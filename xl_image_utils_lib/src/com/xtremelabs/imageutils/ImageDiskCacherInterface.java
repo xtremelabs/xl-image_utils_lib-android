@@ -16,6 +16,13 @@
 
 package com.xtremelabs.imageutils;
 
+import java.io.FileNotFoundException;
+
+import android.graphics.Bitmap;
+
+import com.xtremelabs.imageutils.DiskLRUCacher.FileFormatException;
+
+
 /**
  * This interface defines the mechanisms that the ImageCacher uses to interract with the Disk Cache.
  */
@@ -25,6 +32,8 @@ interface ImageDiskCacherInterface extends NetworkToDiskInterface {
 	int getSampleSize(String url, Integer width, Integer height);
 
 	void getBitmapAsynchronouslyFromDisk(String url, int sampleSize, ImageReturnedFrom returnedFrom, boolean noPreviousNetworkRequest);
+	
+	Bitmap getBitmapSynchronouslyFromDisk(String url, int sampleSize) throws FileNotFoundException, FileFormatException;
 
 	void bumpOnDisk(String url);
 
@@ -38,5 +47,5 @@ interface ImageDiskCacherInterface extends NetworkToDiskInterface {
 
 	int calculateSampleSize(Integer width, Integer height, Dimensions imageDimensions);
 
-	void getLocalBitmapAsynchronouslyFromDisk(String uri, int sampleSize, ImageReturnedFrom disk, boolean b);
+	void getLocalBitmapAsynchronouslyFromDisk(String uri, ScalingInfo scalingInfo, ImageReturnedFrom disk, boolean b);
 }

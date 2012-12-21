@@ -32,6 +32,7 @@ class ViewDimensionsUtil {
 		if (dimensions.y <= 0) {
 			dimensions.y = -1;
 		}
+		Logger.d("LayoutParams getImageViewDimensions: " + dimensions.toString());
 		return dimensions;
 	}
 
@@ -42,11 +43,14 @@ class ViewDimensionsUtil {
 		}
 		int length = isWidth ? params.width : params.height;
 		if (length == LayoutParams.WRAP_CONTENT) {
+			Logger.d("LayoutParams.WRAP_CONTENT");
 			return -1;
 		} else if (length == LayoutParams.MATCH_PARENT) {
+			Logger.d("LayoutParams.MATCH_PARENT");
 			try {
 				return getParentDimensions((ViewGroup) imageView.getParent(), isWidth);
 			} catch (ClassCastException e) {
+				Logger.d("LayoutParams ClassCastException");
 				return -1;
 			}
 		} else {
@@ -60,9 +64,14 @@ class ViewDimensionsUtil {
 			return -1;
 		}
 		int length = isWidth ? params.width : params.height;
+		if (length > 0) {
+			Logger.d("LayoutParams.WRAP_CONTENT getParentDimensions: " + length);
+		}
 		if (length == LayoutParams.WRAP_CONTENT) {
+			Logger.d("LayoutParams.WRAP_CONTENT getParentDimensions");
 			return -1;
 		} else if (length == LayoutParams.MATCH_PARENT) {
+			Logger.d("LayoutParams LayoutParams.MATCH_PARENT getParentDimensions");
 			try {
 				return getParentDimensions((ViewGroup) parent.getParent(), isWidth);
 			} catch (ClassCastException e) {

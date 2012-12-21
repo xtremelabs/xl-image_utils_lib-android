@@ -130,7 +130,7 @@ public class AsyncOperationsMaps {
 		HashSet<DecodeOperationParameters> decodeRequestsToMake = moveNetworkListenersToDiskQueue(url);
 		if (decodeRequestsToMake != null) {
 			for (DecodeOperationParameters decodeOperationParameters : decodeRequestsToMake) {
-				mAsyncOperationsObserver.onImageDecodeRequired(decodeOperationParameters.mUrl, decodeOperationParameters.mSampleSize);
+				mAsyncOperationsObserver.onImageDecodeRequired(decodeOperationParameters.mUri, decodeOperationParameters.mSampleSize);
 			}
 		}
 	}

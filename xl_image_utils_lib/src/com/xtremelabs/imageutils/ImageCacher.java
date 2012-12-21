@@ -16,6 +16,7 @@
 
 package com.xtremelabs.imageutils;
 
+import java.io.FileNotFoundException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -26,6 +27,7 @@ import android.graphics.BitmapFactory.Options;
 import android.os.Build;
 
 import com.xtremelabs.imageutils.AsyncOperationsMaps.AsyncOperationState;
+import com.xtremelabs.imageutils.DiskLRUCacher.FileFormatException;
 
 /**
  * This class defensively handles requests from four locations: LifecycleReferenceManager, ImageMemoryCacherInterface, ImageDiskCacherInterface, ImageNetworkInterface and the AsyncOperationsMaps.
@@ -39,7 +41,7 @@ public class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, 
 
 	private static final String PREFIX = "IMAGE CACHER - ";
 
-	private static final String FILE_SYSTEM_HOST = "file";
+	private static final String FILE_SYSTEM_SCHEME = "file";
 
 	private static ImageCacher mImageCacher;
 
@@ -66,6 +68,31 @@ public class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, 
 			mImageCacher = new ImageCacher(appContext);
 		}
 		return mImageCacher;
+	}
+
+	public Bitmap getBitmapForWidget(String url, ImageCacherListener cacherListener, ScalingInfo scalingInfo) {
+		int sampleSize = getSampleSize(url, scalingInfo);
+		Bitmap bitmap;
+
+		if (mDiskCache.isCached(url) && sampleSize != -1) {
+			if ((bitmap = mMemoryCache.getBitmap(url, sampleSize)) != null) {
+				return bitmap;
+			} else {
+				try {
+					return mDiskCache.getBitmapSynchronouslyFromDisk(url, sampleSize);
+				} catch (FileNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (FileFormatException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		} else {
+			downloadImageFromNetwork(url, cacherListener, scalingInfo);
+		}
+
+		return null;
 	}
 
 	public Bitmap getBitmap(String uri, ImageCacherListener imageCacherListener, ScalingInfo scalingInfo) {
@@ -103,6 +130,7 @@ public class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, 
 		} else if (requestType == RequestType.REMOTE_REQUEST) {
 			downloadImageFromNetwork(uri, imageCacherListener, scalingInfo);
 		} else if (requestType == RequestType.LOCAL_REQUEST) {
+			
 			decodeBitmapForLocalRequest(uri, imageCacherListener, scalingInfo);
 		}
 
@@ -113,7 +141,7 @@ public class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, 
 		RequestType requestType;
 		try {
 			URI convertedUri = new URI(uri);
-			if (convertedUri.getHost() == FILE_SYSTEM_HOST) {
+			if (convertedUri.getScheme().equals(FILE_SYSTEM_SCHEME)) {
 				requestType = RequestType.LOCAL_REQUEST;
 			} else {
 				requestType = RequestType.REMOTE_REQUEST;
@@ -181,13 +209,14 @@ public class ImageCacher implements ImageDownloadObserver, ImageDecodeObserver, 
 		int sampleSize = 1;
 		if (scalingInfo.sampleSize != null) {
 			sampleSize = scalingInfo.sampleSize;
-		} else if (scalingInfo.width != null || scalingInfo.height != null) {
-			Options options = new Options();
-			options.inJustDecodeBounds = true;
-			BitmapFactory.decodeFile(uri, options);
-			Dimensions dimensions = new Dimensions(options.outWidth, options.outHeight);
-			sampleSize = mDiskCache.calculateSampleSize(scalingInfo.width, scalingInfo.height, dimensions);
 		}
+//		else if (scalingInfo.width != null || scalingInfo.height != null) {
+//			Options options = new Options();
+//			options.inJustDecodeBounds = true;
+//			BitmapFactory.decodeFile(uri, options);
+//			Dimensions dimensions = new Dimensions(options.outWidth, options.outHeight);
+//			sampleSize = mDiskCache.calculateSampleSize(scalingInfo.width, scalingInfo.height, dimensions);
+//		}
 
 		mAsyncOperationsMap.registerListenerForDecode(imageCacherListener, uri, sampleSize);
 		mDiskCache.getLocalBitmapAsynchronouslyFromDisk(uri, sampleSize, ImageReturnedFrom.DISK, true);

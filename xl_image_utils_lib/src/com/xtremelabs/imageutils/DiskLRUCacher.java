@@ -22,6 +22,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +31,7 @@ import java.util.List;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.BitmapFactory.Options;
 
 import com.xtremelabs.imageutils.DiskDatabaseHelper.DiskDatabaseHelperObserver;
 
@@ -38,6 +41,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	private final DiskDatabaseHelper mDatabaseHelper;
 	private final ImageDecodeObserver mImageDecodeObserver;
 	private final CachedImagesMap mCachedImagesMap = new CachedImagesMap();
+	private MappedQueue<String, Dimensions> mUriToDimensionsMap = new MappedQueue<String, Dimensions>(150);
 	private final HashMap<DecodeOperationParameters, Runnable> mRequestToRunnableMap = new HashMap<DecodeOperationParameters, Runnable>();
 
 	/*
@@ -111,7 +115,25 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public void getLocalBitmapAsynchronouslyFromDisk(final String uri, final int sampleSize, ImageReturnedFrom disk, boolean b) {
+	public void getLocalBitmapAsynchronouslyFromDisk(final String uri, final ScalingInfo scalingInfo, ImageReturnedFrom disk, boolean b) {
+
+		/*
+		 * FIXME We need to push the image dimensions decode off the UI thread. However, we cannot do that in the same runnable as the decode operations since we require the images dimensions PRIOR to
+		 * making that decode request. We need to revisit the flow in the future to optimize this process.
+		 */
+		int sampleSize = 1;
+		if (scalingInfo.sampleSize != null) {
+			sampleSize = scalingInfo.sampleSize;
+		} else if (scalingInfo.width != null || scalingInfo.height != null) {
+			Options options = new Options();
+			options.inJustDecodeBounds = true;
+			BitmapFactory.decodeFile(uri, options);
+			Dimensions dimensions = new Dimensions(options.outWidth, options.outHeight);
+			mUriToDimensionsMap.addOrBump(uri, dimensions);
+			sampleSize = calculateSampleSize(scalingInfo.width, scalingInfo.height, dimensions);
+		}
+		
+
 		final DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(uri, sampleSize);
 
 		Runnable runnable = new Runnable() {
@@ -196,7 +218,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		}
 	}
 
-	private Bitmap getBitmapSynchronouslyFromDisk(String url, int sampleSize) throws FileNotFoundException, FileFormatException {
+	public Bitmap getBitmapSynchronouslyFromDisk(String url, int sampleSize) throws FileNotFoundException, FileFormatException {
 		File file = getFile(url);
 		FileInputStream fileInputStream = null;
 		fileInputStream = new FileInputStream(file);
@@ -218,29 +240,34 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	}
 
 	private Bitmap getLocalBitmapSynchronouslyFromDisk(String uri, int sampleSize) throws FileNotFoundException, FileFormatException {
-		File file = new File(uri);
-		FileInputStream fileInputStream = null;
-		fileInputStream = new FileInputStream(file);
-		BitmapFactory.Options opts = new BitmapFactory.Options();
-		opts.inSampleSize = sampleSize;
-		Bitmap bitmap = BitmapFactory.decodeStream(fileInputStream, null, opts);
-		if (fileInputStream != null) {
-			try {
-				fileInputStream.close();
-			} catch (IOException e) {
-				e.printStackTrace();
+		File file;
+		try {
+			file = new File(new URI(uri).getPath());
+			FileInputStream fileInputStream = null;
+			fileInputStream = new FileInputStream(file);
+			BitmapFactory.Options opts = new BitmapFactory.Options();
+			opts.inSampleSize = sampleSize;
+			Bitmap bitmap = BitmapFactory.decodeStream(fileInputStream, null, opts);
+			if (fileInputStream != null) {
+				try {
+					fileInputStream.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
-		}
-		if (bitmap == null) {
-			file.delete();
+			if (bitmap == null) {
+				file.delete();
+				throw new FileFormatException();
+			}
+			return bitmap;
+		} catch (URISyntaxException e1) {
 			throw new FileFormatException();
 		}
-		return bitmap;
 	}
 
 	/**
-	 * This calculates the sample size be dividing the width and the height until the first point at which information is lost. Then, it takes one step back and returns the last sample size that did not lead to any loss
-	 * of information.
+	 * This calculates the sample size be dividing the width and the height until the first point at which information is lost. Then, it takes one step back and returns the last sample size that did
+	 * not lead to any loss of information.
 	 * 
 	 * @param width
 	 *            The image will not be scaled down to be smaller than this width. Null for no scaling by width.
