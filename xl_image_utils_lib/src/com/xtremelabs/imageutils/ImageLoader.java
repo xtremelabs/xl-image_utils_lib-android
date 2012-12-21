@@ -19,6 +19,8 @@ package com.xtremelabs.imageutils;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Fragment;
+import android.app.Service;
+import android.content.Context;
 import android.widget.ImageView;
 
 import com.xtremelabs.imageutils.ThreadChecker.CalledFromWrongThreadException;
@@ -78,6 +80,10 @@ public class ImageLoader extends AbstractImageLoader {
 	 */
 	public ImageLoader(Fragment fragment) {
 		super(fragment, fragment.getActivity().getApplicationContext());
+	}
+	
+	public ImageLoader(Service service) {
+		super(service, service.getApplicationContext());
 	}
 
 }
