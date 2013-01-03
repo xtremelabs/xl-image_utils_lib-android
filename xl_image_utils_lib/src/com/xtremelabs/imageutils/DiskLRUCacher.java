@@ -267,8 +267,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	}
 
 	/**
-	 * This calculates the sample size be dividing the width and the height until the first point at which information is lost. Then, it takes one step back and returns the last sample size that did not lead to any loss
-	 * of information.
+	 * Calculates a sample size that will potentially save memory and not result in a loss of quality when the image is made to fill the image view.
 	 * 
 	 * @param width
 	 *            The image will not be scaled down to be smaller than this width. Null for no scaling by width.
@@ -278,47 +277,34 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	 *            The dimensions of the image, as decoded from the full image on disk.
 	 * @return The calculated sample size. 1 if both height and width are null.
 	 */
-	// public int calculateSampleSize(Integer width, Integer height, Dimensions imageDimensions) {
-	// if (width == null && height == null) {
-	// return 1;
-	// }
-	//
-	// int sampleSize = 2;
-	// while ((width == null || imageDimensions.getWidth() / sampleSize >= width) && (height == null || imageDimensions.getHeight() / sampleSize >= height)) {
-	// sampleSize *= 2;
-	// }
-	// sampleSize /= 2;
-	// return sampleSize;
-	// }
-
 	public static int calculateSampleSize(Integer width, Integer height, Dimensions imageDimensions) {
 		final int imageWidth = imageDimensions.getWidth();
 		final int imageHeight = imageDimensions.getHeight();
 
+		int sampleSize = 1;
 		int widthSampleSize = -1;
 		int heightSampleSize = -1;
 
-		if (width != null && imageWidth > width) {
-			widthSampleSize = Math.round((float) imageWidth / (float) width);
-		}
+		if (imageWidth > width && imageHeight > height) {
+			if (width != null && imageWidth > width) {
+				widthSampleSize = Math.round((float) imageWidth / (float) width);
+			}
 
-		if (height != null && imageHeight > height) {
-			heightSampleSize = Math.round((float) imageHeight / (float) height);
-		}
+			if (height != null && imageHeight > height) {
+				heightSampleSize = Math.round((float) imageHeight / (float) height);
+			}
 
-		if (widthSampleSize == -1 && heightSampleSize == -1) {
-			return 1;
+			if (widthSampleSize != -1 || heightSampleSize != -1) {
+				if (widthSampleSize == -1) {
+					sampleSize = heightSampleSize;
+				} else if (heightSampleSize == -1) {
+					sampleSize = widthSampleSize;
+				} else {
+					sampleSize = Math.min(widthSampleSize, heightSampleSize);
+				}
+			}
 		}
-
-		if (widthSampleSize == -1) {
-			return heightSampleSize;
-		}
-
-		if (heightSampleSize == -1) {
-			return widthSampleSize;
-		}
-
-		return Math.min(widthSampleSize, heightSampleSize);
+		return sampleSize;
 	}
 
 	private synchronized void clearLeastUsedFilesInCache() {
