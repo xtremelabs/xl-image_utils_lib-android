@@ -36,4 +36,6 @@ interface ImageDiskCacherInterface extends NetworkToDiskInterface {
 	void bumpInQueue(String url, int sampleSize);
 
 	boolean isDecodeRequestPending(DecodeOperationParameters decodeOperationParameters);
+
+	void retrieveImageDetails(String uri);
 }

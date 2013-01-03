@@ -24,4 +24,6 @@ public interface AsyncOperationsObserver {
 	public boolean isNetworkRequestPendingForUrl(String url);
 
 	public boolean isDecodeRequestPending(DecodeOperationParameters decodeOperationParameters);
+
+	public void onImageDetailsRequired(String uri);
 }

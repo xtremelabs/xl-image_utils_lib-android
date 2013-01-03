@@ -26,25 +26,24 @@ import android.os.Handler;
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
 
 /**
- * This class is responsible for maintaining a clear separation between the cacher and the lifecycle classes that originally made image requests (ie. Activities
- * and Fragments).
+ * This class is responsible for maintaining a clear separation between the cacher and the lifecycle classes that originally made image requests (ie. Activities and Fragments).
  * 
- * HashMaps are used to maintain mappings between the different requests. When an Activity or Fragment is being destroyed, this class will sever all references
- * back to the Activity or Fragment, allowing the class to become garbage collected.
+ * HashMaps are used to maintain mappings between the different requests. When an Activity or Fragment is being destroyed, this class will sever all references back to the Activity or Fragment, allowing the class to
+ * become garbage collected.
  * 
- * Finally, this class is responsible for ensuring that all calls back to listeners in the ImageLoader occur on the UI thread. This prevents race conditions in
- * the ImageLoader and simplifies loading the bitmaps back to image views.
+ * Finally, this class is responsible for ensuring that all calls back to listeners in the ImageLoader occur on the UI thread. This prevents race conditions in the ImageLoader and simplifies loading the bitmaps back to
+ * image views.
  */
 // TODO: It may be worthwhile to use a WeakHashMap rather than actively forcing the user to call onDestroy.
 // Look into using a ReferenceQueue
-class LifecycleReferenceManager {
+class LifecycleReferenceManager implements ReferenceManager {
 	private static final String PREFIX = "REFERENCE MANAGER - ";
 
 	private static LifecycleReferenceManager referenceManager;
 
-	private LifecycleKeyListenerMapper mListenerHelper = new LifecycleKeyListenerMapper();
-	private Handler mUiThreadHandler;
-	private ImageCacher mImageCacher;
+	private final LifecycleKeyListenerMapper mListenerHelper = new LifecycleKeyListenerMapper();
+	private final Handler mUiThreadHandler;
+	private final ImageCacher mImageCacher;
 
 	private LifecycleReferenceManager(Context applicationContext) {
 		mImageCacher = ImageCacher.getInstance(applicationContext);
@@ -71,6 +70,7 @@ class LifecycleReferenceManager {
 	 * @param imageManagerListener
 	 * @param scalingInfo
 	 */
+	@Override
 	public void getBitmap(Object key, String url, ImageManagerListener imageManagerListener, ScalingInfo scalingInfo) {
 		if (GeneralUtils.isStringBlank(url)) {
 			imageManagerListener.onLoadImageFailed("Blank url");
@@ -81,10 +81,12 @@ class LifecycleReferenceManager {
 		returnImageIfValid(imageManagerListener, bitmap);
 	}
 
+	@Override
 	public List<ImageManagerListener> removeListenersForKey(Object key) {
 		return mListenerHelper.removeAllEntriesForKey(key);
 	}
 
+	@Override
 	public void cancelRequest(ImageManagerListener imageManagerListener) {
 		if (Logger.logAll()) {
 			Logger.d(PREFIX + "Cancelling a request.");
@@ -117,11 +119,11 @@ class LifecycleReferenceManager {
 					}
 
 					ImageManagerListener listener = mListenerHelper.getAndRemoveListener(ImageManagerCacheListener.this);
-					
+
 					if (Logger.isProfiling()) {
 						Profiler.report("End-of-call  --  Removing the listener.");
 					}
-					
+
 					if (listener != null) {
 						if (Logger.isProfiling()) {
 							Profiler.init("End-of-call  --  On Image Received (success)");
@@ -147,12 +149,12 @@ class LifecycleReferenceManager {
 					if (Logger.isProfiling()) {
 						Profiler.init("End-of-call on UI thread - failure");
 					}
-					
+
 					ImageManagerListener listener = mListenerHelper.getAndRemoveListener(ImageManagerCacheListener.this);
 					if (listener != null) {
 						listener.onLoadImageFailed(message);
 					}
-					
+
 					if (Logger.isProfiling()) {
 						Profiler.init("End-of-call on UI thread - failure");
 					}

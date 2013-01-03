@@ -19,7 +19,7 @@ public abstract class AbstractImageLoader {
 	public static final String TAG = "ImageLoader";
 
 	private final ImageViewReferenceMapper mViewMapper = new ImageViewReferenceMapper();
-	private LifecycleReferenceManager mReferenceManager;
+	private ReferenceManager mReferenceManager;
 	private Context mApplicationContext;
 	private Object mKey;
 	private boolean mDestroyed = false;
@@ -47,6 +47,7 @@ public abstract class AbstractImageLoader {
 			throw new IllegalArgumentException("Key inside the ImageLoader cannot be null!");
 		}
 		initKeyAndAppContext(key, applicationContext);
+		mReferenceManager = LifecycleReferenceManager.getInstance(applicationContext);
 	}
 
 	/**
@@ -312,7 +313,10 @@ public abstract class AbstractImageLoader {
 	protected void initKeyAndAppContext(Object key, Context applicationContext) {
 		mApplicationContext = applicationContext;
 		mKey = key;
-		mReferenceManager = LifecycleReferenceManager.getInstance(applicationContext);
+	}
+
+	void stubReferenceManager(ReferenceManager referenceManager) {
+		mReferenceManager = referenceManager;
 	}
 
 	private void performImageRequestOnUiThread(final ImageView imageView, final String url, final Options options, final ImageManagerListener imageManagerListener) {
