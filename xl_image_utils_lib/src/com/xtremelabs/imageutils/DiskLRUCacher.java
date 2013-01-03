@@ -80,7 +80,8 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		boolean isPermanentStorageUri = false;
 		try {
 			URI imageUri = new URI(uri);
-			if (imageUri.getScheme().equals("file")) {
+			String scheme = imageUri.getScheme();
+			if (scheme != null && scheme.equals("file")) {
 				isPermanentStorageUri = true;
 			}
 		} catch (URISyntaxException e) {
@@ -206,11 +207,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 
 	@Override
 	public Dimensions getImageDimensions(String uri) {
-		boolean isFromPermanentStorage = false;
-		try {
-			isFromPermanentStorage = new URI(uri).getScheme().equals("file");
-		} catch (URISyntaxException e) {
-		}
+		boolean isFromPermanentStorage = isPermanentStorageUri(uri);
 
 		Dimensions dimensions;
 		if (isFromPermanentStorage) {
