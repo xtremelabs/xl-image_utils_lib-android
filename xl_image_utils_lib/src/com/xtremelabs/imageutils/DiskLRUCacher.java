@@ -278,17 +278,47 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	 *            The dimensions of the image, as decoded from the full image on disk.
 	 * @return The calculated sample size. 1 if both height and width are null.
 	 */
-	public int calculateSampleSize(Integer width, Integer height, Dimensions imageDimensions) {
-		if (width == null && height == null) {
+	// public int calculateSampleSize(Integer width, Integer height, Dimensions imageDimensions) {
+	// if (width == null && height == null) {
+	// return 1;
+	// }
+	//
+	// int sampleSize = 2;
+	// while ((width == null || imageDimensions.getWidth() / sampleSize >= width) && (height == null || imageDimensions.getHeight() / sampleSize >= height)) {
+	// sampleSize *= 2;
+	// }
+	// sampleSize /= 2;
+	// return sampleSize;
+	// }
+
+	public static int calculateSampleSize(Integer width, Integer height, Dimensions imageDimensions) {
+		final int imageWidth = imageDimensions.getWidth();
+		final int imageHeight = imageDimensions.getHeight();
+
+		int widthSampleSize = -1;
+		int heightSampleSize = -1;
+
+		if (width != null && imageWidth > width) {
+			widthSampleSize = Math.round((float) imageWidth / (float) width);
+		}
+
+		if (height != null && imageHeight > height) {
+			heightSampleSize = Math.round((float) imageHeight / (float) height);
+		}
+
+		if (widthSampleSize == -1 && heightSampleSize == -1) {
 			return 1;
 		}
 
-		int sampleSize = 2;
-		while ((width == null || imageDimensions.getWidth() / sampleSize >= width) && (height == null || imageDimensions.getHeight() / sampleSize >= height)) {
-			sampleSize *= 2;
+		if (widthSampleSize == -1) {
+			return heightSampleSize;
 		}
-		sampleSize /= 2;
-		return sampleSize;
+
+		if (heightSampleSize == -1) {
+			return widthSampleSize;
+		}
+
+		return Math.min(widthSampleSize, heightSampleSize);
 	}
 
 	private synchronized void clearLeastUsedFilesInCache() {
