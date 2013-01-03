@@ -161,7 +161,11 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 	private static boolean checkIsFileSystemURI(String uri) {
 		try {
 			URI u = new URI(uri);
-			return u.getScheme().equals(FILE_SYSTEM_SCHEME);
+			String scheme = u.getScheme();
+			if (scheme == null) {
+				return false;
+			}
+			return scheme.equals(FILE_SYSTEM_SCHEME);
 		} catch (URISyntaxException e) {
 			return false;
 		}
