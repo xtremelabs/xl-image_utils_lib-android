@@ -1,8 +1,18 @@
 package com.xtremelabs.testactivity;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.graphics.Bitmap;
 import android.graphics.Point;
+import android.graphics.drawable.BitmapDrawable;
+import android.os.StrictMode;
+import android.os.StrictMode.ThreadPolicy;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -13,13 +23,19 @@ import com.xtremelabs.imageutils.ImageLoader;
 
 @TargetApi(13)
 public class KittenAdapter extends BaseAdapter {
+	private static final String IMAGE_FILE_NAME = "kitteh.jpg";
 	private static final String URL = "http://placekitten.com/500/250?a=";
-	private Activity mActivity;
-	private ImageLoader mImageLoader;
+	private final String KITTEN_URI;
+	private final Activity mActivity;
+	private final ImageLoader mImageLoader;
 
 	public KittenAdapter(Activity activity, ImageLoader imageLoader) {
+		KITTEN_URI = "file://" + activity.getCacheDir() + File.separator + IMAGE_FILE_NAME;
+
 		mActivity = activity;
 		mImageLoader = imageLoader;
+
+		loadKittenToFile();
 	}
 
 	@Override
@@ -29,7 +45,11 @@ public class KittenAdapter extends BaseAdapter {
 
 	@Override
 	public Object getItem(int position) {
-		return URL + position;
+		if (position % 2 == 0) {
+			return URL + position;
+		} else {
+			return KITTEN_URI;
+		}
 	}
 
 	@Override
@@ -55,8 +75,13 @@ public class KittenAdapter extends BaseAdapter {
 		if (kittenViews == null)
 			kittenViews = (KittenViews) convertView.getTag();
 
-		mImageLoader.loadImage(kittenViews.kitten1, (String) getItem(position) + "1");
-		mImageLoader.loadImage(kittenViews.kitten2, (String) getItem(position) + "2");
+		if (position % 2 == 0) {
+			mImageLoader.loadImage(kittenViews.kitten1, (String) getItem(position) + "1");
+			mImageLoader.loadImage(kittenViews.kitten2, (String) getItem(position) + "2");
+		} else {
+			mImageLoader.loadImage(kittenViews.kitten1, (String) getItem(position));
+			mImageLoader.loadImage(kittenViews.kitten2, (String) getItem(position));
+		}
 
 		return convertView;
 	}
@@ -75,5 +100,20 @@ public class KittenAdapter extends BaseAdapter {
 
 		params1.width = params2.width = size.x / 2;
 		params1.height = params2.height = (int) ((size.x / 800f) * 200f);
+	}
+
+	private void loadKittenToFile() {
+		StrictMode.setThreadPolicy(ThreadPolicy.LAX);
+		try {
+			URI uri = new URI(KITTEN_URI);
+			final File imageFile = new File(uri.getPath());
+			final FileOutputStream fos = new FileOutputStream(imageFile);
+			Bitmap bitmap = ((BitmapDrawable) mActivity.getResources().getDrawable(R.drawable.kitteh)).getBitmap();
+			bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+		} catch (final FileNotFoundException e) {
+			throw new RuntimeException("Could not find kitteh.");
+		} catch (URISyntaxException e) {
+			throw new RuntimeException("Poorly named kitteh.");
+		}
 	}
 }

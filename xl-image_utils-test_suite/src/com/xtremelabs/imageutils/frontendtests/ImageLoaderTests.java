@@ -15,7 +15,7 @@ import com.xtremelabs.imageutils.testutils.GeneralTestUtils.DelayedLoopListener;
 import com.xtremelabs.testactivity.MainActivity;
 
 public class ImageLoaderTests extends ActivityInstrumentationTestCase2<MainActivity> {
-	private String mTestUrl = "http://placekitten.com/500/300";
+	private final String mTestUrl = "http://placekitten.com/500/300";
 
 	private ImageView mImageView;
 	private Bitmap mBitmap;
@@ -102,11 +102,11 @@ public class ImageLoaderTests extends ActivityInstrumentationTestCase2<MainActiv
 	public void testNullUrlFailure() {
 		try {
 			runTestOnUiThread(new Runnable() {
-				
+
 				@Override
 				public void run() {
 					ImageLoader imageLoader = new ImageLoader(getActivity());
-					
+
 					mDiskManagerAccessUtil = new DiskManagerAccessUtil(getActivity().getApplicationContext());
 
 					mDiskManagerAccessUtil.clearDiskCache();
@@ -141,7 +141,7 @@ public class ImageLoaderTests extends ActivityInstrumentationTestCase2<MainActiv
 					assertTrue(mFailed);
 					assertFalse(mComplete);
 					assertTrue(mErrorMessage.contains("Blank url"));
-					
+
 					imageLoader.destroy();
 				}
 			});
