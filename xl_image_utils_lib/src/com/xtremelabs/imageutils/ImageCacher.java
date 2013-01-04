@@ -46,7 +46,9 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 		return mImageCacher;
 	}
 
-	public Bitmap getBitmap(String uri, ImageCacherListener imageCacherListener, ScalingInfo scalingInfo) {
+	public Bitmap getBitmap(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
+		String uri = imageRequest.getUri();
+		ScalingInfo scalingInfo = imageRequest.getScalingInfo();
 		throwExceptionIfNeeded(uri, imageCacherListener, scalingInfo);
 
 		AsyncOperationState asyncOperationState = mAsyncOperationsMap.queueListenerIfRequestPending(imageCacherListener, uri, scalingInfo);

@@ -52,7 +52,8 @@ public class ImageCacherTests extends AndroidTestCase {
 			}
 		});
 
-		assertNull(mImageCacher.getBitmap(TEST_URI, new ImageCacherListener() {
+		ImageRequest imageRequest = new ImageRequest(TEST_URI, new ScalingInfo());
+		assertNull(mImageCacher.getBitmap(imageRequest, new ImageCacherListener() {
 			@Override
 			public void onImageAvailable(Bitmap bitmap, ImageReturnedFrom returnedFrom) {
 			}
@@ -60,7 +61,7 @@ public class ImageCacherTests extends AndroidTestCase {
 			@Override
 			public void onFailure(String message) {
 			}
-		}, new ScalingInfo()));
+		}));
 
 		delayedLoop.startLoop();
 		delayedLoop.assertPassed();
@@ -95,7 +96,8 @@ public class ImageCacherTests extends AndroidTestCase {
 			}
 		});
 
-		assertNull(mImageCacher.getBitmap(TEST_URI, new ImageCacherListener() {
+		ImageRequest imageRequest = new ImageRequest(TEST_URI, new ScalingInfo());
+		assertNull(mImageCacher.getBitmap(imageRequest, new ImageCacherListener() {
 			@Override
 			public void onImageAvailable(Bitmap bitmap, ImageReturnedFrom returnedFrom) {
 			}
@@ -103,7 +105,7 @@ public class ImageCacherTests extends AndroidTestCase {
 			@Override
 			public void onFailure(String message) {
 			}
-		}, new ScalingInfo()));
+		}));
 
 		delayedLoop.startLoop();
 		delayedLoop.assertPassed();
@@ -138,7 +140,8 @@ public class ImageCacherTests extends AndroidTestCase {
 			}
 		});
 
-		Bitmap bitmap = mImageCacher.getBitmap(TEST_URI, new ImageCacherListener() {
+		ImageRequest imageRequest = new ImageRequest(TEST_URI, new ScalingInfo());
+		Bitmap bitmap = mImageCacher.getBitmap(imageRequest, new ImageCacherListener() {
 			@Override
 			public void onImageAvailable(Bitmap bitmap, ImageReturnedFrom returnedFrom) {
 			}
@@ -146,7 +149,7 @@ public class ImageCacherTests extends AndroidTestCase {
 			@Override
 			public void onFailure(String message) {
 			}
-		}, new ScalingInfo());
+		});
 
 		assertNotNull(bitmap);
 		assertEquals(100, bitmap.getWidth());

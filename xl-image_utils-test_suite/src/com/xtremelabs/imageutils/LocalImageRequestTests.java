@@ -22,7 +22,7 @@ public class LocalImageRequestTests extends ActivityInstrumentationTestCase2<Mai
 		mImageLoader = new ImageLoader(getActivity());
 		mImageLoader.stubReferenceManager(new ReferenceManager() {
 			@Override
-			public void getBitmap(Object key, String url, ImageManagerListener imageManagerListener, ScalingInfo scalingInfo) {
+			public void getBitmap(Object key, ImageRequest imageRequest, ImageManagerListener imageManagerListener) {
 				imageManagerListener.onImageReceived(null, ImageReturnedFrom.DISK);
 			}
 
