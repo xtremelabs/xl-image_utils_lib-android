@@ -17,11 +17,11 @@
 package com.xtremelabs.imageutils;
 
 public interface AsyncOperationsObserver {
-	public void onImageDecodeRequired(String url, int mSampleSize);
+	public void onImageDecodeRequired(String uri, int sampleSize);
 
 	public int getSampleSize(String url, ScalingInfo scalingInfo);
 
-	public boolean isNetworkRequestPendingForUrl(String url);
+	public boolean isNetworkRequestPendingForUri(String uri);
 
 	public boolean isDecodeRequestPending(DecodeOperationParameters decodeOperationParameters);
 

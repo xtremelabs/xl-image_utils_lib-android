@@ -534,6 +534,16 @@ public abstract class AbstractImageLoader {
 		public boolean useScreenSizeAsBounds = true;
 
 		/**
+		 * If true, the image will scale to fit best within the specified (or calculated) width and height bounds. If only one dimension is specified for bounds (ie. width OR height is null), the image will scale
+		 * appropriately to that dimension.<br>
+		 * <br>
+		 * If false, the image will scale to the largest possible fit for the view. If one or both bounds are null, the full sized image will be loaded.
+		 */
+		// TODO THIS MUST BE IMPLEMENTED BEFORE RELEASE!!!
+		// TODO The description is kinda crappy. Need to fix the description.
+		public boolean scaleImageForSmallestFit = true;
+
+		/**
 		 * If set to true, the ImageLoader will, before getting the Bitmap, replace the current image within the ImageView with either a null Bitmap or the image resource indicated by the placeholderImageResourceId.
 		 * 
 		 * If set to false, the ImageLoader will only attempt to load the requested Bitmap to the view.

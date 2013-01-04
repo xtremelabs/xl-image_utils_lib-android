@@ -97,15 +97,15 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 	/**
 	 * Caches the image at the provided url to disk. If the image is already on disk, it gets bumped on the eviction queue.
 	 * 
-	 * @param url
+	 * @param uri
 	 */
-	public synchronized void precacheImage(String url) {
-		validateUri(url);
+	public synchronized void precacheImage(String uri) {
+		validateUri(uri);
 
-		if (!mAsyncOperationsMap.isNetworkRequestPendingForUrl(url) && !mDiskCache.isCached(url)) {
-			mNetworkInterface.downloadImageToDisk(url);
+		if (!mAsyncOperationsMap.isNetworkRequestPendingForUri(uri) && !mDiskCache.isCached(uri)) {
+			mNetworkInterface.downloadImageToDisk(uri);
 		} else {
-			mDiskCache.bumpOnDisk(url);
+			mDiskCache.bumpOnDisk(uri);
 		}
 	}
 
@@ -204,8 +204,8 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 	}
 
 	@Override
-	public boolean isNetworkRequestPendingForUrl(String url) {
-		return mNetworkInterface.isNetworkRequestPendingForUrl(url);
+	public boolean isNetworkRequestPendingForUri(String uri) {
+		return mNetworkInterface.isNetworkRequestPendingForUrl(uri);
 	}
 
 	@Override
