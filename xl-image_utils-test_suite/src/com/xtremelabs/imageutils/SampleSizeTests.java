@@ -38,7 +38,7 @@ public class SampleSizeTests extends ActivityInstrumentationTestCase2<MainActivi
 
 		width = 129;
 		height = 129;
-		assertEquals(2, DiskLRUCacher.calculateSampleSize(width, height, imageDimensions));
+		assertEquals(3, DiskLRUCacher.calculateSampleSize(width, height, imageDimensions));
 
 		width = 128;
 		height = 128;
