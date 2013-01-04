@@ -286,7 +286,7 @@ public abstract class AbstractImageLoader {
 	 * The Width and Height allow you to specify the size of the view that the image will be loaded to. If the image is significantly larger than the provided width and/or height, the image will be scaled down in memory,
 	 * allowing for significant improvements to memory usage and performance, at no cost to image detail.
 	 * 
-	 * @param url
+	 * @param uri
 	 * @param applicationContext
 	 * @param width
 	 *            See comment above. Pass in NULL if you want the width to be ignored.
@@ -296,14 +296,16 @@ public abstract class AbstractImageLoader {
 	 * @throws CalledFromWrongThreadException
 	 *             This is thrown if the method is called from off the UI thread.
 	 */
-	public void precacheImageToDiskAndMemory(String url, Context applicationContext, Integer width, Integer height) {
+	public void precacheImageToDiskAndMemory(String uri, Context applicationContext, Integer width, Integer height) {
 		// TODO: Replace the width and height with options?
 		ThreadChecker.throwErrorIfOffUiThread();
 
 		ScalingInfo scalingInfo = new ScalingInfo();
 		scalingInfo.height = height;
 		scalingInfo.width = width;
-		mReferenceManager.getBitmap(applicationContext, url, getBlankImageManagerListener(), scalingInfo);
+
+		ImageRequest imageRequest = new ImageRequest(uri, scalingInfo);
+		mReferenceManager.getBitmap(applicationContext, imageRequest, getBlankImageManagerListener());
 	}
 
 	protected void initKeyAndAppContext(Object key, Context applicationContext) {
@@ -315,27 +317,30 @@ public abstract class AbstractImageLoader {
 		mReferenceManager = referenceManager;
 	}
 
-	private void performImageRequestOnUiThread(final ImageView imageView, final String url, final Options options, final ImageManagerListener imageManagerListener) {
+	private void performImageRequestOnUiThread(final ImageView imageView, final String uri, final Options options, final ImageManagerListener imageManagerListener) {
 		if (ThreadChecker.isOnUiThread())
-			performImageRequest(imageView, url, options, imageManagerListener);
+			performImageRequest(imageView, uri, options, imageManagerListener);
 		else {
 			new Handler(mApplicationContext.getMainLooper()).post(new Runnable() {
 
 				@Override
 				public void run() {
 					if (!mDestroyed)
-						performImageRequest(imageView, url, options, imageManagerListener);
+						performImageRequest(imageView, uri, options, imageManagerListener);
 				}
 			});
 		}
 	}
 
-	private void performImageRequest(ImageView imageView, String url, Options options, ImageManagerListener imageManagerListener) {
+	private void performImageRequest(ImageView imageView, String uri, Options options, ImageManagerListener imageManagerListener) {
 		mapImageView(imageView, imageManagerListener);
 		setPreLoadImage(imageView, options);
 
 		ScalingInfo scalingInfo = getScalingInfo(imageView, options);
-		mReferenceManager.getBitmap(mKey, url, imageManagerListener, scalingInfo);
+
+		ImageRequest imageRequest = new ImageRequest(uri, scalingInfo);
+		imageRequest.setOptions(options);
+		mReferenceManager.getBitmap(mKey, imageRequest, imageManagerListener);
 	}
 
 	private void setPreLoadImage(ImageView imageView, Options options) {

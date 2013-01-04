@@ -71,13 +71,16 @@ class LifecycleReferenceManager implements ReferenceManager {
 	 * @param scalingInfo
 	 */
 	@Override
-	public void getBitmap(Object key, String url, ImageManagerListener imageManagerListener, ScalingInfo scalingInfo) {
-		if (GeneralUtils.isStringBlank(url)) {
+	public void getBitmap(Object key, ImageRequest imageRequest, ImageManagerListener imageManagerListener) {
+		String uri = imageRequest.getUri();
+		ScalingInfo scalingInfo = imageRequest.getScalingInfo();
+
+		if (GeneralUtils.isStringBlank(uri)) {
 			imageManagerListener.onLoadImageFailed("Blank url");
 			return;
 		}
-		ImageManagerCacheListener cacheListener = generateRegisteredListener(key, url, imageManagerListener);
-		Bitmap bitmap = mImageCacher.getBitmap(url, cacheListener, scalingInfo);
+		ImageManagerCacheListener cacheListener = generateRegisteredListener(key, uri, imageManagerListener);
+		Bitmap bitmap = mImageCacher.getBitmap(imageRequest, cacheListener);
 		returnImageIfValid(imageManagerListener, bitmap);
 	}
 
