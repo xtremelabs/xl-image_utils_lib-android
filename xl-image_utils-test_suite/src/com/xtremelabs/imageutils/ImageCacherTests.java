@@ -7,6 +7,7 @@ import android.test.UiThreadTest;
 
 import com.xtreme.utilities.testing.DelayedLoop;
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
+import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
 
 public class ImageCacherTests extends AndroidTestCase {
 	private static final String TEST_URI = "file:///some/directory/with/an/image.jpg";
@@ -33,7 +34,7 @@ public class ImageCacherTests extends AndroidTestCase {
 		mCallComplete = false;
 		mImageCacher.stubAsynchOperationsMaps(new AsyncOperationsMaps(mImageCacher) {
 			@Override
-			public synchronized AsyncOperationState queueListenerIfRequestPending(ImageCacherListener imageCacherListener, String url, ScalingInfo scalingInfo) {
+			public synchronized AsyncOperationState queueListenerIfRequestPending(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
 				return AsyncOperationState.NOT_QUEUED;
 			}
 
@@ -53,15 +54,15 @@ public class ImageCacherTests extends AndroidTestCase {
 		});
 
 		ImageRequest imageRequest = new ImageRequest(TEST_URI, new ScalingInfo());
-		assertNull(mImageCacher.getBitmap(imageRequest, new ImageCacherListener() {
+		assertEquals(ImageResponseStatus.REQUEST_QUEUED, mImageCacher.getBitmap(imageRequest, new ImageCacherListener() {
 			@Override
-			public void onImageAvailable(Bitmap bitmap, ImageReturnedFrom returnedFrom) {
+			public void onImageAvailable(ImageResponse imageResponse) {
 			}
 
 			@Override
 			public void onFailure(String message) {
 			}
-		}));
+		}).getImageResponseStatus());
 
 		delayedLoop.startLoop();
 		delayedLoop.assertPassed();
@@ -75,7 +76,7 @@ public class ImageCacherTests extends AndroidTestCase {
 
 		mImageCacher.stubAsynchOperationsMaps(new AsyncOperationsMaps(mImageCacher) {
 			@Override
-			public synchronized AsyncOperationState queueListenerIfRequestPending(ImageCacherListener imageCacherListener, String url, ScalingInfo scalingInfo) {
+			public synchronized AsyncOperationState queueListenerIfRequestPending(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
 				return AsyncOperationState.QUEUED_FOR_DETAILS_REQUEST;
 			}
 		});
@@ -97,15 +98,15 @@ public class ImageCacherTests extends AndroidTestCase {
 		});
 
 		ImageRequest imageRequest = new ImageRequest(TEST_URI, new ScalingInfo());
-		assertNull(mImageCacher.getBitmap(imageRequest, new ImageCacherListener() {
+		assertEquals(ImageResponseStatus.REQUEST_QUEUED, mImageCacher.getBitmap(imageRequest, new ImageCacherListener() {
 			@Override
-			public void onImageAvailable(Bitmap bitmap, ImageReturnedFrom returnedFrom) {
+			public void onImageAvailable(ImageResponse imageResponse) {
 			}
 
 			@Override
 			public void onFailure(String message) {
 			}
-		}));
+		}).getImageResponseStatus());
 
 		delayedLoop.startLoop();
 		delayedLoop.assertPassed();
@@ -116,7 +117,7 @@ public class ImageCacherTests extends AndroidTestCase {
 
 		mImageCacher.stubAsynchOperationsMaps(new AsyncOperationsMaps(mImageCacher) {
 			@Override
-			public synchronized AsyncOperationState queueListenerIfRequestPending(ImageCacherListener imageCacherListener, String url, ScalingInfo scalingInfo) {
+			public synchronized AsyncOperationState queueListenerIfRequestPending(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
 				return AsyncOperationState.NOT_QUEUED;
 			}
 		});
@@ -141,9 +142,9 @@ public class ImageCacherTests extends AndroidTestCase {
 		});
 
 		ImageRequest imageRequest = new ImageRequest(TEST_URI, new ScalingInfo());
-		Bitmap bitmap = mImageCacher.getBitmap(imageRequest, new ImageCacherListener() {
+		ImageResponse imageResponse = mImageCacher.getBitmap(imageRequest, new ImageCacherListener() {
 			@Override
-			public void onImageAvailable(Bitmap bitmap, ImageReturnedFrom returnedFrom) {
+			public void onImageAvailable(ImageResponse imageResponse) {
 			}
 
 			@Override
@@ -151,9 +152,9 @@ public class ImageCacherTests extends AndroidTestCase {
 			}
 		});
 
-		assertNotNull(bitmap);
-		assertEquals(100, bitmap.getWidth());
-		assertEquals(100, bitmap.getHeight());
+		assertNotNull(imageResponse);
+		assertEquals(100, imageResponse.getBitmap().getWidth());
+		assertEquals(100, imageResponse.getBitmap().getHeight());
 	}
 
 	public void testImageDetailsRetrieved() {

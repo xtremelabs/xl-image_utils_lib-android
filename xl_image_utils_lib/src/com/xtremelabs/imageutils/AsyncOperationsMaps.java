@@ -7,6 +7,7 @@ import java.util.Set;
 import android.graphics.Bitmap;
 
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
+import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
 import com.xtremelabs.imageutils.OperationTracker.KeyReferenceProvider;
 import com.xtremelabs.imageutils.OperationTracker.OperationTransferer;
 
@@ -49,18 +50,20 @@ public class AsyncOperationsMaps {
 		return mDetailsOperationTracker.hasPendingOperation(uri);
 	}
 
-	public synchronized boolean isDecodeRequestPendingForUriAndScalingInfo(String url, ScalingInfo scalingInfo) {
-		DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(url, mAsyncOperationsObserver.getSampleSize(url, scalingInfo));
+	public synchronized boolean isDecodeRequestPendingForUriAndScalingInfo(String uri, ScalingInfo scalingInfo) {
+		DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(uri, mAsyncOperationsObserver.getSampleSize(new ImageRequest(uri, scalingInfo)));
 		return mDecodeOperationTracker.hasPendingOperation(decodeOperationParameters);
 	}
 
-	public synchronized AsyncOperationState queueListenerIfRequestPending(ImageCacherListener imageCacherListener, String uri, ScalingInfo scalingInfo) {
+	public synchronized AsyncOperationState queueListenerIfRequestPending(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
+		String uri = imageRequest.getUri();
+		ScalingInfo scalingInfo = imageRequest.getScalingInfo();
 		if (isNetworkRequestPendingForUri(uri)) {
 			registerListenerForNetworkRequest(imageCacherListener, uri, scalingInfo);
 			return AsyncOperationState.QUEUED_FOR_NETWORK_REQUEST;
 		}
 
-		int sampleSize = mAsyncOperationsObserver.getSampleSize(uri, scalingInfo);
+		int sampleSize = mAsyncOperationsObserver.getSampleSize(imageRequest);
 		DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(uri, sampleSize);
 		if (isDecodeRequestPendingForParams(decodeOperationParameters)) {
 			queueForDecodeRequest(imageCacherListener, decodeOperationParameters);
@@ -95,7 +98,7 @@ public class AsyncOperationsMaps {
 		List<ImageCacherListener> listeners = mDecodeOperationTracker.removeList(decodeOperationParameters, mDecodeReferenceProvider);
 
 		for (ImageCacherListener listener : listeners) {
-			listener.onImageAvailable(bitmap, returnedFrom);
+			listener.onImageAvailable(new ImageResponse(bitmap, returnedFrom, ImageResponseStatus.SUCCESS));
 		}
 	}
 
@@ -126,7 +129,7 @@ public class AsyncOperationsMaps {
 			mDetailsOperationTracker.transferOperation(uri, new OperationTransferer<String, RequestParameters, ImageCacherListener>() {
 				@Override
 				public void transferOperation(String uri, RequestParameters networkRequestParameters, ImageCacherListener imageCacherListener) {
-					int sampleSize = mAsyncOperationsObserver.getSampleSize(uri, networkRequestParameters.mScalingInfo);
+					int sampleSize = mAsyncOperationsObserver.getSampleSize(new ImageRequest(uri, networkRequestParameters.mScalingInfo));
 					DecodeOperationParameters decodeOperationParameters = new DecodeOperationParameters(uri, sampleSize);
 
 					queueForDecodeRequest(networkRequestParameters.mImageCacherListener, decodeOperationParameters);

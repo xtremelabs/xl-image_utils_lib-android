@@ -8,6 +8,7 @@ import android.test.UiThreadTest;
 import android.widget.ImageView;
 
 import com.xtreme.utilities.testing.DelayedLoop;
+import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
 import com.xtremelabs.testactivity.MainActivity;
 
 public class LocalImageRequestTests extends ActivityInstrumentationTestCase2<MainActivity> {
@@ -23,7 +24,7 @@ public class LocalImageRequestTests extends ActivityInstrumentationTestCase2<Mai
 		mImageLoader.stubReferenceManager(new ReferenceManager() {
 			@Override
 			public void getBitmap(Object key, ImageRequest imageRequest, ImageManagerListener imageManagerListener) {
-				imageManagerListener.onImageReceived(null, ImageReturnedFrom.DISK);
+				imageManagerListener.onImageReceived(new ImageResponse(null, ImageReturnedFrom.DISK, ImageResponseStatus.SUCCESS));
 			}
 
 			@Override
