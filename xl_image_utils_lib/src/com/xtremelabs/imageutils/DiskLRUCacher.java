@@ -285,23 +285,21 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		int widthSampleSize = -1;
 		int heightSampleSize = -1;
 
-		if (imageWidth > width && imageHeight > height) {
-			if (width != null && imageWidth > width) {
-				widthSampleSize = Math.round((float) imageWidth / (float) width);
-			}
+		if (width != null && imageWidth > width) {
+			widthSampleSize = imageWidth / width;
+		}
 
-			if (height != null && imageHeight > height) {
-				heightSampleSize = Math.round((float) imageHeight / (float) height);
-			}
+		if (height != null && imageHeight > height) {
+			heightSampleSize = imageHeight / height;
+		}
 
-			if (widthSampleSize != -1 || heightSampleSize != -1) {
-				if (widthSampleSize == -1) {
-					sampleSize = heightSampleSize;
-				} else if (heightSampleSize == -1) {
-					sampleSize = widthSampleSize;
-				} else {
-					sampleSize = Math.min(widthSampleSize, heightSampleSize);
-				}
+		if (widthSampleSize != -1 || heightSampleSize != -1) {
+			if (widthSampleSize == -1) {
+				sampleSize = heightSampleSize;
+			} else if (heightSampleSize == -1) {
+				sampleSize = widthSampleSize;
+			} else {
+				sampleSize = Math.min(widthSampleSize, heightSampleSize);
 			}
 		}
 		return sampleSize;

@@ -433,13 +433,13 @@ public abstract class AbstractImageLoader {
 			}
 
 			@Override
-			public void onImageReceived(Bitmap bitmap, ImageReturnedFrom returnedFrom) {
+			public void onImageReceived(ImageResponse imageResponse) {
 				ImageView imageView = mViewMapper.removeImageView(this);
 				if (imageView != null) {
 					if (Logger.isProfiling()) {
 						Profiler.init("Setting image bitmap for default listener");
 					}
-					imageView.setImageBitmap(bitmap);
+					imageView.setImageBitmap(imageResponse.getBitmap());
 					if (Logger.isProfiling()) {
 						Profiler.report("Setting image bitmap for default listener");
 					}
@@ -467,10 +467,10 @@ public abstract class AbstractImageLoader {
 			}
 
 			@Override
-			public void onImageReceived(Bitmap bitmap, ImageReturnedFrom returnedFrom) {
+			public void onImageReceived(ImageResponse imageResponse) {
 				ImageView imageView = mViewMapper.removeImageView(this);
 				if (imageView != null) {
-					listener.onImageAvailable(imageView, bitmap, returnedFrom);
+					listener.onImageAvailable(imageView, imageResponse.getBitmap(), imageResponse.getImageReturnedFrom());
 				}
 			}
 		};
@@ -488,7 +488,7 @@ public abstract class AbstractImageLoader {
 			}
 
 			@Override
-			public void onImageReceived(Bitmap bitmap, ImageReturnedFrom returnedFrom) {
+			public void onImageReceived(ImageResponse imageResponse) {
 			}
 		};
 	}

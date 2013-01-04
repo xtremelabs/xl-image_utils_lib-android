@@ -20,10 +20,10 @@ import java.util.List;
 
 import android.app.Application;
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.os.Handler;
 
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
+import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
 
 /**
  * This class is responsible for maintaining a clear separation between the cacher and the lifecycle classes that originally made image requests (ie. Activities and Fragments).
@@ -37,8 +37,6 @@ import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
 // TODO: It may be worthwhile to use a WeakHashMap rather than actively forcing the user to call onDestroy.
 // Look into using a ReferenceQueue
 class LifecycleReferenceManager implements ReferenceManager {
-	private static final String PREFIX = "REFERENCE MANAGER - ";
-
 	private static LifecycleReferenceManager referenceManager;
 
 	private final LifecycleKeyListenerMapper mListenerHelper = new LifecycleKeyListenerMapper();
@@ -73,15 +71,14 @@ class LifecycleReferenceManager implements ReferenceManager {
 	@Override
 	public void getBitmap(Object key, ImageRequest imageRequest, ImageManagerListener imageManagerListener) {
 		String uri = imageRequest.getUri();
-		ScalingInfo scalingInfo = imageRequest.getScalingInfo();
 
 		if (GeneralUtils.isStringBlank(uri)) {
 			imageManagerListener.onLoadImageFailed("Blank url");
 			return;
 		}
 		ImageManagerCacheListener cacheListener = generateRegisteredListener(key, uri, imageManagerListener);
-		Bitmap bitmap = mImageCacher.getBitmap(imageRequest, cacheListener);
-		returnImageIfValid(imageManagerListener, bitmap);
+		ImageResponse imageResponse = mImageCacher.getBitmap(imageRequest, cacheListener);
+		returnImageIfValid(imageManagerListener, imageResponse);
 	}
 
 	@Override
@@ -91,9 +88,6 @@ class LifecycleReferenceManager implements ReferenceManager {
 
 	@Override
 	public void cancelRequest(ImageManagerListener imageManagerListener) {
-		if (Logger.logAll()) {
-			Logger.d(PREFIX + "Cancelling a request.");
-		}
 		mListenerHelper.unregisterListener(imageManagerListener).cancelRequest();
 	}
 
@@ -104,41 +98,22 @@ class LifecycleReferenceManager implements ReferenceManager {
 		return cacheListener;
 	}
 
-	private void returnImageIfValid(ImageManagerListener listener, Bitmap bitmap) {
-		if (bitmap != null && mListenerHelper.unregisterListener(listener) != null) {
-			listener.onImageReceived(bitmap, ImageReturnedFrom.MEMORY);
+	private void returnImageIfValid(ImageManagerListener listener, ImageResponse imageResponse) {
+		if (imageResponse.getImageResponseStatus() == ImageResponseStatus.SUCCESS && mListenerHelper.unregisterListener(listener) != null) {
+			listener.onImageReceived(imageResponse);
 		}
 	}
 
 	class ImageManagerCacheListener extends ImageCacherListener {
 		@Override
-		public void onImageAvailable(final Bitmap bitmap, final ImageReturnedFrom returnedFrom) {
+		public void onImageAvailable(final ImageResponse imageResponse) {
 			mUiThreadHandler.post(new Runnable() {
 				@Override
 				public void run() {
-					if (Logger.isProfiling()) {
-						Profiler.init("End-of-call on UI thread - success");
-						Profiler.init("End-of-call  --  Removing the listener.");
-					}
-
 					ImageManagerListener listener = mListenerHelper.getAndRemoveListener(ImageManagerCacheListener.this);
 
-					if (Logger.isProfiling()) {
-						Profiler.report("End-of-call  --  Removing the listener.");
-					}
-
 					if (listener != null) {
-						if (Logger.isProfiling()) {
-							Profiler.init("End-of-call  --  On Image Received (success)");
-						}
-						listener.onImageReceived(bitmap, returnedFrom);
-						if (Logger.isProfiling()) {
-							Profiler.report("End-of-call  --  On Image Received (success)");
-						}
-					}
-
-					if (Logger.isProfiling()) {
-						Profiler.report("End-of-call on UI thread - success");
+						listener.onImageReceived(imageResponse);
 					}
 				}
 			});
@@ -149,26 +124,15 @@ class LifecycleReferenceManager implements ReferenceManager {
 			mUiThreadHandler.post(new Runnable() {
 				@Override
 				public void run() {
-					if (Logger.isProfiling()) {
-						Profiler.init("End-of-call on UI thread - failure");
-					}
-
 					ImageManagerListener listener = mListenerHelper.getAndRemoveListener(ImageManagerCacheListener.this);
 					if (listener != null) {
 						listener.onLoadImageFailed(message);
-					}
-
-					if (Logger.isProfiling()) {
-						Profiler.init("End-of-call on UI thread - failure");
 					}
 				}
 			});
 		}
 
 		public void cancelRequest() {
-			if (Logger.logAll()) {
-				Logger.d(PREFIX + "Cancelling request from within listener.");
-			}
 			mImageCacher.cancelRequestForBitmap(this);
 		}
 	}

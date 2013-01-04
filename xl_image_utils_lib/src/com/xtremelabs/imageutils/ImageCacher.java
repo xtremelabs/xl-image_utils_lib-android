@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.os.Build;
 
 import com.xtremelabs.imageutils.AsyncOperationsMaps.AsyncOperationState;
+import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
 
 /**
  * This class defensively handles requests from four locations: LifecycleReferenceManager, ImageMemoryCacherInterface, ImageDiskCacherInterface, ImageNetworkInterface and the AsyncOperationsMaps.
@@ -46,33 +47,33 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 		return mImageCacher;
 	}
 
-	public Bitmap getBitmap(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
+	public ImageResponse getBitmap(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
 		String uri = imageRequest.getUri();
 		ScalingInfo scalingInfo = imageRequest.getScalingInfo();
-		throwExceptionIfNeeded(uri, imageCacherListener, scalingInfo);
+		throwExceptionIfNeeded(imageRequest, imageCacherListener);
 
-		AsyncOperationState asyncOperationState = mAsyncOperationsMap.queueListenerIfRequestPending(imageCacherListener, uri, scalingInfo);
+		AsyncOperationState asyncOperationState = mAsyncOperationsMap.queueListenerIfRequestPending(imageRequest, imageCacherListener);
 
 		switch (asyncOperationState) {
 		case QUEUED_FOR_NETWORK_REQUEST:
 			mNetworkInterface.bump(uri);
-			return null;
+			return generateQueuedResponse();
 		case QUEUED_FOR_DECODE_REQUEST:
-			mDiskCache.bumpInQueue(uri, getSampleSize(uri, scalingInfo));
-			return null;
+			mDiskCache.bumpInQueue(uri, getSampleSize(imageRequest));
+			return generateQueuedResponse();
 		case QUEUED_FOR_DETAILS_REQUEST:
 			mDiskCache.bumpInQueue(uri, 0);
-			return null;
+			return generateQueuedResponse();
 		}
 
-		int sampleSize = getSampleSize(uri, scalingInfo);
+		int sampleSize = getSampleSize(imageRequest);
 
 		// TODO: Look into removing the sampleSize check.
 
 		if (mDiskCache.isCached(uri) && sampleSize != -1) {
 			Bitmap bitmap;
 			if ((bitmap = mMemoryCache.getBitmap(uri, sampleSize)) != null) {
-				return bitmap;
+				return new ImageResponse(bitmap, ImageReturnedFrom.MEMORY, ImageResponseStatus.SUCCESS);
 			} else {
 				decodeBitmapFromDisk(uri, imageCacherListener, sampleSize);
 			}
@@ -82,16 +83,19 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 			downloadImageFromNetwork(uri, imageCacherListener, scalingInfo);
 		}
 
-		return null;
+		return generateQueuedResponse();
 	}
 
 	@Override
-	public int getSampleSize(String url, ScalingInfo scalingInfo) {
+	public int getSampleSize(ImageRequest imageRequest) {
+		String uri = imageRequest.getUri();
+		ScalingInfo scalingInfo = imageRequest.getScalingInfo();
+
 		int sampleSize;
 		if (scalingInfo.sampleSize != null) {
 			sampleSize = scalingInfo.sampleSize;
 		} else {
-			sampleSize = mDiskCache.getSampleSize(url, scalingInfo.width, scalingInfo.height);
+			sampleSize = mDiskCache.getSampleSize(uri, scalingInfo.width, scalingInfo.height);
 		}
 		return sampleSize;
 	}
@@ -146,16 +150,16 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 			throw new IllegalArgumentException("Null URI passed into the image system.");
 	}
 
-	private void throwExceptionIfNeeded(String uri, ImageCacherListener imageCacherListener, ScalingInfo scalingInfo) {
+	private void throwExceptionIfNeeded(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
 		ThreadChecker.throwErrorIfOffUiThread();
 
-		validateUri(uri);
+		validateUri(imageRequest.getUri());
 
 		if (imageCacherListener == null) {
 			throw new IllegalArgumentException("The ImageCacherListener must not be null.");
 		}
 
-		if (scalingInfo == null) {
+		if (imageRequest.getScalingInfo() == null) {
 			throw new IllegalArgumentException("The ScalingInfo must not be null.");
 		}
 	}
@@ -174,7 +178,7 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 	}
 
 	public static abstract class ImageCacherListener {
-		public abstract void onImageAvailable(Bitmap bitmap, ImageReturnedFrom returnedFrom);
+		public abstract void onImageAvailable(ImageResponse imageResponse);
 
 		public abstract void onFailure(String message);
 	}
@@ -248,5 +252,9 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 	@Override
 	public void onImageDetailsRequired(String uri) {
 		mDiskCache.retrieveImageDetails(uri);
+	}
+
+	private ImageResponse generateQueuedResponse() {
+		return new ImageResponse(null, null, ImageResponseStatus.REQUEST_QUEUED);
 	}
 }
