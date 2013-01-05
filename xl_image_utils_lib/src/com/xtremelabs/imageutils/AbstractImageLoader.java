@@ -511,7 +511,7 @@ public abstract class AbstractImageLoader {
 		 * <br>
 		 * {@link ScalingPreference#ROUND_TO_CLOSEST_MATCH}<br>
 		 * The dimensions of the image returned will be as close to the dimension of the bounds as possible. The bitmap returned may be scaled down to be smaller than the view. This option may degrade image quality, but
-		 * often will consume less memory.<br>
+		 * often will consume less memory. This option will give preference to the smaller of the two bounds.<br>
 		 * <br>
 		 * {@link ScalingPreference#SMALLER_THAN_VIEW}<br>
 		 * The dimensions of the image being returned is guaranteed to be equal to or smaller than the size of the bounds provided. This guarantees memory savings in the event that images are larger than the ImageViews

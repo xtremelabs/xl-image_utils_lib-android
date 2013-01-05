@@ -32,7 +32,6 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.FloatMath;
-import android.util.Log;
 
 import com.xtremelabs.imageutils.AbstractImageLoader.Options;
 import com.xtremelabs.imageutils.AbstractImageLoader.Options.ScalingPreference;
@@ -294,12 +293,8 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		final int imageWidth = imageDimensions.getWidth();
 		final int imageHeight = imageDimensions.getHeight();
 
-		int widthSampleSize = -1;
-		int heightSampleSize = -1;
-
-		if (height != null && height == 257) {
-			Log.d("O hi", "O hi");
-		}
+		int widthSampleSize;
+		int heightSampleSize;
 
 		widthSampleSize = calculateSampleSizeForDimension(imageWidth, width, scalingPreference);
 		heightSampleSize = calculateSampleSizeForDimension(imageHeight, height, scalingPreference);
@@ -313,9 +308,10 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 			switch (scalingPreference) {
 			case MATCH_TO_LARGER_DIMENSION:
 			case LARGER_THAN_VIEW_OR_FULL_SIZE:
-			case ROUND_TO_CLOSEST_MATCH:
 				sampleSize = Math.min(widthSampleSize, heightSampleSize);
 				break;
+			case ROUND_TO_CLOSEST_MATCH:
+			case MATCH_TO_SMALLER_DIMENSION:
 			case SMALLER_THAN_VIEW:
 				sampleSize = Math.max(widthSampleSize, heightSampleSize);
 				break;
@@ -330,6 +326,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 
 			switch (scalingPreference) {
 			case MATCH_TO_LARGER_DIMENSION:
+			case MATCH_TO_SMALLER_DIMENSION:
 			case ROUND_TO_CLOSEST_MATCH:
 			case SMALLER_THAN_VIEW:
 				sampleSize = tempSampleSize;
@@ -343,11 +340,16 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	}
 
 	private static int calculateSampleSizeForDimension(int imageDimension, Integer boundingDimension, ScalingPreference scalingPreference) {
-		int sampleSize = -1;
+		int sampleSize = 1;
 
-		if (boundingDimension != null && imageDimension > boundingDimension) {
+		if (boundingDimension == null) {
+			sampleSize = -1;
+		} else if (imageDimension <= boundingDimension) {
+			sampleSize = 1;
+		} else {
 			float imageWidthToBoundsWidthRatio = (float) imageDimension / (float) boundingDimension;
 			switch (scalingPreference) {
+			case MATCH_TO_SMALLER_DIMENSION:
 			case MATCH_TO_LARGER_DIMENSION:
 			case LARGER_THAN_VIEW_OR_FULL_SIZE:
 				sampleSize = (int) imageWidthToBoundsWidthRatio;
