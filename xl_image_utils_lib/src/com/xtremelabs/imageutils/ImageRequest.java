@@ -16,6 +16,14 @@ class ImageRequest {
 	private Options mOptions;
 
 	public ImageRequest(String uri, ScalingInfo scalingInfo) {
+		if (GeneralUtils.isStringBlank(uri)) {
+			throw new IllegalArgumentException("You cannot create an ImageRequest with a null or empty URI!");
+		}
+
+		if (scalingInfo == null) {
+			throw new IllegalArgumentException("You cannot create an ImageRequest with null ScalingInfo!");
+		}
+
 		mUri = uri;
 		mScalingInfo = scalingInfo;
 

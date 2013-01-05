@@ -14,7 +14,7 @@ public class DiskCacheStub implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public int getSampleSize(String uri, Integer width, Integer height) {
+	public int getSampleSize(ImageRequest imageRequest) {
 		return 0;
 	}
 

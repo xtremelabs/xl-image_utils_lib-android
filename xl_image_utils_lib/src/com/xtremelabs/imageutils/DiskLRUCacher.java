@@ -31,7 +31,11 @@ import java.util.List;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.FloatMath;
+import android.util.Log;
 
+import com.xtremelabs.imageutils.AbstractImageLoader.Options;
+import com.xtremelabs.imageutils.AbstractImageLoader.Options.ScalingPreference;
 import com.xtremelabs.imageutils.DiskDatabaseHelper.DiskDatabaseHelperObserver;
 
 public class DiskLRUCacher implements ImageDiskCacherInterface {
@@ -90,12 +94,12 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public int getSampleSize(String uri, Integer width, Integer height) {
-		Dimensions dimensions = getImageDimensions(uri);
+	public int getSampleSize(ImageRequest imageRequest) {
+		Dimensions dimensions = getImageDimensions(imageRequest.getUri());
 		if (dimensions == null) {
 			return -1;
 		}
-		int sampleSize = calculateSampleSize(width, height, dimensions);
+		int sampleSize = calculateSampleSize(imageRequest, dimensions);
 		return sampleSize;
 	}
 
@@ -277,31 +281,86 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	 *            The dimensions of the image, as decoded from the full image on disk.
 	 * @return The calculated sample size. 1 if both height and width are null.
 	 */
-	public static int calculateSampleSize(Integer width, Integer height, Dimensions imageDimensions) {
+	public static int calculateSampleSize(ImageRequest imageRequest, Dimensions imageDimensions) {
+		ScalingInfo scalingInfo = imageRequest.getScalingInfo();
+		Options options = imageRequest.getOptions();
+		ScalingPreference scalingPreference = ScalingPreference.SMALLER_THAN_VIEW;
+		if (options != null && options.scalingPreference != null) {
+			scalingPreference = options.scalingPreference;
+		}
+
+		final Integer width = scalingInfo.width;
+		final Integer height = scalingInfo.height;
 		final int imageWidth = imageDimensions.getWidth();
 		final int imageHeight = imageDimensions.getHeight();
 
-		int sampleSize = 1;
 		int widthSampleSize = -1;
 		int heightSampleSize = -1;
 
-		if (width != null && imageWidth > width) {
-			widthSampleSize = imageWidth / width;
+		if (height != null && height == 257) {
+			Log.d("O hi", "O hi");
 		}
 
-		if (height != null && imageHeight > height) {
-			heightSampleSize = imageHeight / height;
-		}
+		widthSampleSize = calculateSampleSizeForDimension(imageWidth, width, scalingPreference);
+		heightSampleSize = calculateSampleSizeForDimension(imageHeight, height, scalingPreference);
+		return calculateOverallSampleSize(widthSampleSize, heightSampleSize, scalingPreference);
+	}
 
-		if (widthSampleSize != -1 || heightSampleSize != -1) {
-			if (widthSampleSize == -1) {
-				sampleSize = heightSampleSize;
-			} else if (heightSampleSize == -1) {
-				sampleSize = widthSampleSize;
-			} else {
+	private static int calculateOverallSampleSize(int widthSampleSize, int heightSampleSize, ScalingPreference scalingPreference) {
+		int sampleSize = 1;
+
+		if (widthSampleSize != -1 && heightSampleSize != -1) {
+			switch (scalingPreference) {
+			case MATCH_TO_LARGER_DIMENSION:
+			case LARGER_THAN_VIEW_OR_FULL_SIZE:
+			case ROUND_TO_CLOSEST_MATCH:
 				sampleSize = Math.min(widthSampleSize, heightSampleSize);
+				break;
+			case SMALLER_THAN_VIEW:
+				sampleSize = Math.max(widthSampleSize, heightSampleSize);
+				break;
+			}
+		} else if (widthSampleSize != -1 || heightSampleSize != -1) {
+			int tempSampleSize;
+			if (widthSampleSize == -1) {
+				tempSampleSize = heightSampleSize;
+			} else {
+				tempSampleSize = widthSampleSize;
+			}
+
+			switch (scalingPreference) {
+			case MATCH_TO_LARGER_DIMENSION:
+			case ROUND_TO_CLOSEST_MATCH:
+			case SMALLER_THAN_VIEW:
+				sampleSize = tempSampleSize;
+				break;
+			case LARGER_THAN_VIEW_OR_FULL_SIZE:
+				break;
 			}
 		}
+
+		return sampleSize;
+	}
+
+	private static int calculateSampleSizeForDimension(int imageDimension, Integer boundingDimension, ScalingPreference scalingPreference) {
+		int sampleSize = -1;
+
+		if (boundingDimension != null && imageDimension > boundingDimension) {
+			float imageWidthToBoundsWidthRatio = (float) imageDimension / (float) boundingDimension;
+			switch (scalingPreference) {
+			case MATCH_TO_LARGER_DIMENSION:
+			case LARGER_THAN_VIEW_OR_FULL_SIZE:
+				sampleSize = (int) imageWidthToBoundsWidthRatio;
+				break;
+			case ROUND_TO_CLOSEST_MATCH:
+				sampleSize = Math.round(imageWidthToBoundsWidthRatio);
+				break;
+			case SMALLER_THAN_VIEW:
+				sampleSize = (int) FloatMath.ceil(imageWidthToBoundsWidthRatio);
+				break;
+			}
+		}
+
 		return sampleSize;
 	}
 
