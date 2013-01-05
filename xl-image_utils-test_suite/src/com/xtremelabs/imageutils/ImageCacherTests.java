@@ -129,7 +129,7 @@ public class ImageCacherTests extends AndroidTestCase {
 			}
 
 			@Override
-			public int getSampleSize(String uri, Integer width, Integer height) {
+			public int getSampleSize(ImageRequest imageRequest) {
 				return 1;
 			}
 		});

@@ -496,6 +496,32 @@ public abstract class AbstractImageLoader {
 	 */
 	public static class Options {
 		/**
+		 * {@link ScalingPreference#LARGER_THAN_VIEW_OR_FULL_SIZE}<br>
+		 * This option guarantees that the image being returned will be larger than the view's bounds, or it's maximum size. The image may be scaled down if it is possible to do so without becoming smaller than either of
+		 * the provided bounds. The image will not be scaled unless both a width and height bounds are specified.<br>
+		 * <br>
+		 * {@link ScalingPreference#MATCH_TO_LARGER_DIMENSION}<br>
+		 * This option is nearly identical to {@link ScalingPreference#LARGER_THAN_VIEW_OR_FULL_SIZE}. The only difference is that if bounds are provided for only one dimension of the ImageView (ie. width OR height), the
+		 * image may be scaled according to that dimension.<br>
+		 * <br>
+		 * {@link ScalingPreference#MATCH_TO_SMALLER_DIMENSION}<br>
+		 * This option is nearly identical to {@link ScalingPreference#LARGER_THAN_VIEW_OR_FULL_SIZE}. They differ in that if bounds are provided for only one dimension of the ImageView (ie. width OR height), the image
+		 * may be scaled according to that dimension, and if both width and height are provided, the image will scale to best fit within the bounds (as opposed to the other two options above, which will scale to the
+		 * larger of the two dimensions only).<br>
+		 * <br>
+		 * {@link ScalingPreference#ROUND_TO_CLOSEST_MATCH}<br>
+		 * The dimensions of the image returned will be as close to the dimension of the bounds as possible. The bitmap returned may be scaled down to be smaller than the view. This option may degrade image quality, but
+		 * often will consume less memory.<br>
+		 * <br>
+		 * {@link ScalingPreference#SMALLER_THAN_VIEW}<br>
+		 * The dimensions of the image being returned is guaranteed to be equal to or smaller than the size of the bounds provided. This guarantees memory savings in the event that images are larger than the ImageViews
+		 * they are being loaded into.
+		 */
+		public static enum ScalingPreference {
+			SMALLER_THAN_VIEW, ROUND_TO_CLOSEST_MATCH, LARGER_THAN_VIEW_OR_FULL_SIZE, MATCH_TO_LARGER_DIMENSION, MATCH_TO_SMALLER_DIMENSION
+		}
+
+		/**
 		 * Forces the image to be decoded with the specified sample size. This will override any other parameters that affect the sample size of the image.
 		 * 
 		 * NOTE: This value, if specified, should always be a positive power of 2. The higher the number provided, the further the image will be scaled down.
@@ -535,14 +561,10 @@ public abstract class AbstractImageLoader {
 		public boolean useScreenSizeAsBounds = true;
 
 		/**
-		 * If true, the image will scale to fit best within the specified (or calculated) width and height bounds. If only one dimension is specified for bounds (ie. width OR height is null), the image will scale
-		 * appropriately to that dimension.<br>
-		 * <br>
-		 * If false, the image will scale to the largest possible fit for the view. If one or both bounds are null, the full sized image will be loaded.
+		 * The ImageLoader has the ability to automatically scale down images according to the bounds of the ImageView provided, or the bounds specified within this options object. This parameter is a flag for the sample
+		 * size calculation logic that changes how it chooses sample sizes. See {@link ScalingPreference} for further details.
 		 */
-		// TODO THIS MUST BE IMPLEMENTED BEFORE RELEASE!!!
-		// TODO The description is kinda crappy. Need to fix the description.
-		public boolean scaleImageForSmallestFit = true;
+		public ScalingPreference scalingPreference = ScalingPreference.SMALLER_THAN_VIEW;
 
 		/**
 		 * If set to true, the ImageLoader will, before getting the Bitmap, replace the current image within the ImageView with either a null Bitmap or the image resource indicated by the placeholderImageResourceId.

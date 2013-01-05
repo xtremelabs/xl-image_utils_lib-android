@@ -88,14 +88,13 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 
 	@Override
 	public int getSampleSize(ImageRequest imageRequest) {
-		String uri = imageRequest.getUri();
 		ScalingInfo scalingInfo = imageRequest.getScalingInfo();
 
 		int sampleSize;
 		if (scalingInfo.sampleSize != null) {
 			sampleSize = scalingInfo.sampleSize;
 		} else {
-			sampleSize = mDiskCache.getSampleSize(uri, scalingInfo.width, scalingInfo.height);
+			sampleSize = mDiskCache.getSampleSize(imageRequest);
 		}
 		return sampleSize;
 	}
