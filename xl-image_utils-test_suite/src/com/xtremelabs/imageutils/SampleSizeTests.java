@@ -33,47 +33,47 @@ public class SampleSizeTests extends ActivityInstrumentationTestCase2<MainActivi
 
 		mScalingInfo.width = 600;
 		mScalingInfo.height = 600;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 500;
 		mScalingInfo.height = 500;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 257;
 		mScalingInfo.height = 257;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 256;
 		mScalingInfo.height = 256;
-		assertEquals(2, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(2, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 100;
 		mScalingInfo.height = 600;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 600;
 		mScalingInfo.height = 100;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 170;
 		mScalingInfo.height = 170;
-		assertEquals(3, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(3, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = null;
 		mScalingInfo.height = 100;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 100;
 		mScalingInfo.height = null;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = null;
 		mScalingInfo.height = null;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 256;
 		mScalingInfo.height = 128;
-		assertEquals(2, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(2, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 	}
 
 	public void testSampleSizesMatchToLargerDimension() {
@@ -81,47 +81,47 @@ public class SampleSizeTests extends ActivityInstrumentationTestCase2<MainActivi
 
 		mScalingInfo.width = 600;
 		mScalingInfo.height = 600;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 500;
 		mScalingInfo.height = 500;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 257;
 		mScalingInfo.height = 257;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 256;
 		mScalingInfo.height = 256;
-		assertEquals(2, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(2, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 100;
 		mScalingInfo.height = 600;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 600;
 		mScalingInfo.height = 100;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 170;
 		mScalingInfo.height = 170;
-		assertEquals(3, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(3, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = null;
 		mScalingInfo.height = 100;
-		assertEquals(5, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(5, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 100;
 		mScalingInfo.height = null;
-		assertEquals(5, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(5, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = null;
 		mScalingInfo.height = null;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 256;
 		mScalingInfo.height = 128;
-		assertEquals(2, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(2, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 	}
 
 	public void testSampleSizesMatchToSmallerDimension() {
@@ -129,47 +129,47 @@ public class SampleSizeTests extends ActivityInstrumentationTestCase2<MainActivi
 
 		mScalingInfo.width = 600;
 		mScalingInfo.height = 600;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 500;
 		mScalingInfo.height = 500;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 257;
 		mScalingInfo.height = 257;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 256;
 		mScalingInfo.height = 256;
-		assertEquals(2, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(2, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 100;
 		mScalingInfo.height = 600;
-		assertEquals(5, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(5, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 600;
 		mScalingInfo.height = 100;
-		assertEquals(5, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(5, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 170;
 		mScalingInfo.height = 170;
-		assertEquals(3, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(3, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = null;
 		mScalingInfo.height = 100;
-		assertEquals(5, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(5, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 100;
 		mScalingInfo.height = null;
-		assertEquals(5, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(5, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = null;
 		mScalingInfo.height = null;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 256;
 		mScalingInfo.height = 128;
-		assertEquals(4, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(4, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 	}
 
 	public void testSampleSizesSmallerThanView() {
@@ -177,47 +177,47 @@ public class SampleSizeTests extends ActivityInstrumentationTestCase2<MainActivi
 
 		mScalingInfo.width = 600;
 		mScalingInfo.height = 600;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 500;
 		mScalingInfo.height = 500;
-		assertEquals(2, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(2, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 257;
 		mScalingInfo.height = 257;
-		assertEquals(2, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(2, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 256;
 		mScalingInfo.height = 256;
-		assertEquals(2, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(2, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 100;
 		mScalingInfo.height = 600;
-		assertEquals(6, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(6, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 600;
 		mScalingInfo.height = 100;
-		assertEquals(6, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(6, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 170;
 		mScalingInfo.height = 170;
-		assertEquals(4, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(4, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = null;
 		mScalingInfo.height = 100;
-		assertEquals(6, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(6, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 100;
 		mScalingInfo.height = null;
-		assertEquals(6, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(6, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = null;
 		mScalingInfo.height = null;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 256;
 		mScalingInfo.height = 128;
-		assertEquals(4, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(4, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 	}
 
 	public void testSampleSizesRoundToClosestMatch() {
@@ -225,88 +225,88 @@ public class SampleSizeTests extends ActivityInstrumentationTestCase2<MainActivi
 
 		mScalingInfo.width = 600;
 		mScalingInfo.height = 600;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 500;
 		mScalingInfo.height = 500;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 257;
 		mScalingInfo.height = 257;
-		assertEquals(2, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(2, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 256;
 		mScalingInfo.height = 256;
-		assertEquals(2, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(2, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 100;
 		mScalingInfo.height = 600;
-		assertEquals(5, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(5, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 600;
 		mScalingInfo.height = 100;
-		assertEquals(5, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(5, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 170;
 		mScalingInfo.height = 170;
-		assertEquals(3, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(3, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = null;
 		mScalingInfo.height = 100;
-		assertEquals(5, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(5, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 100;
 		mScalingInfo.height = null;
-		assertEquals(5, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(5, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = null;
 		mScalingInfo.height = null;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 256;
 		mScalingInfo.height = 128;
-		assertEquals(4, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(4, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 	}
 
 	public void testBasicSampleSizeCalculations() {
 		mScalingInfo.width = 512;
 		mScalingInfo.height = 512;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 2000;
 		mScalingInfo.height = 2000;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 257;
 		mScalingInfo.height = 257;
-		assertEquals(1, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(1, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 256;
 		mScalingInfo.height = 256;
-		assertEquals(2, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(2, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 250;
 		mScalingInfo.height = 250;
-		assertEquals(2, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(2, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 129;
 		mScalingInfo.height = 129;
-		assertEquals(3, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(3, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 128;
 		mScalingInfo.height = 128;
-		assertEquals(4, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(4, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 64;
 		mScalingInfo.height = 64;
-		assertEquals(8, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(8, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 32;
 		mScalingInfo.height = 32;
-		assertEquals(16, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(16, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 
 		mScalingInfo.width = 16;
 		mScalingInfo.height = 16;
-		assertEquals(32, DiskLRUCacher.calculateSampleSize(mImageRequest, mDimensions));
+		assertEquals(32, SampleSizeCalculationUtility.calculateSampleSize(mImageRequest, mDimensions));
 	}
 }
