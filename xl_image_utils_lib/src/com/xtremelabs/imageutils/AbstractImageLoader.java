@@ -83,6 +83,12 @@ public abstract class AbstractImageLoader {
 		}
 	}
 
+	/**
+	 * Allows the usage of custom network libraries. If a {@link NetworkRequestCreator} is provided to the image system, all network calls will go through that interface.
+	 * 
+	 * @param appContext
+	 * @param networkRequestCreator
+	 */
 	public static void setNetworkRequestCreator(Context appContext, NetworkRequestCreator networkRequestCreator) {
 		ImageCacher.getInstance(appContext).setNetworkRequestCreator(networkRequestCreator);
 	}

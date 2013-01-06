@@ -5,6 +5,7 @@ v1.1
 - The SampleSize calculation code has been completely re-written. The image system now loads images significantly faster and uses less memory when large images are being loaded into smaller views.
 - A new option called "ScalingPreference" has been added. This option allows developers to choose what logic is used when scaling down images.
 - A new option called "preferedConfig" has been added. This option allows developers to change the pixel format of decoded bitmaps.
+- An API was added that allows developers to stub their own network libraries into the image system.
 - The ImageLoader Javadoc has been updated. The Javadoc comments should now more accurately describe the functionality of API calls.
 - Unit test coverage has been expanded.
 - Refactored some of the system's internals. Future patches should take less time to develop.
