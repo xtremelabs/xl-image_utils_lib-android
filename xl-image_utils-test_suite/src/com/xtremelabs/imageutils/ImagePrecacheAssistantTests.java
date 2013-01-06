@@ -17,6 +17,7 @@ public class ImagePrecacheAssistantTests extends ActivityInstrumentationTestCase
 
 	private final List<String> mDiskPrecacheRequests = new ArrayList<String>();
 	private final List<String> mMemoryPrecacheRequests = new ArrayList<String>();
+	private final List<Integer> mPositionsRequested = new ArrayList<Integer>();
 
 	public ImagePrecacheAssistantTests() {
 		super(MainActivity.class);
@@ -43,6 +44,7 @@ public class ImagePrecacheAssistantTests extends ActivityInstrumentationTestCase
 		mAssistant = new ImagePrecacheAssistant(mImageLoader, new PrecacheInformationProvider() {
 			@Override
 			public List<PrecacheRequest> onRowPrecacheRequestsRequired(int position) {
+				mPositionsRequested.add(position);
 				return mList;
 			}
 
@@ -69,6 +71,7 @@ public class ImagePrecacheAssistantTests extends ActivityInstrumentationTestCase
 		assertEquals(1, mMemoryPrecacheRequests.size());
 		assertEquals(0, mDiskPrecacheRequests.size());
 		assertEquals("1", mMemoryPrecacheRequests.get(0));
+		assertEquals(1, (int) mPositionsRequested.get(0));
 
 		clearLists();
 
@@ -93,22 +96,25 @@ public class ImagePrecacheAssistantTests extends ActivityInstrumentationTestCase
 		assertEquals(0, mMemoryPrecacheRequests.size());
 		assertEquals(1, mDiskPrecacheRequests.size());
 		assertEquals("1", mDiskPrecacheRequests.get(0));
+		assertEquals(1, (int) mPositionsRequested.get(0));
 	}
 
 	public void testMemoryAndDiskPrecache() {
 		mAssistant.setMemCacheRange(1);
-		mAssistant.setDiskCacheRange(2);
+		mAssistant.setDiskCacheRange(1);
 
 		mCount = 3;
 		mList.add(new PrecacheRequest("1", new Dimensions(null, null)));
 		mAssistant.onPositionVisited(0);
 		assertEquals(1, mMemoryPrecacheRequests.size());
 		assertEquals(1, mDiskPrecacheRequests.size());
+		assertEquals(1, (int) mPositionsRequested.get(0));
+		assertEquals(2, (int) mPositionsRequested.get(1));
 	}
 
 	public void testDirectionSwap() {
 		mAssistant.setMemCacheRange(2);
-		mAssistant.setDiskCacheRange(4);
+		mAssistant.setDiskCacheRange(2);
 
 		mCount = 12;
 
@@ -116,6 +122,12 @@ public class ImagePrecacheAssistantTests extends ActivityInstrumentationTestCase
 		mAssistant.onPositionVisited(3);
 		assertEquals(2, mMemoryPrecacheRequests.size());
 		assertEquals(2, mDiskPrecacheRequests.size());
+		List<Integer> expectedValues = new ArrayList<Integer>();
+		expectedValues.add(4);
+		expectedValues.add(5);
+		expectedValues.add(6);
+		expectedValues.add(7);
+		assertEquals(expectedValues, mPositionsRequested);
 
 		clearLists();
 
@@ -123,11 +135,50 @@ public class ImagePrecacheAssistantTests extends ActivityInstrumentationTestCase
 		mAssistant.onPositionVisited(2);
 		assertEquals(2, mMemoryPrecacheRequests.size());
 		assertEquals(0, mDiskPrecacheRequests.size());
+		expectedValues.clear();
+		expectedValues.add(0);
+		expectedValues.add(1);
+		assertEquals(expectedValues, mPositionsRequested);
+	}
+
+	public void testPositionsRequested() {
+		mAssistant.setMemCacheRange(1);
+		mAssistant.setDiskCacheRange(1);
+
+		mCount = 3;
+		mList.add(new PrecacheRequest("1", new Dimensions(null, null)));
+		mAssistant.onPositionVisited(0);
+		assertEquals(1, mMemoryPrecacheRequests.size());
+		assertEquals(1, mDiskPrecacheRequests.size());
+
+		assertEquals(1, (int) mPositionsRequested.get(0));
+		assertEquals(2, (int) mPositionsRequested.get(1));
+	}
+
+	public void testForNoExcessiveCalls() {
+		mAssistant.setMemCacheRange(2);
+		mAssistant.setDiskCacheRange(2);
+
+		mCount = 10;
+		mList.add(new PrecacheRequest("1", new Dimensions(null, null)));
+		mAssistant.onPositionVisited(0);
+		assertEquals(2, mMemoryPrecacheRequests.size());
+		assertEquals(2, mDiskPrecacheRequests.size());
+
+		clearLists();
+
+		mList.add(new PrecacheRequest("1", new Dimensions(null, null)));
+		mAssistant.onPositionVisited(1);
+		assertEquals(1, mMemoryPrecacheRequests.size());
+		assertEquals(1, mDiskPrecacheRequests.size());
+		assertEquals(3, (int) mPositionsRequested.get(0));
+		assertEquals(5, (int) mPositionsRequested.get(1));
 	}
 
 	private void clearLists() {
 		mDiskPrecacheRequests.clear();
 		mMemoryPrecacheRequests.clear();
 		mList.clear();
+		mPositionsRequested.clear();
 	}
 }
