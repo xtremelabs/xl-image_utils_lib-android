@@ -15,8 +15,6 @@ import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
  * The job of this class is to "route" messages appropriately in order to ensure synchronized handling of image downloading and caching operations.
  */
 public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, AsyncOperationsObserver {
-	private static final String PREFIX = "IMAGE CACHER - ";
-
 	private static final String FILE_SYSTEM_SCHEME = "file";
 
 	private static ImageCacher mImageCacher;
@@ -124,9 +122,6 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 	}
 
 	public void cancelRequestForBitmap(ImageCacherListener imageCacherListener) {
-		if (Logger.logAll()) {
-			Logger.d(PREFIX + "Cancelling a request.");
-		}
 		mAsyncOperationsMap.cancelPendingRequest(imageCacherListener);
 	}
 

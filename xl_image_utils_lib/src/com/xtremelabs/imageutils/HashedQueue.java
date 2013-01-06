@@ -1,19 +1,3 @@
-/*
- * Copyright 2012 Xtreme Labs
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.xtremelabs.imageutils;
 
 import java.util.Collection;
@@ -133,11 +117,11 @@ public class HashedQueue<T> implements Queue<T> {
 		if (next != null) {
 			next.setPrevious(previous);
 		}
-		
+
 		if (previous == null) {
 			mHead = next;
 		}
-		
+
 		if (next == null) {
 			mTail = previous;
 		}
@@ -225,7 +209,7 @@ public class HashedQueue<T> implements Queue<T> {
 		T data = null;
 		if (mHead != null) {
 			mNodeMap.remove(mHead.data);
-			
+
 			data = mHead.data;
 			mHead = mHead.next;
 			if (mHead != null) {
@@ -245,7 +229,7 @@ public class HashedQueue<T> implements Queue<T> {
 
 		return poll();
 	}
-	
+
 	public synchronized void bump(T e) {
 		remove(e);
 		add(e);

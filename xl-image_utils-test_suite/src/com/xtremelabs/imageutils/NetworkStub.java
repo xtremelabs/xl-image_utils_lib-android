@@ -14,4 +14,8 @@ public class NetworkStub implements ImageNetworkInterface {
 	public boolean isNetworkRequestPendingForUrl(String url) {
 		return false;
 	}
+
+	@Override
+	public void setNetworkRequestCreator(NetworkRequestCreator networkRequestImplementer) {
+	}
 }

@@ -25,6 +25,7 @@ public abstract class AbstractImageLoader {
 
 	private Options mDefaultOptions = new Options();
 
+	// TODO Cancelled network calls should still save the downloaded image to disk.
 	// TODO Have an API call that can get a bitmap without an ImageView.
 	// TODO Make the disk thread pool a priority pool so that preloaded images take lower priority until directly requested.
 
@@ -445,13 +446,7 @@ public abstract class AbstractImageLoader {
 			public void onImageReceived(ImageResponse imageResponse) {
 				ImageView imageView = mViewMapper.removeImageView(this);
 				if (imageView != null) {
-					if (Logger.isProfiling()) {
-						Profiler.init("Setting image bitmap for default listener");
-					}
 					imageView.setImageBitmap(imageResponse.getBitmap());
-					if (Logger.isProfiling()) {
-						Profiler.report("Setting image bitmap for default listener");
-					}
 				}
 			}
 		};
