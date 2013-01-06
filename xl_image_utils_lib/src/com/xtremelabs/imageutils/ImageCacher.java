@@ -7,7 +7,6 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Build;
 
-import com.xtremelabs.imageutils.AsyncOperationsMaps.AsyncOperationState;
 import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
 
 /**
@@ -52,9 +51,7 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 		ScalingInfo scalingInfo = imageRequest.getScalingInfo();
 		throwExceptionIfNeeded(imageRequest, imageCacherListener);
 
-		AsyncOperationState asyncOperationState = mAsyncOperationsMap.queueListenerIfRequestPending(imageRequest, imageCacherListener);
-
-		switch (asyncOperationState) {
+		switch (mAsyncOperationsMap.queueListenerIfRequestPending(imageRequest, imageCacherListener)) {
 		case QUEUED_FOR_NETWORK_REQUEST:
 			mNetworkInterface.bump(uri);
 			return generateQueuedResponse();
@@ -64,6 +61,10 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 		case QUEUED_FOR_DETAILS_REQUEST:
 			mDiskCache.bumpInQueue(uri, 0);
 			return generateQueuedResponse();
+		case NOT_QUEUED:
+			break;
+		default:
+			break;
 		}
 
 		int sampleSize = getSampleSize(imageRequest);
