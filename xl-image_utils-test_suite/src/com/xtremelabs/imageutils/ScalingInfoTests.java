@@ -54,8 +54,8 @@ public class ScalingInfoTests extends ActivityInstrumentationTestCase2<MainActiv
 		assertNotNull(scalingInfo.height);
 		assertNull(scalingInfo.sampleSize);
 
-		assertEquals(screenDimensions.getWidth(), scalingInfo.width);
-		assertEquals(screenDimensions.getHeight(), scalingInfo.height);
+		assertEquals(screenDimensions.width, scalingInfo.width);
+		assertEquals(screenDimensions.height, scalingInfo.height);
 	}
 
 	@UiThreadTest
@@ -91,14 +91,14 @@ public class ScalingInfoTests extends ActivityInstrumentationTestCase2<MainActiv
 
 		setParams(LayoutParams.WRAP_CONTENT, 100);
 		scalingInfo = mImageLoader.getScalingInfo(imageView, options);
-		assertEquals(DisplayUtility.getDisplaySize(getActivity().getApplicationContext()).getWidth().intValue(), scalingInfo.width.intValue());
+		assertEquals(DisplayUtility.getDisplaySize(getActivity().getApplicationContext()).width.intValue(), scalingInfo.width.intValue());
 		assertEquals(100, scalingInfo.height.intValue());
 		assertNull(scalingInfo.sampleSize);
 
 		setParams(100, LayoutParams.WRAP_CONTENT);
 		scalingInfo = mImageLoader.getScalingInfo(imageView, options);
 		assertEquals(100, scalingInfo.width.intValue());
-		assertEquals(DisplayUtility.getDisplaySize(getActivity().getApplicationContext()).getHeight().intValue(), scalingInfo.height.intValue());
+		assertEquals(DisplayUtility.getDisplaySize(getActivity().getApplicationContext()).height.intValue(), scalingInfo.height.intValue());
 		assertNull(scalingInfo.sampleSize);
 
 		setParams(100, 50);
@@ -109,8 +109,8 @@ public class ScalingInfoTests extends ActivityInstrumentationTestCase2<MainActiv
 
 		setParams(50000, 50000);
 		scalingInfo = mImageLoader.getScalingInfo(imageView, options);
-		assertEquals(DisplayUtility.getDisplaySize(getActivity().getApplicationContext()).getWidth().intValue(), scalingInfo.width.intValue());
-		assertEquals(DisplayUtility.getDisplaySize(getActivity().getApplicationContext()).getHeight().intValue(), scalingInfo.height.intValue());
+		assertEquals(DisplayUtility.getDisplaySize(getActivity().getApplicationContext()).width.intValue(), scalingInfo.width.intValue());
+		assertEquals(DisplayUtility.getDisplaySize(getActivity().getApplicationContext()).height.intValue(), scalingInfo.height.intValue());
 		assertNull(scalingInfo.sampleSize);
 	}
 

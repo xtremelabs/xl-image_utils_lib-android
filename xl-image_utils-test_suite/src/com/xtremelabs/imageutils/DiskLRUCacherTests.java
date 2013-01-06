@@ -91,8 +91,8 @@ public class DiskLRUCacherTests extends ActivityInstrumentationTestCase2<MainAct
 		assertEquals(1, sampleSize);
 
 		ScalingInfo scalingInfo = new ScalingInfo();
-		scalingInfo.width = dimensions.getWidth() / 2;
-		scalingInfo.height = dimensions.getHeight() / 2;
+		scalingInfo.width = dimensions.width / 2;
+		scalingInfo.height = dimensions.height / 2;
 		sampleSize = mDiskCacher.getSampleSize(new ImageRequest(mKittenImageUri, scalingInfo));
 		assertEquals(2, sampleSize);
 	}

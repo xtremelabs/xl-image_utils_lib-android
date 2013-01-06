@@ -1,7 +1,5 @@
 package com.xtremelabs.imageutils;
 
-import android.util.FloatMath;
-
 import com.xtremelabs.imageutils.AbstractImageLoader.Options;
 import com.xtremelabs.imageutils.AbstractImageLoader.Options.ScalingPreference;
 
@@ -27,8 +25,8 @@ class SampleSizeCalculationUtility {
 
 		final Integer width = scalingInfo.width;
 		final Integer height = scalingInfo.height;
-		final int imageWidth = imageDimensions.getWidth();
-		final int imageHeight = imageDimensions.getHeight();
+		final int imageWidth = imageDimensions.width;
+		final int imageHeight = imageDimensions.height;
 
 		int widthSampleSize;
 		int heightSampleSize;
@@ -95,7 +93,7 @@ class SampleSizeCalculationUtility {
 				sampleSize = Math.round(imageWidthToBoundsWidthRatio);
 				break;
 			case SMALLER_THAN_VIEW:
-				sampleSize = (int) FloatMath.ceil(imageWidthToBoundsWidthRatio);
+				sampleSize = (int) Math.ceil(imageWidthToBoundsWidthRatio);
 				break;
 			}
 		}

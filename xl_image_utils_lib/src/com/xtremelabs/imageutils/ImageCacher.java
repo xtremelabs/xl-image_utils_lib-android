@@ -76,7 +76,7 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 			} else {
 				decodeBitmapFromDisk(decodeSignature, imageCacherListener);
 			}
-		} else if (checkIsFileSystemURI(uri)) {
+		} else if (isFileSystemURI(uri)) {
 			retrieveImageDetails(imageRequest, imageCacherListener);
 		} else {
 			downloadImageFromNetwork(imageRequest, imageCacherListener);
@@ -99,12 +99,16 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 	}
 
 	/**
-	 * Caches the image at the provided url to disk. If the image is already on disk, it gets bumped on the eviction queue.
+	 * Caches the image at the provided uri to disk. If the image is already on disk, it gets bumped on the eviction queue.
 	 * 
 	 * @param uri
 	 */
-	public synchronized void precacheImage(String uri) {
+	public synchronized void precacheImageToDisk(String uri) {
 		validateUri(uri);
+
+		if (isFileSystemURI(uri)) {
+			return;
+		}
 
 		if (!mAsyncOperationsMap.isNetworkRequestPending(uri) && !mDiskCache.isCached(uri)) {
 			mNetworkInterface.downloadImageToDisk(uri);
@@ -159,7 +163,7 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 		}
 	}
 
-	private static boolean checkIsFileSystemURI(String uri) {
+	private static boolean isFileSystemURI(String uri) {
 		try {
 			URI u = new URI(uri);
 			String scheme = u.getScheme();

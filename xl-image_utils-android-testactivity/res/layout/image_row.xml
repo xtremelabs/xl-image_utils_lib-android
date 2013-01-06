@@ -1,20 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/kitten_frame_layout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:id="@+id/kitten_frame_layout" >
+    android:orientation="horizontal" >
 
     <ImageView
         android:id="@+id/kitten1"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
+        android:contentDescription="@string/kitten_1"
         android:scaleType="fitXY" />
-    
+
     <ImageView
         android:id="@+id/kitten2"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
+        android:contentDescription="@string/kitten_2"
         android:scaleType="fitXY" />
 
 </LinearLayout>

@@ -5,6 +5,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -19,7 +21,11 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 
 import com.xtreme.testactivity.R;
+import com.xtremelabs.imageutils.Dimensions;
 import com.xtremelabs.imageutils.ImageLoader;
+import com.xtremelabs.imageutils.ImagePrecacheAssistant;
+import com.xtremelabs.imageutils.ImagePrecacheAssistant.PrecacheInformationProvider;
+import com.xtremelabs.imageutils.ImagePrecacheAssistant.PrecacheRequest;
 
 @TargetApi(13)
 public class KittenAdapter extends BaseAdapter {
@@ -28,6 +34,8 @@ public class KittenAdapter extends BaseAdapter {
 	private final String KITTEN_URI;
 	private final Activity mActivity;
 	private final ImageLoader mImageLoader;
+	private ImagePrecacheAssistant mImagePrecacheAssistant;
+	private final Dimensions mBounds;
 
 	public KittenAdapter(Activity activity, ImageLoader imageLoader) {
 		KITTEN_URI = "file://" + activity.getCacheDir() + File.separator + IMAGE_FILE_NAME;
@@ -36,6 +44,29 @@ public class KittenAdapter extends BaseAdapter {
 		mImageLoader = imageLoader;
 
 		loadKittenToFile();
+
+		Point size = new Point();
+		mActivity.getWindowManager().getDefaultDisplay().getSize(size);
+		mBounds = new Dimensions(size.x / 2, (int) ((size.x / 800f) * 200f));
+
+		mImagePrecacheAssistant = new ImagePrecacheAssistant(mImageLoader, new PrecacheInformationProvider() {
+			@Override
+			public List<PrecacheRequest> onRowPrecacheRequestsRequired(int position) {
+				List<PrecacheRequest> list = new ArrayList<PrecacheRequest>();
+				if (position % 2 == 0) {
+					list.add(new PrecacheRequest((String) getItem(position) + "1", mBounds));
+					list.add(new PrecacheRequest((String) getItem(position) + "2", mBounds));
+				} else {
+					list.add(new PrecacheRequest((String) getItem(position), mBounds));
+				}
+				return list;
+			}
+
+			@Override
+			public int getCount() {
+				return KittenAdapter.this.getCount();
+			}
+		});
 	}
 
 	@Override
@@ -60,6 +91,8 @@ public class KittenAdapter extends BaseAdapter {
 	@TargetApi(13)
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
+		mImagePrecacheAssistant.onPositionVisited(position);
+
 		KittenViews kittenViews = null;
 		if (convertView == null) {
 			convertView = View.inflate(mActivity, R.layout.image_row, null);

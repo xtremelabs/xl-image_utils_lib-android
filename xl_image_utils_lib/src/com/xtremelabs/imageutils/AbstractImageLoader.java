@@ -274,11 +274,39 @@ public abstract class AbstractImageLoader {
 	}
 
 	/**
-	 * Caches the image at the provided URL into the disk cache. This call is asynchronous and cannot be cancelled once called.<br>
+	 * Caches the image at the provided URI into the disk cache. This call is asynchronous and cannot be cancelled once called.<br>
 	 * <br>
 	 * Ideal use cases for this method:<br>
 	 * - Pre-cache large images when the user is likely to display them shortly. This will not increase memory usage, but will drastically speed up image load times.<br>
 	 * - Pre-cache ListView images.<br>
+	 * <br>
+	 * File system URIs will be ignored by the caching system, as these images are already on disk.
+	 * 
+	 * @param uri
+	 * @param applicationContext
+	 */
+	// TODO Test what happens if precache image to disk is called with a file system URI.
+	public void precacheImageToDisk(final String uri) {
+		if (ThreadChecker.isOnUiThread()) {
+			ImageCacher.getInstance(mApplicationContext).precacheImageToDisk(uri);
+		} else {
+			new Handler(mApplicationContext.getMainLooper()).post(new Runnable() {
+				@Override
+				public void run() {
+					precacheImageToDisk(uri, mApplicationContext);
+				}
+			});
+		}
+	}
+
+	/**
+	 * Caches the image at the provided URI into the disk cache. This call is asynchronous and cannot be cancelled once called.<br>
+	 * <br>
+	 * Ideal use cases for this method:<br>
+	 * - Pre-cache large images when the user is likely to display them shortly. This will not increase memory usage, but will drastically speed up image load times.<br>
+	 * - Pre-cache ListView images.<br>
+	 * <br>
+	 * File system URIs will be ignored by the caching system, as these images are already on disk.
 	 * 
 	 * @param uri
 	 * @param applicationContext
@@ -286,7 +314,7 @@ public abstract class AbstractImageLoader {
 	// TODO Test what happens if precache image to disk is called with a file system URI.
 	public static void precacheImageToDisk(final String uri, final Context applicationContext) {
 		if (ThreadChecker.isOnUiThread()) {
-			ImageCacher.getInstance(applicationContext).precacheImage(uri);
+			ImageCacher.getInstance(applicationContext).precacheImageToDisk(uri);
 		} else {
 			new Handler(applicationContext.getMainLooper()).post(new Runnable() {
 				@Override
@@ -317,6 +345,22 @@ public abstract class AbstractImageLoader {
 	 * @throws CalledFromWrongThreadException
 	 *             This is thrown if the method is called from off the UI thread.
 	 */
+	public void precacheImageToDiskAndMemory(String uri, Integer width, Integer height) {
+		// TODO: Replace the width and height with options?
+		ThreadChecker.throwErrorIfOffUiThread();
+
+		ScalingInfo scalingInfo = new ScalingInfo();
+		scalingInfo.height = height;
+		scalingInfo.width = width;
+
+		ImageRequest imageRequest = new ImageRequest(uri, scalingInfo);
+		mReferenceManager.getBitmap(mApplicationContext, imageRequest, getBlankImageManagerListener());
+	}
+
+	/**
+	 * Please use {@link #precacheImageToDiskAndMemory(String, Integer, Integer)}.
+	 */
+	@Deprecated
 	public void precacheImageToDiskAndMemory(String uri, Context applicationContext, Integer width, Integer height) {
 		// TODO: Replace the width and height with options?
 		ThreadChecker.throwErrorIfOffUiThread();
@@ -397,8 +441,8 @@ public abstract class AbstractImageLoader {
 
 		if (options.useScreenSizeAsBounds) {
 			Dimensions screenSize = DisplayUtility.getDisplaySize(mApplicationContext);
-			width = Math.min(screenSize.getWidth(), width == null ? screenSize.getWidth() : width);
-			height = Math.min(screenSize.getHeight(), height == null ? screenSize.getHeight() : height);
+			width = Math.min(screenSize.width, width == null ? screenSize.width : width);
+			height = Math.min(screenSize.height, height == null ? screenSize.height : height);
 		}
 
 		if (options.autoDetectBounds) {

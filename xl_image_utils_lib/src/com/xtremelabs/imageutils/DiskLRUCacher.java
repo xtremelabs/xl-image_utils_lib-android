@@ -85,12 +85,14 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 
 	@Override
 	public void retrieveImageDetails(final String uri) {
-		mThreadPool.execute(new Runnable() {
-			@Override
-			public void run() {
-				cacheImageDetails(uri);
-			}
-		});
+		if (mPermanentStorageDimensionsCache.getValue(uri) == null) {
+			mThreadPool.execute(new Runnable() {
+				@Override
+				public void run() {
+					cacheImageDetails(uri);
+				}
+			});
+		}
 	}
 
 	void cacheImageDetails(String uri) {
@@ -112,7 +114,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 				mPermanentStorageDimensionsCache.addOrBump(uri, dimensions);
 			} else {
 				mCachedImagesMap.putDimensions(uri, dimensions);
-				mDatabaseHelper.addOrUpdateFile(uri, file.length(), dimensions.getWidth(), dimensions.getHeight());
+				mDatabaseHelper.addOrUpdateFile(uri, file.length(), dimensions.width, dimensions.height);
 				clearLeastUsedFilesInCache();
 			}
 
@@ -163,7 +165,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		File file = getFile(uri);
 		Dimensions dimensions = getImageDimensionsFromDisk(file);
 		mCachedImagesMap.putDimensions(uri, dimensions);
-		mDatabaseHelper.addOrUpdateFile(uri, file.length(), dimensions.getWidth(), dimensions.getHeight());
+		mDatabaseHelper.addOrUpdateFile(uri, file.length(), dimensions.width, dimensions.height);
 		clearLeastUsedFilesInCache();
 	}
 
