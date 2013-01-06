@@ -5,6 +5,7 @@ import java.util.List;
 import android.app.Activity;
 import android.app.Fragment;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.os.Build;
 import android.os.Handler;
@@ -531,40 +532,40 @@ public abstract class AbstractImageLoader {
 		}
 
 		/**
-		 * Forces the image to be decoded with the specified sample size. This will override any other parameters that affect the sample size of the image.
-		 * 
-		 * NOTE: This value, if specified, should always be a positive power of 2. The higher the number provided, the further the image will be scaled down.
-		 * 
-		 * Example: A sample size of 2 will decrease the size of the image by 4. A sample size of 4 will decrease the size of the image by 16.
-		 * 
+		 * Forces the image to be decoded with the specified sample size. This will override any other parameters that affect the sample size of the image.<br>
+		 * <br>
+		 * NOTE: This value, if specified, should always be a positive power of 2. The higher the number provided, the further the image will be scaled down.<br>
+		 * <br>
+		 * Example: A sample size of 2 will decrease the size of the image by 4. A sample size of 4 will decrease the size of the image by 16.<br>
+		 * <br>
 		 * Default value: null.
 		 */
 		public Integer overrideSampleSize = null;
 
 		/**
-		 * If specified, this value allows the cacher to conserve memory by estimating the optimal sample size. This works in conjunction with the widthBounds field, so both can be specified at the same time.
-		 * 
+		 * If specified, this value allows the cacher to conserve memory by estimating the optimal sample size. This works in conjunction with the widthBounds field, so both can be specified at the same time.<br>
+		 * <br>
 		 * Default value: null.
 		 */
 		public Integer heightBounds = null;
 
 		/**
-		 * If specified, this value allows the cacher to conserve memory by estimating the optimal sample size. This works in conjunction with the heightBounds field, so both can be specified at the same time.
-		 * 
+		 * If specified, this value allows the cacher to conserve memory by estimating the optimal sample size. This works in conjunction with the heightBounds field, so both can be specified at the same time.<br>
+		 * <br>
 		 * Default value: null.
 		 */
 		public Integer widthBounds = null;
 
 		/**
-		 * If true, the ImageLoader will attempt to optimize the sample size for the image being returned.
-		 * 
+		 * If true, the ImageLoader will attempt to optimize the sample size for the image being returned.<br>
+		 * <br>
 		 * Default value: true.
 		 */
 		public boolean autoDetectBounds = true;
 
 		/**
-		 * If true, the ImageLoader will select a sample size that will optimize the image size for the size of the screen.
-		 * 
+		 * If true, the ImageLoader will select a sample size that will optimize the image size for the size of the screen.<br>
+		 * <br>
 		 * Default value: true.
 		 */
 		public boolean useScreenSizeAsBounds = true;
@@ -576,24 +577,33 @@ public abstract class AbstractImageLoader {
 		public ScalingPreference scalingPreference = ScalingPreference.SMALLER_THAN_VIEW;
 
 		/**
-		 * If set to true, the ImageLoader will, before getting the Bitmap, replace the current image within the ImageView with either a null Bitmap or the image resource indicated by the placeholderImageResourceId.
-		 * 
+		 * If set to true, the ImageLoader will, before getting the Bitmap, replace the current image within the ImageView with either a null Bitmap or the image resource indicated by the placeholderImageResourceId.<br>
+		 * <br>
 		 * If set to false, the ImageLoader will only attempt to load the requested Bitmap to the view.
 		 */
 		public boolean wipeOldImageOnPreload = true;
 
 		/**
-		 * The ImageLoader will load the resource at this ID prior to making the image request.
-		 * 
+		 * The ImageLoader will load the resource at this ID prior to making the image request.<br>
+		 * <br>
 		 * Default value: null.
 		 */
 		public Integer placeholderImageResourceId = null;
 
 		/**
-		 * In the event that the image load fails, the resource at the provided ID will be loaded into the ImageView.
-		 * 
+		 * In the event that the image load fails, the resource at the provided ID will be loaded into the ImageView.<br>
+		 * <br>
 		 * Default value: null.
 		 */
 		public Integer unsuccessfulLoadResourceId = null;
+
+		/**
+		 * Modify this value to change the colour format of decoded bitmaps. If set to null, the BitmapFactory will automatically select a colour format.<br>
+		 * <br>
+		 * This options can be used to manually raise or lower the bit depth of images, which may result in memory savings.<br>
+		 * <br>
+		 * Default value: null.
+		 */
+		public Bitmap.Config preferedConfig = null;
 	}
 }
