@@ -1,19 +1,3 @@
-/*
- * Copyright 2012 Xtreme Labs
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.xtremelabs.imageutils;
 
 import java.io.BufferedInputStream;
@@ -35,14 +19,14 @@ class ImageDownloader implements ImageNetworkInterface {
 	@SuppressWarnings("unused")
 	private static final String TAG = "DefaultImageDownloader";
 
-	private NetworkToDiskInterface mNetworkToDiskInterface;
-	private ImageDownloadObserver mImageDownloadObserver;
-	private HashMap<String, ImageDownloadingRunnable> mUrlToRunnableMap = new HashMap<String, ImageDownloadingRunnable>();
+	private final NetworkToDiskInterface mNetworkToDiskInterface;
+	private final ImageDownloadObserver mImageDownloadObserver;
+	private final HashMap<String, ImageDownloadingRunnable> mUrlToRunnableMap = new HashMap<String, ImageDownloadingRunnable>();
 
 	/*
 	 * TODO: Research into lowering the number of available threads for the network
 	 */
-	private LifoThreadPool mThreadPool = new LifoThreadPool(3);
+	private final LifoThreadPool mThreadPool = new LifoThreadPool(3);
 
 	public ImageDownloader(NetworkToDiskInterface networkToDiskInterface, ImageDownloadObserver imageDownloadObserver) {
 		mNetworkToDiskInterface = networkToDiskInterface;
@@ -71,7 +55,7 @@ class ImageDownloader implements ImageNetworkInterface {
 	}
 
 	class ImageDownloadingRunnable implements Runnable {
-		private String mUrl;
+		private final String mUrl;
 		private boolean mFailed = false;
 		private InputStream mInputStream = null;
 		private HttpEntity mEntity;
@@ -94,8 +78,8 @@ class ImageDownloader implements ImageNetworkInterface {
 				errorMessage = "Failed to download image with error message: " + e.getMessage();
 			} catch (IllegalStateException e) {
 				/*
-				 * NOTE: If a bad URL is passed in (for example, mUrl = "N/A", the client.execute() call will throw an IllegalStateException. We do not want this exception to crash the app. Rather, we
-				 * want to log the error and report a failure.
+				 * NOTE: If a bad URL is passed in (for example, mUrl = "N/A", the client.execute() call will throw an IllegalStateException. We do not want this exception to crash the app. Rather, we want to log the
+				 * error and report a failure.
 				 */
 				Log.w(AbstractImageLoader.TAG, "IMAGE LOAD FAILED - An error occurred while performing the network request for the image. Stack trace below. URL: " + mUrl);
 				e.printStackTrace();
