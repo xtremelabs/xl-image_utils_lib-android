@@ -19,9 +19,9 @@ package com.xtremelabs.imageutils;
 import android.graphics.Bitmap;
 
 public interface ImageDiskObserver {
-	public void onImageDecoded(Bitmap bitmap, String uri, int sampleSize, ImageReturnedFrom returnedFrom);
+	public void onImageDecoded(DecodeSignature decodeSignature, Bitmap bitmap, ImageReturnedFrom returnedFrom);
 
-	public void onImageDecodeFailed(String uri, int sampleSize, String error);
+	public void onImageDecodeFailed(DecodeSignature decodeSignature, String error);
 
 	public void onImageDetailsRequestFailed(String uri, String errorMessage);
 

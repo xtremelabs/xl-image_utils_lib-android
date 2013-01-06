@@ -48,7 +48,6 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 
 	public ImageResponse getBitmap(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
 		String uri = imageRequest.getUri();
-		ScalingInfo scalingInfo = imageRequest.getScalingInfo();
 		throwExceptionIfNeeded(imageRequest, imageCacherListener);
 
 		switch (mAsyncOperationsMap.queueListenerIfRequestPending(imageRequest, imageCacherListener)) {
@@ -56,10 +55,10 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 			mNetworkInterface.bump(uri);
 			return generateQueuedResponse();
 		case QUEUED_FOR_DECODE_REQUEST:
-			mDiskCache.bumpInQueue(uri, getSampleSize(imageRequest));
+			mDiskCache.bumpInQueue(new DecodeSignature(uri, getSampleSize(imageRequest), imageRequest.getOptions().preferedConfig));
 			return generateQueuedResponse();
 		case QUEUED_FOR_DETAILS_REQUEST:
-			mDiskCache.bumpInQueue(uri, 0);
+			mDiskCache.bumpInQueue(new DecodeSignature(uri, 0, imageRequest.getOptions().preferedConfig));
 			return generateQueuedResponse();
 		case NOT_QUEUED:
 			break;
@@ -72,16 +71,17 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 		// TODO: Look into removing the sampleSize check.
 
 		if (mDiskCache.isCached(uri) && sampleSize != -1) {
+			DecodeSignature decodeSignature = new DecodeSignature(uri, sampleSize, imageRequest.getOptions().preferedConfig);
 			Bitmap bitmap;
-			if ((bitmap = mMemoryCache.getBitmap(uri, sampleSize)) != null) {
+			if ((bitmap = mMemoryCache.getBitmap(decodeSignature)) != null) {
 				return new ImageResponse(bitmap, ImageReturnedFrom.MEMORY, ImageResponseStatus.SUCCESS);
 			} else {
-				decodeBitmapFromDisk(uri, imageCacherListener, sampleSize);
+				decodeBitmapFromDisk(decodeSignature, imageCacherListener);
 			}
 		} else if (checkIsFileSystemURI(uri)) {
-			retrieveImageDetails(uri, imageCacherListener, scalingInfo);
+			retrieveImageDetails(imageRequest, imageCacherListener);
 		} else {
-			downloadImageFromNetwork(uri, imageCacherListener, scalingInfo);
+			downloadImageFromNetwork(imageRequest, imageCacherListener);
 		}
 
 		return generateQueuedResponse();
@@ -108,7 +108,7 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 	public synchronized void precacheImage(String uri) {
 		validateUri(uri);
 
-		if (!mAsyncOperationsMap.isNetworkRequestPendingForUri(uri) && !mDiskCache.isCached(uri)) {
+		if (!mAsyncOperationsMap.isNetworkRequestPending(uri) && !mDiskCache.isCached(uri)) {
 			mNetworkInterface.downloadImageToDisk(uri);
 		} else {
 			mDiskCache.bumpOnDisk(uri);
@@ -130,19 +130,19 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 		mAsyncOperationsMap.cancelPendingRequest(imageCacherListener);
 	}
 
-	private void downloadImageFromNetwork(String uri, ImageCacherListener imageCacherListener, ScalingInfo scalingInfo) {
-		mAsyncOperationsMap.registerListenerForNetworkRequest(imageCacherListener, uri, scalingInfo);
-		mNetworkInterface.downloadImageToDisk(uri);
+	private void downloadImageFromNetwork(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
+		mAsyncOperationsMap.registerListenerForNetworkRequest(imageRequest, imageCacherListener);
+		mNetworkInterface.downloadImageToDisk(imageRequest.getUri());
 	}
 
-	private void retrieveImageDetails(String uri, ImageCacherListener imageCacherListener, ScalingInfo scalingInfo) {
-		mAsyncOperationsMap.registerListenerForDetailsRequest(imageCacherListener, uri, scalingInfo);
-		mDiskCache.retrieveImageDetails(uri);
+	private void retrieveImageDetails(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
+		mAsyncOperationsMap.registerListenerForDetailsRequest(imageRequest, imageCacherListener);
+		mDiskCache.retrieveImageDetails(imageRequest.getUri());
 	}
 
-	private void decodeBitmapFromDisk(String uri, ImageCacherListener imageCacherListener, int sampleSize) {
-		mAsyncOperationsMap.registerListenerForDecode(imageCacherListener, uri, sampleSize);
-		mDiskCache.getBitmapAsynchronouslyFromDisk(uri, sampleSize, ImageReturnedFrom.DISK, true);
+	private void decodeBitmapFromDisk(DecodeSignature decodeSignature, ImageCacherListener imageCacherListener) {
+		mAsyncOperationsMap.registerListenerForDecode(decodeSignature, imageCacherListener);
+		mDiskCache.getBitmapAsynchronouslyFromDisk(decodeSignature, ImageReturnedFrom.DISK, true);
 	}
 
 	private void validateUri(String uri) {
@@ -184,14 +184,14 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 	}
 
 	@Override
-	public void onImageDecoded(Bitmap bitmap, String uri, int sampleSize, ImageReturnedFrom returnedFrom) {
-		mMemoryCache.cacheBitmap(bitmap, uri, sampleSize);
-		mAsyncOperationsMap.onDecodeSuccess(bitmap, uri, sampleSize, returnedFrom);
+	public void onImageDecoded(DecodeSignature decodeSignature, Bitmap bitmap, ImageReturnedFrom returnedFrom) {
+		mMemoryCache.cacheBitmap(bitmap, decodeSignature);
+		mAsyncOperationsMap.onDecodeSuccess(bitmap, returnedFrom, decodeSignature);
 	}
 
 	@Override
-	public void onImageDecodeFailed(String uri, int sampleSize, String message) {
-		mAsyncOperationsMap.onDecodeFailed(uri, sampleSize, message);
+	public void onImageDecodeFailed(DecodeSignature decodeSignature, String message) {
+		mAsyncOperationsMap.onDecodeFailed(decodeSignature, message);
 	}
 
 	@Override
@@ -205,18 +205,18 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 	}
 
 	@Override
-	public void onImageDecodeRequired(String uri, int sampleSize) {
-		mDiskCache.getBitmapAsynchronouslyFromDisk(uri, sampleSize, ImageReturnedFrom.NETWORK, false);
+	public void onImageDecodeRequired(DecodeSignature decodeSignature) {
+		mDiskCache.getBitmapAsynchronouslyFromDisk(decodeSignature, ImageReturnedFrom.NETWORK, false);
 	}
 
 	@Override
-	public boolean isNetworkRequestPendingForUri(String uri) {
+	public boolean isNetworkRequestPending(String uri) {
 		return mNetworkInterface.isNetworkRequestPendingForUrl(uri);
 	}
 
 	@Override
-	public boolean isDecodeRequestPending(DecodeOperationParameters decodeOperationParameters) {
-		return mDiskCache.isDecodeRequestPending(decodeOperationParameters);
+	public boolean isDecodeRequestPending(DecodeSignature decodeSignature) {
+		return mDiskCache.isDecodeRequestPending(decodeSignature);
 	}
 
 	public void setNetworkRequestCreator(NetworkRequestCreator networkRequestCreator) {

@@ -22,10 +22,9 @@ public class SampleSizeTests extends ActivityInstrumentationTestCase2<MainActivi
 
 		mDimensions = new Dimensions(512, 512);
 		mScalingInfo = new ScalingInfo();
-		mImageRequest = new ImageRequest("some uri", mScalingInfo);
 		mOptions = new Options();
+		mImageRequest = new ImageRequest("some uri", mScalingInfo, mOptions);
 		mOptions.scalingPreference = ScalingPreference.LARGER_THAN_VIEW_OR_FULL_SIZE;
-		mImageRequest.setOptions(mOptions);
 	}
 
 	public void testSampleSizesWithLargerThanView() {

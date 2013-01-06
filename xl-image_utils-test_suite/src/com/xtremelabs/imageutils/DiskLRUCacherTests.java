@@ -37,23 +37,7 @@ public class DiskLRUCacherTests extends ActivityInstrumentationTestCase2<MainAct
 			loadKittenToFile();
 		}
 
-		mDiskCacher = new DiskLRUCacher(getActivity().getApplicationContext(), new ImageDiskObserver() {
-			@Override
-			public void onImageDecoded(final Bitmap bitmap, final String url, final int sampleSize, final ImageReturnedFrom returnedFrom) {
-			}
-
-			@Override
-			public void onImageDecodeFailed(final String url, final int sampleSize, final String error) {
-			}
-
-			@Override
-			public void onImageDetailsRequestFailed(String uri, final String errorMessage) {
-			}
-
-			@Override
-			public void onImageDetailsRetrieved(final String uri) {
-			}
-		});
+		mDiskCacher = new DiskLRUCacher(getActivity().getApplicationContext(), new BlankImageDiskObserver());
 	}
 
 	@Override
@@ -83,11 +67,11 @@ public class DiskLRUCacherTests extends ActivityInstrumentationTestCase2<MainAct
 			}
 
 			@Override
-			public void onImageDecoded(final Bitmap bitmap, final String uri, final int sampleSize, final ImageReturnedFrom returnedFrom) {
+			public void onImageDecoded(DecodeSignature decodeSignature, Bitmap bitmap, ImageReturnedFrom returnedFrom) {
 			}
 
 			@Override
-			public void onImageDecodeFailed(final String uri, final int sampleSize, final String error) {
+			public void onImageDecodeFailed(DecodeSignature decodeSignature, String error) {
 			}
 		});
 		mDiskCacher.cacheImageDetails(mKittenImageUri);
@@ -121,7 +105,7 @@ public class DiskLRUCacherTests extends ActivityInstrumentationTestCase2<MainAct
 	public void testGettingPermanentStorageBitmap() {
 		Bitmap bitmap = null;
 		try {
-			bitmap = mDiskCacher.getBitmapSynchronouslyFromDisk(mKittenImageUri, 1);
+			bitmap = mDiskCacher.getBitmapSynchronouslyFromDisk(new DecodeSignature(mKittenImageUri, 1, null));
 		} catch (FileNotFoundException e) {
 			fail();
 		} catch (FileFormatException e) {
@@ -155,19 +139,19 @@ public class DiskLRUCacherTests extends ActivityInstrumentationTestCase2<MainAct
 
 	private class BlankImageDiskObserver implements ImageDiskObserver {
 		@Override
-		public void onImageDecoded(final Bitmap bitmap, final String uri, final int sampleSize, final ImageReturnedFrom returnedFrom) {
-		}
-
-		@Override
-		public void onImageDecodeFailed(final String uri, final int sampleSize, final String error) {
-		}
-
-		@Override
 		public void onImageDetailsRequestFailed(String uri, final String errorMessage) {
 		}
 
 		@Override
 		public void onImageDetailsRetrieved(final String uri) {
+		}
+
+		@Override
+		public void onImageDecoded(DecodeSignature decodeSignature, Bitmap bitmap, ImageReturnedFrom returnedFrom) {
+		}
+
+		@Override
+		public void onImageDecodeFailed(DecodeSignature decodeSignature, String error) {
 		}
 	}
 }

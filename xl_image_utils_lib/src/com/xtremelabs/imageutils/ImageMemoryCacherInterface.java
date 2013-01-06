@@ -19,9 +19,9 @@ package com.xtremelabs.imageutils;
 import android.graphics.Bitmap;
 
 public interface ImageMemoryCacherInterface {
-	Bitmap getBitmap(String url, int sampleSize);
+	Bitmap getBitmap(DecodeSignature decodeSignature);
 
-	void cacheBitmap(Bitmap bitmap, String url, int sampleSize);
+	void cacheBitmap(Bitmap bitmap, DecodeSignature decodeSignature);
 	
 	void clearCache();
 

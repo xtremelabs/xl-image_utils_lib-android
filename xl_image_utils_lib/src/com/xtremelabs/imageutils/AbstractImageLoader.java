@@ -352,8 +352,7 @@ public abstract class AbstractImageLoader {
 
 		ScalingInfo scalingInfo = getScalingInfo(imageView, options);
 
-		ImageRequest imageRequest = new ImageRequest(uri, scalingInfo);
-		imageRequest.setOptions(options);
+		ImageRequest imageRequest = new ImageRequest(uri, scalingInfo, options);
 		mReferenceManager.getBitmap(mKey, imageRequest, imageManagerListener);
 	}
 

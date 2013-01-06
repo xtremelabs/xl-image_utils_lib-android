@@ -13,11 +13,21 @@ class ImageRequest {
 	private final String mUri;
 	private final ScalingInfo mScalingInfo;
 	private ImageRequestType mImageRequestType;
-	private Options mOptions;
+	private final Options mOptions;
 
 	public ImageRequest(String uri, ScalingInfo scalingInfo) {
+		this(uri, scalingInfo, null);
+	}
+
+	public ImageRequest(String uri, ScalingInfo scalingInfo, Options options) {
 		mUri = uri;
 		mScalingInfo = scalingInfo;
+
+		if (options == null) {
+			mOptions = new Options();
+		} else {
+			mOptions = options;
+		}
 
 		setRequestType();
 	}
@@ -36,10 +46,6 @@ class ImageRequest {
 
 	public ScalingInfo getScalingInfo() {
 		return mScalingInfo;
-	}
-
-	public void setOptions(Options options) {
-		mOptions = options;
 	}
 
 	private void setRequestType() {
