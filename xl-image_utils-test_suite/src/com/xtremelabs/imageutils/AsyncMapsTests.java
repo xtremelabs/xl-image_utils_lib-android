@@ -22,16 +22,11 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 		super.setUp();
 		mObserver = new AsyncOperationsObserver() {
 			@Override
-			public void onImageDecodeRequired(String url, int mSampleSize) {
+			public void onImageDecodeRequired(DecodeSignature decodeSignature) {
 			}
 
 			@Override
-			public boolean isNetworkRequestPendingForUri(String uri) {
-				return true;
-			}
-
-			@Override
-			public boolean isDecodeRequestPending(DecodeOperationParameters decodeOperationParameters) {
+			public boolean isDecodeRequestPending(DecodeSignature decodeSignature) {
 				return true;
 			}
 
@@ -42,6 +37,11 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 
 			@Override
 			public void onImageDetailsRequired(String uri) {
+			}
+
+			@Override
+			public boolean isNetworkRequestPending(String uri) {
+				return true;
 			}
 		};
 		mMaps = new AsyncOperationsMaps(mObserver);
@@ -60,16 +60,16 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 		ScalingInfo scalingInfo = new ScalingInfo();
 		scalingInfo.sampleSize = 1;
 
-		assertFalse(mMaps.isNetworkRequestPendingForUri(uri));
+		assertFalse(mMaps.isNetworkRequestPending(uri));
 		assertTrue(mMaps.queueListenerIfRequestPending(new ImageRequest(uri, scalingInfo), imageCacherListener) == AsyncOperationState.NOT_QUEUED);
-		mMaps.registerListenerForNetworkRequest(imageCacherListener, uri, scalingInfo);
-		assertTrue(mMaps.isNetworkRequestPendingForUri(uri));
-		assertFalse(mMaps.isDecodeRequestPendingForUriAndScalingInfo(uri, scalingInfo));
+		mMaps.registerListenerForNetworkRequest(new ImageRequest(uri, scalingInfo), imageCacherListener);
+		assertTrue(mMaps.isNetworkRequestPending(uri));
+		assertFalse(mMaps.isDecodeRequestPending(uri, scalingInfo, null));
 
 		mMaps.onDownloadComplete(uri);
-		assertFalse(mMaps.isNetworkRequestPendingForUri(uri));
-		assertTrue(mMaps.isDetailsRequestPendingForUri(uri));
-		assertFalse(mMaps.isDecodeRequestPendingForUriAndScalingInfo(uri, scalingInfo));
+		assertFalse(mMaps.isNetworkRequestPending(uri));
+		assertTrue(mMaps.isDetailsRequestPending(uri));
+		assertFalse(mMaps.isDecodeRequestPending(uri, scalingInfo, null));
 
 		assertFalse(mAsyncFailed);
 	}
@@ -80,14 +80,14 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 		ScalingInfo scalingInfo = new ScalingInfo();
 		scalingInfo.sampleSize = 1;
 
-		assertFalse(mMaps.isNetworkRequestPendingForUri(uri));
+		assertFalse(mMaps.isNetworkRequestPending(uri));
 		assertTrue(mMaps.queueListenerIfRequestPending(new ImageRequest(uri, scalingInfo), imageCacherListener) == AsyncOperationState.NOT_QUEUED);
-		mMaps.registerListenerForNetworkRequest(imageCacherListener, uri, scalingInfo);
-		assertTrue(mMaps.isNetworkRequestPendingForUri(uri));
-		assertFalse(mMaps.isDecodeRequestPendingForUriAndScalingInfo(uri, scalingInfo));
+		mMaps.registerListenerForNetworkRequest(new ImageRequest(uri, scalingInfo), imageCacherListener);
+		assertTrue(mMaps.isNetworkRequestPending(uri));
+		assertFalse(mMaps.isDecodeRequestPending(uri, scalingInfo, null));
 
 		mMaps.onDownloadFailed(uri, "Forced download failure");
-		assertFalse(mMaps.isNetworkRequestPendingForUri(uri));
+		assertFalse(mMaps.isNetworkRequestPending(uri));
 
 		assertTrue(mAsyncPassed);
 		assertFalse(mAsyncFailed);
@@ -107,26 +107,26 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 		ScalingInfo scalingInfo2 = new ScalingInfo();
 		scalingInfo2.sampleSize = 2;
 
-		assertFalse(mMaps.isNetworkRequestPendingForUri(uri));
+		assertFalse(mMaps.isNetworkRequestPending(uri));
 		assertTrue(mMaps.queueListenerIfRequestPending(new ImageRequest(uri, scalingInfo1), imageCacherListener1) == AsyncOperationState.NOT_QUEUED);
 
-		mMaps.registerListenerForNetworkRequest(imageCacherListener1, uri, scalingInfo1);
-		assertTrue(mMaps.isNetworkRequestPendingForUri(uri));
-		assertFalse(mMaps.isDecodeRequestPendingForUriAndScalingInfo(uri, scalingInfo1));
+		mMaps.registerListenerForNetworkRequest(new ImageRequest(uri, scalingInfo1), imageCacherListener1);
+		assertTrue(mMaps.isNetworkRequestPending(uri));
+		assertFalse(mMaps.isDecodeRequestPending(uri, scalingInfo1, null));
 		assertEquals(mMaps.getNumPendingDownloads(), 1);
 		assertEquals(mMaps.getNumPendingDecodes(), 0);
 
 		mMaps.queueListenerIfRequestPending(new ImageRequest(uri, scalingInfo2), imageCacherListener2);
-		assertTrue(mMaps.isNetworkRequestPendingForUri(uri));
-		assertFalse(mMaps.isDecodeRequestPendingForUriAndScalingInfo(uri, scalingInfo2));
+		assertTrue(mMaps.isNetworkRequestPending(uri));
+		assertFalse(mMaps.isDecodeRequestPending(uri, scalingInfo2, null));
 		assertEquals(mMaps.getNumPendingDownloads(), 1);
 		assertEquals(mMaps.getNumPendingDetailsRequests(), 0);
 		assertEquals(mMaps.getNumPendingDecodes(), 0);
 
 		mMaps.onDownloadComplete(uri);
-		assertFalse(mMaps.isNetworkRequestPendingForUri(uri));
-		assertTrue(mMaps.isDetailsRequestPendingForUri(uri));
-		assertTrue(mMaps.isDetailsRequestPendingForUri(uri));
+		assertFalse(mMaps.isNetworkRequestPending(uri));
+		assertTrue(mMaps.isDetailsRequestPending(uri));
+		assertTrue(mMaps.isDetailsRequestPending(uri));
 		assertEquals(mMaps.getNumPendingDownloads(), 0);
 		assertEquals(mMaps.getNumPendingDetailsRequests(), 1);
 		assertEquals(mMaps.getNumPendingDecodes(), 0);
@@ -146,25 +146,25 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 		ScalingInfo scalingInfo2 = new ScalingInfo();
 		scalingInfo2.sampleSize = 2;
 
-		assertFalse(mMaps.isNetworkRequestPendingForUri(uri));
+		assertFalse(mMaps.isNetworkRequestPending(uri));
 		assertTrue(mMaps.queueListenerIfRequestPending(new ImageRequest(uri, scalingInfo1), imageCacherListener1) == AsyncOperationState.NOT_QUEUED);
 
-		mMaps.registerListenerForNetworkRequest(imageCacherListener1, uri, scalingInfo1);
-		assertTrue(mMaps.isNetworkRequestPendingForUri(uri));
-		assertFalse(mMaps.isDecodeRequestPendingForUriAndScalingInfo(uri, scalingInfo1));
+		mMaps.registerListenerForNetworkRequest(new ImageRequest(uri, scalingInfo1), imageCacherListener1);
+		assertTrue(mMaps.isNetworkRequestPending(uri));
+		assertFalse(mMaps.isDecodeRequestPending(uri, scalingInfo1, null));
 		assertEquals(mMaps.getNumPendingDownloads(), 1);
 		assertEquals(mMaps.getNumPendingDecodes(), 0);
 
 		mMaps.queueListenerIfRequestPending(new ImageRequest(uri, scalingInfo2), imageCacherListener2);
-		assertTrue(mMaps.isNetworkRequestPendingForUri(uri));
-		assertFalse(mMaps.isDecodeRequestPendingForUriAndScalingInfo(uri, scalingInfo2));
+		assertTrue(mMaps.isNetworkRequestPending(uri));
+		assertFalse(mMaps.isDecodeRequestPending(uri, scalingInfo2, null));
 		assertEquals(mMaps.getNumPendingDownloads(), 1);
 		assertEquals(mMaps.getNumPendingDecodes(), 0);
 
 		mMaps.onDownloadFailed(uri, "Forced download failure");
-		assertFalse(mMaps.isNetworkRequestPendingForUri(uri));
-		assertFalse(mMaps.isDecodeRequestPendingForUriAndScalingInfo(uri, scalingInfo1));
-		assertFalse(mMaps.isDecodeRequestPendingForUriAndScalingInfo(uri, scalingInfo2));
+		assertFalse(mMaps.isNetworkRequestPending(uri));
+		assertFalse(mMaps.isDecodeRequestPending(uri, scalingInfo1, null));
+		assertFalse(mMaps.isDecodeRequestPending(uri, scalingInfo2, null));
 		assertEquals(mMaps.getNumPendingDownloads(), 0);
 		assertEquals(mMaps.getNumPendingDecodes(), 0);
 
@@ -182,7 +182,7 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 
 		generateAndValidateNetworkRequest(uri, imageCacherListener, scalingInfo);
 		mMaps.cancelPendingRequest(imageCacherListener);
-		assertTrue(mMaps.isNetworkRequestPendingForUri(uri));
+		assertTrue(mMaps.isNetworkRequestPending(uri));
 		mMaps.onDownloadComplete(uri);
 		assertEquals(0, mMaps.getNumPendingDownloads());
 		assertEquals(1, mMaps.getNumPendingDetailsRequests());
@@ -194,9 +194,9 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 
 		generateAndValidateNetworkRequest(uri, imageCacherListener, scalingInfo);
 		mMaps.cancelPendingRequest(imageCacherListener);
-		assertTrue(mMaps.isNetworkRequestPendingForUri(uri));
+		assertTrue(mMaps.isNetworkRequestPending(uri));
 		mMaps.onDownloadFailed(uri, "Forced download failure");
-		assertFalse(mMaps.isNetworkRequestPendingForUri(uri));
+		assertFalse(mMaps.isNetworkRequestPending(uri));
 		assertEquals(0, mMaps.getNumPendingDownloads());
 		assertEquals(0, mMaps.getNumPendingDetailsRequests());
 		assertEquals(0, mMaps.getNumPendingDecodes());
@@ -208,8 +208,8 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 		ScalingInfo scalingInfo = new ScalingInfo();
 		scalingInfo.sampleSize = 1;
 
-		assertFalse(mMaps.isDetailsRequestPendingForUri(uri));
-		mMaps.registerListenerForDetailsRequest(new ImageCacherListener() {
+		assertFalse(mMaps.isDetailsRequestPending(uri));
+		mMaps.registerListenerForDetailsRequest(new ImageRequest(uri, scalingInfo), new ImageCacherListener() {
 			@Override
 			public void onImageAvailable(ImageResponse imageResponse) {
 			}
@@ -217,26 +217,26 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 			@Override
 			public void onFailure(String message) {
 			}
-		}, uri, scalingInfo);
-		assertTrue(mMaps.isDetailsRequestPendingForUri(uri));
+		});
+		assertTrue(mMaps.isDetailsRequestPending(uri));
 
 		mMaps.onDetailsRequestComplete(uri);
-		assertFalse(mMaps.isDetailsRequestPendingForUri(uri));
-		assertTrue(mMaps.isDecodeRequestPendingForUriAndScalingInfo(uri, scalingInfo));
+		assertFalse(mMaps.isDetailsRequestPending(uri));
+		assertTrue(mMaps.isDecodeRequestPending(uri, scalingInfo, null));
 	}
 
 	public void testDecodeSuccess() {
-		String url = "blah";
+		String uri = "blah";
 		ImageCacherListener imageCacherListener = getPassingImageCacherListener();
 		ScalingInfo scalingInfo = new ScalingInfo();
 		scalingInfo.sampleSize = 1;
 
-		generateAndValidateDecodeRequest(url, imageCacherListener, scalingInfo);
+		generateAndValidateDecodeRequest(uri, imageCacherListener, scalingInfo);
 
-		mMaps.onDecodeSuccess(null, url, scalingInfo.sampleSize, ImageReturnedFrom.DISK);
+		mMaps.onDecodeSuccess(null, ImageReturnedFrom.DISK, new DecodeSignature(uri, scalingInfo.sampleSize, null));
 		assertEquals(mMaps.getNumPendingDownloads(), 0);
 		assertEquals(mMaps.getNumPendingDecodes(), 0);
-		assertFalse(mMaps.isDecodeRequestPendingForUriAndScalingInfo(url, scalingInfo));
+		assertFalse(mMaps.isDecodeRequestPending(uri, scalingInfo, null));
 
 		assertTrue(mAsyncPassed);
 		assertFalse(mAsyncFailed);
@@ -250,10 +250,10 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 
 		generateAndValidateDecodeRequest(url, imageCacherListener, scalingInfo);
 
-		mMaps.onDecodeFailed(url, scalingInfo.sampleSize, "Forced decode failure");
+		mMaps.onDecodeFailed(new DecodeSignature(url, scalingInfo.sampleSize, null), "Forced decode failure");
 		assertEquals(mMaps.getNumPendingDownloads(), 0);
 		assertEquals(mMaps.getNumPendingDecodes(), 0);
-		assertFalse(mMaps.isDecodeRequestPendingForUriAndScalingInfo(url, scalingInfo));
+		assertFalse(mMaps.isDecodeRequestPending(url, scalingInfo, null));
 
 		assertTrue(mAsyncPassed);
 		assertFalse(mAsyncFailed);
@@ -299,7 +299,7 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 		assertEquals(mMaps.getNumPendingDecodes(), 3);
 		assertEquals(mMaps.getNumListenersForDecode(), 4);
 
-		mMaps.onDecodeSuccess(null, uri1, 1, ImageReturnedFrom.DISK);
+		mMaps.onDecodeSuccess(null, ImageReturnedFrom.DISK, new DecodeSignature(uri1, 1, null));
 		assertEquals(mMaps.getNumPendingDecodes(), 2);
 		assertEquals(mMaps.getNumListenersForDecode(), 2);
 
@@ -309,17 +309,17 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 	}
 
 	public void testDecodeCancel() {
-		String url = "blah";
+		String uri = "blah";
 		ImageCacherListener imageCacherListener = getFailingImageCacherListener();
 		ScalingInfo scalingInfo = new ScalingInfo();
 		scalingInfo.sampleSize = 1;
 
-		generateAndValidateDecodeRequest(url, imageCacherListener, scalingInfo);
+		generateAndValidateDecodeRequest(uri, imageCacherListener, scalingInfo);
 
 		mMaps.cancelPendingRequest(imageCacherListener);
-		assertTrue(mMaps.isDecodeRequestPendingForUriAndScalingInfo(url, scalingInfo));
-		mMaps.onDecodeSuccess(null, url, scalingInfo.sampleSize, ImageReturnedFrom.DISK);
-		assertFalse(mMaps.isDecodeRequestPendingForUriAndScalingInfo(url, scalingInfo));
+		assertTrue(mMaps.isDecodeRequestPending(uri, scalingInfo, null));
+		mMaps.onDecodeSuccess(null, ImageReturnedFrom.DISK, new DecodeSignature(uri, scalingInfo.sampleSize, null));
+		assertFalse(mMaps.isDecodeRequestPending(uri, scalingInfo, null));
 
 		assertEquals(mMaps.getNumPendingDownloads(), 0);
 		assertEquals(mMaps.getNumPendingDecodes(), 0);
@@ -353,10 +353,10 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 		assertEquals(1, mMaps.getNumPendingDetailsRequests());
 		assertEquals(0, mMaps.getNumListenersForDecode());
 		assertEquals(0, mMaps.getNumPendingDecodes());
-		assertTrue(mMaps.isDetailsRequestPendingForUri(uri));
-		assertFalse(mMaps.isDecodeRequestPendingForUriAndScalingInfo(uri, scalingInfo1));
-		assertFalse(mMaps.isDecodeRequestPendingForUriAndScalingInfo(uri, scalingInfo2));
-		assertFalse(mMaps.isDecodeRequestPendingForUriAndScalingInfo(uri, scalingInfo3));
+		assertTrue(mMaps.isDetailsRequestPending(uri));
+		assertFalse(mMaps.isDecodeRequestPending(uri, scalingInfo1, null));
+		assertFalse(mMaps.isDecodeRequestPending(uri, scalingInfo2, null));
+		assertFalse(mMaps.isDecodeRequestPending(uri, scalingInfo3, null));
 
 		mMaps.onDetailsRequestComplete(uri);
 		assertFalse(mMaps.areMapsEmpty());
@@ -369,9 +369,9 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 	public void testIsDetailsRequestPending() {
 		String uri = "uri";
 
-		assertFalse(mMaps.isDetailsRequestPendingForUri(uri));
+		assertFalse(mMaps.isDetailsRequestPending(uri));
 
-		mMaps.registerListenerForDetailsRequest(new ImageCacherListener() {
+		mMaps.registerListenerForDetailsRequest(new ImageRequest(uri, new ScalingInfo()), new ImageCacherListener() {
 			@Override
 			public void onImageAvailable(ImageResponse imageResponse) {
 			}
@@ -379,9 +379,9 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 			@Override
 			public void onFailure(String message) {
 			}
-		}, uri, new ScalingInfo());
+		});
 
-		assertTrue(mMaps.isDetailsRequestPendingForUri(uri));
+		assertTrue(mMaps.isDetailsRequestPending(uri));
 	}
 
 	private ImageCacherListener getBlankImageCacherListener() {
@@ -428,17 +428,17 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 	}
 
 	private void generateAndValidateNetworkRequest(String uri, ImageCacherListener imageCacherListener, ScalingInfo scalingInfo) {
-		assertFalse(mMaps.isNetworkRequestPendingForUri(uri));
+		assertFalse(mMaps.isNetworkRequestPending(uri));
 		assertTrue(mMaps.queueListenerIfRequestPending(new ImageRequest(uri, scalingInfo), imageCacherListener) == AsyncOperationState.NOT_QUEUED);
-		mMaps.registerListenerForNetworkRequest(imageCacherListener, uri, scalingInfo);
-		assertTrue(mMaps.isNetworkRequestPendingForUri(uri));
-		assertFalse(mMaps.isDecodeRequestPendingForUriAndScalingInfo(uri, scalingInfo));
+		mMaps.registerListenerForNetworkRequest(new ImageRequest(uri, scalingInfo), imageCacherListener);
+		assertTrue(mMaps.isNetworkRequestPending(uri));
+		assertFalse(mMaps.isDecodeRequestPending(uri, scalingInfo, null));
 	}
 
 	private void generateAndValidateDecodeRequest(String uri, ImageCacherListener imageCacherListener, ScalingInfo scalingInfo) {
-		mMaps.registerListenerForDecode(imageCacherListener, uri, scalingInfo.sampleSize);
+		mMaps.registerListenerForDecode(new DecodeSignature(uri, scalingInfo.sampleSize, null), imageCacherListener);
 		assertFalse(mMaps.isListenerWaitingOnNetwork(imageCacherListener));
 		assertFalse(mMaps.isListenerWaitingOnDetails(imageCacherListener));
-		assertTrue(mMaps.isDecodeRequestPendingForUriAndScalingInfo(uri, scalingInfo));
+		assertTrue(mMaps.isDecodeRequestPending(uri, scalingInfo, null));
 	}
 }

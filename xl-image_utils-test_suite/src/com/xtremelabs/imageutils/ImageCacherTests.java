@@ -39,7 +39,7 @@ public class ImageCacherTests extends AndroidTestCase {
 			}
 
 			@Override
-			public void registerListenerForDetailsRequest(ImageCacherListener imageCacherListener, String uri, ScalingInfo scalingInfo) {
+			public void registerListenerForDetailsRequest(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
 				mCallComplete = true;
 			}
 		});
@@ -88,8 +88,8 @@ public class ImageCacherTests extends AndroidTestCase {
 			}
 
 			@Override
-			public void bumpInQueue(String uri, int sampleSize) {
-				if (sampleSize == 0) {
+			public void bumpInQueue(DecodeSignature decodeSignature) {
+				if (decodeSignature.mSampleSize == 0) {
 					delayedLoop.flagSuccess();
 				} else {
 					delayedLoop.flagFailure();
@@ -136,7 +136,7 @@ public class ImageCacherTests extends AndroidTestCase {
 
 		mImageCacher.stubMemCache(new MemCacheStub() {
 			@Override
-			public Bitmap getBitmap(String url, int sampleSize) {
+			public Bitmap getBitmap(DecodeSignature decodeSignature) {
 				return Bitmap.createBitmap(100, 100, Config.RGB_565);
 			}
 		});
@@ -191,5 +191,62 @@ public class ImageCacherTests extends AndroidTestCase {
 		mImageCacher.onImageDetailsRequestFailed(TEST_URI, "Forced failure.");
 		delayedLoop.startLoop();
 		delayedLoop.assertPassed();
+	}
+
+	public void testSuccessfulMemcacheRetrieval() {
+		final DelayedLoop delayedLoop = new DelayedLoop(1000);
+
+		mImageCacher.stubAsynchOperationsMaps(new AsyncOperationsMaps(mImageCacher) {
+			@Override
+			public synchronized AsyncOperationState queueListenerIfRequestPending(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
+				return AsyncOperationState.NOT_QUEUED;
+			}
+		});
+
+		mImageCacher.stubDiskCache(new DiskCacheStub() {
+			@Override
+			public int getSampleSize(ImageRequest imageRequest) {
+				return 1;
+			}
+
+			@Override
+			public boolean isCached(String uri) {
+				return true;
+			}
+		});
+
+		mImageCacher.stubMemCache(new MemCacheStub() {
+			@Override
+			public Bitmap getBitmap(DecodeSignature decodeSignature) {
+				if (decodeSignature == null || decodeSignature.mSampleSize != 1 || decodeSignature.mUri != TEST_URI) {
+					delayedLoop.flagFailure();
+					return null;
+				}
+
+				delayedLoop.flagSuccess();
+				return Bitmap.createBitmap(100, 100, Config.RGB_565);
+			}
+		});
+
+		ImageResponse imageResponse = mImageCacher.getBitmap(new ImageRequest(TEST_URI, new ScalingInfo()), new ImageCacherListener() {
+			@Override
+			public void onImageAvailable(ImageResponse imageResponse) {
+				delayedLoop.flagFailure();
+			}
+
+			@Override
+			public void onFailure(String message) {
+				delayedLoop.flagFailure();
+			}
+		});
+
+		delayedLoop.startLoop();
+		delayedLoop.assertPassed();
+
+		assertNotNull(imageResponse);
+		assertNotNull(imageResponse.getBitmap());
+		assertEquals(100, imageResponse.getBitmap().getWidth());
+		assertEquals(ImageReturnedFrom.MEMORY, imageResponse.getImageReturnedFrom());
+		assertEquals(ImageResponseStatus.SUCCESS, imageResponse.getImageResponseStatus());
 	}
 }
