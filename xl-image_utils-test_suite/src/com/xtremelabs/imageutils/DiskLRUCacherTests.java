@@ -6,17 +6,19 @@ import java.io.FileOutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.StrictMode;
 import android.os.StrictMode.ThreadPolicy;
 import android.test.ActivityInstrumentationTestCase2;
 
-import com.example.xl_image_utils_android_testactivity.test.R;
 import com.xtremelabs.imageutils.DiskLRUCacher.FileFormatException;
+import com.xtremelabs.imageutils.test.R;
 import com.xtremelabs.imageutils.testutils.DelayedLoop;
 import com.xtremelabs.testactivity.MainActivity;
 
+@SuppressLint("NewApi")
 public class DiskLRUCacherTests extends ActivityInstrumentationTestCase2<MainActivity> {
 	private static final String IMAGE_FILE_NAME = "disk_cache_test_image.jpg";
 	private static final String TEST_URI = "file:///my/image.jpg";

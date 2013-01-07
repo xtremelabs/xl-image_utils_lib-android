@@ -5,11 +5,11 @@ import android.graphics.drawable.BitmapDrawable;
 import android.test.ActivityInstrumentationTestCase2;
 import android.widget.ImageView;
 
-import com.example.xl_image_utils_android_testactivity.test.R;
 import com.xtremelabs.imageutils.DiskManagerAccessUtil;
 import com.xtremelabs.imageutils.ImageLoader;
 import com.xtremelabs.imageutils.ImageLoaderListener;
 import com.xtremelabs.imageutils.ImageReturnedFrom;
+import com.xtremelabs.imageutils.test.R;
 import com.xtremelabs.imageutils.testutils.GeneralTestUtils;
 import com.xtremelabs.imageutils.testutils.GeneralTestUtils.DelayedLoopListener;
 import com.xtremelabs.testactivity.MainActivity;
