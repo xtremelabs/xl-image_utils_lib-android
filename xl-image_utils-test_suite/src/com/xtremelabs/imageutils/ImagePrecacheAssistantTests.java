@@ -108,8 +108,8 @@ public class ImagePrecacheAssistantTests extends ActivityInstrumentationTestCase
 		mAssistant.onPositionVisited(0);
 		assertEquals(1, mMemoryPrecacheRequests.size());
 		assertEquals(1, mDiskPrecacheRequests.size());
-		assertEquals(1, (int) mPositionsRequested.get(0));
-		assertEquals(2, (int) mPositionsRequested.get(1));
+		assertEquals(2, (int) mPositionsRequested.get(0));
+		assertEquals(1, (int) mPositionsRequested.get(1));
 	}
 
 	public void testDirectionSwap() {
@@ -123,22 +123,19 @@ public class ImagePrecacheAssistantTests extends ActivityInstrumentationTestCase
 		assertEquals(2, mMemoryPrecacheRequests.size());
 		assertEquals(2, mDiskPrecacheRequests.size());
 		List<Integer> expectedValues = new ArrayList<Integer>();
-		expectedValues.add(4);
-		expectedValues.add(5);
 		expectedValues.add(6);
 		expectedValues.add(7);
+		expectedValues.add(4);
+		expectedValues.add(5);
 		assertEquals(expectedValues, mPositionsRequested);
 
 		clearLists();
 
 		mList.add(new PrecacheRequest("1", new Dimensions(null, null)));
 		mAssistant.onPositionVisited(2);
-		assertEquals(2, mMemoryPrecacheRequests.size());
+		assertEquals(1, mMemoryPrecacheRequests.size());
 		assertEquals(0, mDiskPrecacheRequests.size());
-		expectedValues.clear();
-		expectedValues.add(0);
-		expectedValues.add(1);
-		assertEquals(expectedValues, mPositionsRequested);
+		assertEquals(0, (int) mPositionsRequested.get(0));
 	}
 
 	public void testPositionsRequested() {
@@ -151,8 +148,8 @@ public class ImagePrecacheAssistantTests extends ActivityInstrumentationTestCase
 		assertEquals(1, mMemoryPrecacheRequests.size());
 		assertEquals(1, mDiskPrecacheRequests.size());
 
-		assertEquals(1, (int) mPositionsRequested.get(0));
-		assertEquals(2, (int) mPositionsRequested.get(1));
+		assertEquals(2, (int) mPositionsRequested.get(0));
+		assertEquals(1, (int) mPositionsRequested.get(1));
 	}
 
 	public void testForNoExcessiveCalls() {
@@ -171,8 +168,8 @@ public class ImagePrecacheAssistantTests extends ActivityInstrumentationTestCase
 		mAssistant.onPositionVisited(1);
 		assertEquals(1, mMemoryPrecacheRequests.size());
 		assertEquals(1, mDiskPrecacheRequests.size());
-		assertEquals(3, (int) mPositionsRequested.get(0));
-		assertEquals(5, (int) mPositionsRequested.get(1));
+		assertEquals(5, (int) mPositionsRequested.get(0));
+		assertEquals(3, (int) mPositionsRequested.get(1));
 	}
 
 	private void clearLists() {

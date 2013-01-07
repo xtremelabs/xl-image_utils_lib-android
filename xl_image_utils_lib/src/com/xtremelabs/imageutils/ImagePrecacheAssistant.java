@@ -31,6 +31,7 @@ public class ImagePrecacheAssistant {
 
 	private int mCurrentPosition = 0;
 	private Direction mCurrentDirection = Direction.UP;
+	private boolean isFirstCalculation = true;
 
 	public ImagePrecacheAssistant(AbstractImageLoader imageLoader, PrecacheInformationProvider precacheInformationProvider) {
 		mImageLoader = imageLoader;
@@ -44,17 +45,17 @@ public class ImagePrecacheAssistant {
 	 *            The current position within the adapter.
 	 */
 	public void onPositionVisited(int position) {
-		boolean didDirectionSwap = calculateDirection(position);
-		RangesToCache ranges = calculateRanges(position, didDirectionSwap);
-
-		for (int i = ranges.memCacheLowerIndex; i < ranges.memCacheUpperIndex; i++) {
-			List<PrecacheRequest> precacheRequests = mPrecacheInformationProvider.onRowPrecacheRequestsRequired(i);
-			precacheListToMemory(precacheRequests);
-		}
+		calculateDirection(position);
+		RangesToCache ranges = calculateRanges(position);
 
 		for (int i = ranges.diskCacheLowerIndex; i < ranges.diskCacheUpperIndex; i++) {
 			List<PrecacheRequest> precacheRequests = mPrecacheInformationProvider.onRowPrecacheRequestsRequired(i);
 			precacheListToDisk(precacheRequests);
+		}
+
+		for (int i = ranges.memCacheLowerIndex; i < ranges.memCacheUpperIndex; i++) {
+			List<PrecacheRequest> precacheRequests = mPrecacheInformationProvider.onRowPrecacheRequestsRequired(i);
+			precacheListToMemory(precacheRequests);
 		}
 	}
 
@@ -88,29 +89,26 @@ public class ImagePrecacheAssistant {
 		}
 	}
 
-	private RangesToCache calculateRanges(int position, boolean didDirectionSwap) {
+	private RangesToCache calculateRanges(int position) {
 		RangesToCache indices = new RangesToCache();
 
 		switch (mCurrentDirection) {
 		case UP:
-			calculateRangesForUp(position, didDirectionSwap, indices);
+			calculateRangesForUp(position, indices);
 			break;
 		case DOWN:
-			calculateRangesForDown(position, didDirectionSwap, indices);
+			calculateRangesForDown(position, indices);
 			break;
 		}
 
 		return indices;
 	}
 
-	private boolean calculateDirection(int position) {
-		boolean didDirectionSwap = false;
+	private void calculateDirection(int position) {
 		if (directionSwitchedToDown(position)) {
 			mCurrentDirection = Direction.DOWN;
-			didDirectionSwap = true;
 		} else if (directionSwitchedToUp(position)) {
 			mCurrentDirection = Direction.UP;
-			didDirectionSwap = true;
 		}
 
 		switch (mCurrentDirection) {
@@ -121,42 +119,44 @@ public class ImagePrecacheAssistant {
 			mCurrentPosition = position;
 			break;
 		}
-
-		return didDirectionSwap;
 	}
 
-	private void calculateRangesForUp(int position, boolean didDirectionSwap, RangesToCache indices) {
-		if (didDirectionSwap) {
+	private void calculateRangesForUp(int position, RangesToCache indices) {
+		if (isFirstCalculation) {
 			indices.memCacheUpperIndex = Math.max(0, position);
 		} else {
 			indices.memCacheUpperIndex = Math.max(0, position - mMemCacheRange + 1);
 		}
 		indices.memCacheLowerIndex = Math.max(0, position - mMemCacheRange);
 
-		if (didDirectionSwap) {
+		if (isFirstCalculation) {
 			indices.diskCacheUpperIndex = Math.max(0, indices.memCacheLowerIndex);
 		} else {
 			indices.diskCacheUpperIndex = Math.max(0, indices.memCacheLowerIndex - mDiskCacheRange + 1);
 		}
 		indices.diskCacheLowerIndex = Math.max(0, indices.memCacheLowerIndex - mDiskCacheRange);
+
+		isFirstCalculation = false;
 	}
 
-	private void calculateRangesForDown(int position, boolean didDirectionSwap, RangesToCache indices) {
+	private void calculateRangesForDown(int position, RangesToCache indices) {
 		int count = mPrecacheInformationProvider.getCount();
 
-		if (didDirectionSwap) {
+		if (isFirstCalculation) {
 			indices.memCacheLowerIndex = Math.min(count, position + 1);
 		} else {
 			indices.memCacheLowerIndex = Math.min(count, position + mMemCacheRange);
 		}
 		indices.memCacheUpperIndex = Math.min(count, position + 1 + mMemCacheRange);
 
-		if (didDirectionSwap) {
+		if (isFirstCalculation) {
 			indices.diskCacheLowerIndex = Math.min(count, indices.memCacheUpperIndex);
 		} else {
 			indices.diskCacheLowerIndex = Math.min(count, indices.memCacheUpperIndex + mDiskCacheRange - 1);
 		}
 		indices.diskCacheUpperIndex = Math.min(count, indices.memCacheUpperIndex + mDiskCacheRange);
+
+		isFirstCalculation = false;
 	}
 
 	private boolean directionSwitchedToDown(int position) {

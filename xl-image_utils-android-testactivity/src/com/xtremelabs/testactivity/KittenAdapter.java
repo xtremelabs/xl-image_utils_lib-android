@@ -53,12 +53,12 @@ public class KittenAdapter extends BaseAdapter {
 			@Override
 			public List<PrecacheRequest> onRowPrecacheRequestsRequired(int position) {
 				List<PrecacheRequest> list = new ArrayList<PrecacheRequest>();
-				if (position % 2 == 0) {
-					list.add(new PrecacheRequest((String) getItem(position) + "1", mBounds));
-					list.add(new PrecacheRequest((String) getItem(position) + "2", mBounds));
-				} else {
-					list.add(new PrecacheRequest((String) getItem(position), mBounds));
-				}
+				// if (position % 2 == 0) {
+				list.add(new PrecacheRequest((String) getItem(position) + "1", mBounds));
+				list.add(new PrecacheRequest((String) getItem(position) + "2", mBounds));
+				// } else {
+				// list.add(new PrecacheRequest((String) getItem(position), mBounds));
+				// }
 				return list;
 			}
 
@@ -67,6 +67,9 @@ public class KittenAdapter extends BaseAdapter {
 				return KittenAdapter.this.getCount();
 			}
 		});
+
+		mImagePrecacheAssistant.setMemCacheRange(6);
+		mImagePrecacheAssistant.setDiskCacheRange(5);
 	}
 
 	@Override
@@ -76,11 +79,11 @@ public class KittenAdapter extends BaseAdapter {
 
 	@Override
 	public Object getItem(int position) {
-		if (position % 2 == 0) {
-			return URL + position;
-		} else {
-			return KITTEN_URI;
-		}
+		// if (position % 2 == 0) {
+		return URL + position;
+		// } else {
+		// return KITTEN_URI;
+		// }
 	}
 
 	@Override
@@ -108,13 +111,13 @@ public class KittenAdapter extends BaseAdapter {
 		if (kittenViews == null)
 			kittenViews = (KittenViews) convertView.getTag();
 
-		if (position % 2 == 0) {
-			mImageLoader.loadImage(kittenViews.kitten1, (String) getItem(position) + "1");
-			mImageLoader.loadImage(kittenViews.kitten2, (String) getItem(position) + "2");
-		} else {
-			mImageLoader.loadImage(kittenViews.kitten1, (String) getItem(position));
-			mImageLoader.loadImage(kittenViews.kitten2, (String) getItem(position));
-		}
+		// if (position % 2 == 0) {
+		mImageLoader.loadImage(kittenViews.kitten1, (String) getItem(position) + "1");
+		mImageLoader.loadImage(kittenViews.kitten2, (String) getItem(position) + "2");
+		// } else {
+		// mImageLoader.loadImage(kittenViews.kitten1, (String) getItem(position));
+		// mImageLoader.loadImage(kittenViews.kitten2, (String) getItem(position));
+		// }
 
 		return convertView;
 	}
