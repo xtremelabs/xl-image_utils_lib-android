@@ -5,10 +5,10 @@ import android.graphics.Bitmap.Config;
 import android.test.AndroidTestCase;
 import android.test.UiThreadTest;
 
-import com.xtreme.utilities.testing.DelayedLoop;
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
 import com.xtremelabs.imageutils.ImageRequest.RequestType;
 import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
+import com.xtremelabs.imageutils.testutils.DelayedLoop;
 
 public class ImageCacherTests extends AndroidTestCase {
 	private static final String TEST_URI = "file:///some/directory/with/an/image.jpg";

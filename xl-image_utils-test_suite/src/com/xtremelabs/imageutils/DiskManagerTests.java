@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import android.test.ActivityInstrumentationTestCase2;
 
-import com.xtremelabs.imageutils.DiskManager;
 import com.xtremelabs.imageutils.testutils.OneKilobyteStream;
 import com.xtremelabs.testactivity.MainActivity;
 

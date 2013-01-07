@@ -13,8 +13,8 @@ import android.os.StrictMode.ThreadPolicy;
 import android.test.ActivityInstrumentationTestCase2;
 
 import com.example.xl_image_utils_android_testactivity.test.R;
-import com.xtreme.utilities.testing.DelayedLoop;
 import com.xtremelabs.imageutils.DiskLRUCacher.FileFormatException;
+import com.xtremelabs.imageutils.testutils.DelayedLoop;
 import com.xtremelabs.testactivity.MainActivity;
 
 public class DiskLRUCacherTests extends ActivityInstrumentationTestCase2<MainActivity> {

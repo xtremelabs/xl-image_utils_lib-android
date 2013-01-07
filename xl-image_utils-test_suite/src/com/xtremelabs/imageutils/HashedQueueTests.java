@@ -2,7 +2,6 @@ package com.xtremelabs.imageutils;
 
 import android.test.ActivityInstrumentationTestCase2;
 
-import com.xtremelabs.imageutils.HashedQueue;
 import com.xtremelabs.testactivity.MainActivity;
 
 public class HashedQueueTests extends ActivityInstrumentationTestCase2<MainActivity> {

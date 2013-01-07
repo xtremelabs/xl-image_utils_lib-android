@@ -7,8 +7,8 @@ import android.test.ActivityInstrumentationTestCase2;
 import android.test.UiThreadTest;
 import android.widget.ImageView;
 
-import com.xtreme.utilities.testing.DelayedLoop;
 import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
+import com.xtremelabs.imageutils.testutils.DelayedLoop;
 import com.xtremelabs.testactivity.MainActivity;
 
 public class LocalImageRequestTests extends ActivityInstrumentationTestCase2<MainActivity> {
