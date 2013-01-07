@@ -2,6 +2,16 @@ package com.xtremelabs.imageutils;
 
 import java.util.List;
 
+import android.widget.BaseAdapter;
+
+/**
+ * This utility simplifies the process of implementing precaching in adapters for use in widgets such as ListViews and ViewPagers.<br>
+ * <br>
+ * <b>Instructions:</b><br>
+ * Create a new instance of this class from within adapter.<br>
+ * Implement the methods {@link PrecacheInformationProvider#onRowPrecacheRequestsRequired(int)} and {@link PrecacheInformationProvider#getCount()}.<br>
+ * In the "getView" method of the adapter, call {@link #onPositionVisited(int)}, and pass in the current position.
+ */
 public class ImagePrecacheAssistant {
 	private enum Direction {
 		DOWN, UP
@@ -24,6 +34,12 @@ public class ImagePrecacheAssistant {
 		mPrecacheInformationProvider = precacheInformationProvider;
 	}
 
+	/**
+	 * This method must be called in the getView method of your adapter.
+	 * 
+	 * @param position
+	 *            The current position within the adapter.
+	 */
 	public void onPositionVisited(int position) {
 		boolean didDirectionSwap = calculateDirection(position);
 		RangesToCache ranges = calculateRanges(position, didDirectionSwap);
@@ -39,10 +55,20 @@ public class ImagePrecacheAssistant {
 		}
 	}
 
+	/**
+	 * Adjust the number of positions ahead that become cached in both the disk and memory caches.
+	 * 
+	 * @param range
+	 */
 	public void setMemCacheRange(int range) {
 		mMemCacheRange = range;
 	}
 
+	/**
+	 * Adjust the number of positions ahead of those that become cached in memory that will be cached on disk.
+	 * 
+	 * @param range
+	 */
 	public void setDiskCacheRange(int range) {
 		mDiskCacheRange = range;
 	}
@@ -138,9 +164,27 @@ public class ImagePrecacheAssistant {
 		return mCurrentDirection == Direction.DOWN && position <= mCurrentPosition;
 	}
 
+	/**
+	 * This interface must be implemented in order for the {@link ImagePrecacheAssistant} to function.
+	 */
 	public static interface PrecacheInformationProvider {
+		/**
+		 * This method must return the number of elements in the adapter. In most cases, it should return the same value as the {@link BaseAdapter#getCount()} method.
+		 * 
+		 * @return
+		 */
 		public int getCount();
 
+		/**
+		 * This method returns a list of the URIs that are required for a particular position in the adapter.<br>
+		 * <br>
+		 * If there are no image URIs available for the provided position, an empty list should be returned.
+		 * 
+		 * @param position
+		 *            The position for which images will be precached.
+		 * @return A list of {@link PrecacheRequest}s. Each PrecacheRequest should contain a URI for a particular image and the bounds of the view the image will be loaded into. The bounds should be provided in pixels,
+		 *         or be given as null.
+		 */
 		public List<PrecacheRequest> onRowPrecacheRequestsRequired(int position);
 	}
 
@@ -148,9 +192,18 @@ public class ImagePrecacheAssistant {
 		private final String mUri;
 		private final Dimensions mBounds;
 
+		/**
+		 * @param uri
+		 * @param bounds
+		 *            The dimensions of the image view the URI will be loaded into. If one or more dimensions are unknown, simply specify the dimensions as null.
+		 */
 		public PrecacheRequest(String uri, Dimensions bounds) {
 			mUri = uri;
-			mBounds = bounds;
+			if (bounds == null) {
+				mBounds = new Dimensions(null, null);
+			} else {
+				mBounds = bounds;
+			}
 		}
 	}
 
