@@ -7,6 +7,7 @@ import java.util.Set;
 import android.graphics.Bitmap;
 
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
+import com.xtremelabs.imageutils.ImageRequest.RequestType;
 import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
 import com.xtremelabs.imageutils.OperationTracker.KeyReferenceProvider;
 import com.xtremelabs.imageutils.OperationTracker.OperationTransferer;
@@ -122,11 +123,20 @@ public class AsyncOperationsMaps {
 			mDetailsOperationTracker.transferOperation(uri, new OperationTransferer<String, RequestParameters, ImageCacherListener>() {
 				@Override
 				public void transferOperation(String uri, RequestParameters networkRequestParameters, ImageCacherListener imageCacherListener) {
-					int sampleSize = mAsyncOperationsObserver.getSampleSize(new ImageRequest(uri, networkRequestParameters.mImageRequest.getScalingInfo()));
-					DecodeSignature decodeSignature = new DecodeSignature(uri, sampleSize, networkRequestParameters.mImageRequest.getOptions().preferedConfig);
+					RequestType requestType = networkRequestParameters.mImageRequest.getRequestType();
 
-					queueForDecodeRequest(networkRequestParameters.mImageCacherListener, decodeSignature);
-					decodeRequestsToMake.add(decodeSignature);
+					switch (requestType) {
+					case CACHE_TO_DISK:
+						return;
+					case CACHE_TO_DISK_AND_MEMORY:
+					case FULL_REQUEST:
+						int sampleSize = mAsyncOperationsObserver.getSampleSize(new ImageRequest(uri, networkRequestParameters.mImageRequest.getScalingInfo()));
+						DecodeSignature decodeSignature = new DecodeSignature(uri, sampleSize, networkRequestParameters.mImageRequest.getOptions().preferedConfig);
+
+						queueForDecodeRequest(networkRequestParameters.mImageCacherListener, decodeSignature);
+						decodeRequestsToMake.add(decodeSignature);
+						break;
+					}
 				}
 			}, mNetworkAndDetailsKeyReferenceProvider);
 		}

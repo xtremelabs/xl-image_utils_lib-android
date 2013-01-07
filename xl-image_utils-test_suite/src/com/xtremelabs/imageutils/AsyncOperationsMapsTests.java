@@ -5,15 +5,17 @@ import android.util.Log;
 
 import com.xtremelabs.imageutils.AsyncOperationsMaps.AsyncOperationState;
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
+import com.xtremelabs.imageutils.ImageRequest.RequestType;
 import com.xtremelabs.testactivity.MainActivity;
 
-public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivity> {
+public class AsyncOperationsMapsTests extends ActivityInstrumentationTestCase2<MainActivity> {
 	private AsyncOperationsMaps mMaps;
 	private AsyncOperationsObserver mObserver;
 	private boolean mAsyncPassed;
 	private boolean mAsyncFailed;
+	private boolean mDecodeRequiredCalled;
 
-	public AsyncMapsTests() {
+	public AsyncOperationsMapsTests() {
 		super(MainActivity.class);
 	}
 
@@ -23,6 +25,7 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 		mObserver = new AsyncOperationsObserver() {
 			@Override
 			public void onImageDecodeRequired(DecodeSignature decodeSignature) {
+				mDecodeRequiredCalled = true;
 			}
 
 			@Override
@@ -32,7 +35,11 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 
 			@Override
 			public int getSampleSize(ImageRequest imageRequest) {
-				return imageRequest.getScalingInfo().sampleSize;
+				if (imageRequest.getScalingInfo() == null || imageRequest.getScalingInfo().sampleSize == null) {
+					return 1;
+				} else {
+					return imageRequest.getScalingInfo().sampleSize;
+				}
 			}
 
 			@Override
@@ -48,6 +55,7 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 
 		mAsyncPassed = false;
 		mAsyncFailed = false;
+		mDecodeRequiredCalled = false;
 
 		assertEquals(mMaps.getNumPendingDownloads(), 0);
 		assertEquals(mMaps.getNumPendingDecodes(), 0);
@@ -382,6 +390,27 @@ public class AsyncMapsTests extends ActivityInstrumentationTestCase2<MainActivit
 		});
 
 		assertTrue(mMaps.isDetailsRequestPending(uri));
+	}
+
+	public void testDetailsRequestCompleteForDiskPrecacheRequest() {
+		String uri = "Random URI";
+
+		ImageRequest imageRequest = new ImageRequest(uri);
+		imageRequest.setRequestType(RequestType.FULL_REQUEST);
+
+		mMaps.registerListenerForDetailsRequest(imageRequest, getBlankImageCacherListener());
+		mMaps.onDetailsRequestComplete(uri);
+
+		assertTrue(mDecodeRequiredCalled);
+
+		mDecodeRequiredCalled = false;
+
+		imageRequest.setRequestType(RequestType.CACHE_TO_DISK);
+
+		mMaps.registerListenerForDetailsRequest(imageRequest, getBlankImageCacherListener());
+		mMaps.onDetailsRequestComplete(uri);
+
+		assertFalse(mDecodeRequiredCalled);
 	}
 
 	private ImageCacherListener getBlankImageCacherListener() {

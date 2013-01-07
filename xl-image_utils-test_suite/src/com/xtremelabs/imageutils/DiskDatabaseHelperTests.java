@@ -81,22 +81,22 @@ public class DiskDatabaseHelperTests extends ActivityInstrumentationTestCase2<Ma
 		FileEntry entry;
 
 		entry = mDatabaseHelper.getLRU();
-		assertEquals("url1", entry.getUrl());
-		mDatabaseHelper.removeFile(entry.getUrl());
+		assertEquals("url1", entry.getUri());
+		mDatabaseHelper.removeFile(entry.getUri());
 
 		mDatabaseHelper.updateFile("url2");
 		entry = mDatabaseHelper.getLRU();
-		assertEquals("url3", entry.getUrl());
+		assertEquals("url3", entry.getUri());
 
 		mDatabaseHelper.updateFile("url3");
 		entry = mDatabaseHelper.getLRU();
-		assertEquals("url4", entry.getUrl());
+		assertEquals("url4", entry.getUri());
 	}
 
 	private void addOrUpdateAndVerifyEntry(String url, long size, int width, int height) {
 		mDatabaseHelper.addOrUpdateFile(url, size, width, height);
 		FileEntry entry = mDatabaseHelper.getFileEntry(url);
-		assertEquals(url, entry.getUrl());
+		assertEquals(url, entry.getUri());
 		assertEquals(size, entry.getSize());
 		Dimensions dimensions = entry.getDimensions();
 		assertNotNull(dimensions);

@@ -7,6 +7,7 @@ import android.test.UiThreadTest;
 
 import com.xtreme.utilities.testing.DelayedLoop;
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
+import com.xtremelabs.imageutils.ImageRequest.RequestType;
 import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
 
 public class ImageCacherTests extends AndroidTestCase {
@@ -248,5 +249,43 @@ public class ImageCacherTests extends AndroidTestCase {
 		assertEquals(100, imageResponse.getBitmap().getWidth());
 		assertEquals(ImageReturnedFrom.MEMORY, imageResponse.getImageReturnedFrom());
 		assertEquals(ImageResponseStatus.SUCCESS, imageResponse.getImageResponseStatus());
+	}
+
+	public void testPrecacheImageToDisk() {
+		final DelayedLoop delayedLoop = new DelayedLoop(2000);
+		mCallComplete = false;
+
+		mImageCacher.stubAsynchOperationsMaps(new AsyncOperationsMaps(mImageCacher) {
+			@Override
+			public synchronized void registerListenerForNetworkRequest(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
+				if (imageRequest != null && imageRequest.getRequestType() == RequestType.CACHE_TO_DISK) {
+					delayedLoop.flagSuccess();
+				} else {
+					delayedLoop.flagFailure();
+				}
+			}
+		});
+
+		mImageCacher.stubNetwork(new NetworkInterfaceStub() {
+			@Override
+			public void downloadImageToDisk(String url) {
+				mCallComplete = true;
+			}
+		});
+
+		mImageCacher.stubDiskCache(new DiskCacheStub() {
+			@Override
+			public boolean isCached(String uri) {
+				return false;
+			}
+		});
+
+		ImageRequest imageRequest = new ImageRequest("random URI");
+		imageRequest.setRequestType(RequestType.CACHE_TO_DISK);
+		mImageCacher.precacheImageToDisk(imageRequest);
+
+		delayedLoop.startLoop();
+		delayedLoop.assertPassed();
+		assertTrue(mCallComplete);
 	}
 }

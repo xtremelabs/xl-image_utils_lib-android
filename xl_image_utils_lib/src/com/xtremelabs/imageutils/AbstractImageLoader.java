@@ -12,6 +12,7 @@ import android.os.Handler;
 import android.util.Log;
 import android.widget.ImageView;
 
+import com.xtremelabs.imageutils.ImageRequest.RequestType;
 import com.xtremelabs.imageutils.ThreadChecker.CalledFromWrongThreadException;
 
 public abstract class AbstractImageLoader {
@@ -288,7 +289,9 @@ public abstract class AbstractImageLoader {
 	// TODO Test what happens if precache image to disk is called with a file system URI.
 	public void precacheImageToDisk(final String uri) {
 		if (ThreadChecker.isOnUiThread()) {
-			ImageCacher.getInstance(mApplicationContext).precacheImageToDisk(uri);
+			ImageRequest imageRequest = new ImageRequest(uri);
+			imageRequest.setRequestType(RequestType.CACHE_TO_DISK);
+			ImageCacher.getInstance(mApplicationContext).precacheImageToDisk(imageRequest);
 		} else {
 			new Handler(mApplicationContext.getMainLooper()).post(new Runnable() {
 				@Override
@@ -314,7 +317,9 @@ public abstract class AbstractImageLoader {
 	// TODO Test what happens if precache image to disk is called with a file system URI.
 	public static void precacheImageToDisk(final String uri, final Context applicationContext) {
 		if (ThreadChecker.isOnUiThread()) {
-			ImageCacher.getInstance(applicationContext).precacheImageToDisk(uri);
+			ImageRequest imageRequest = new ImageRequest(uri);
+			imageRequest.setRequestType(RequestType.CACHE_TO_DISK);
+			ImageCacher.getInstance(applicationContext).precacheImageToDisk(imageRequest);
 		} else {
 			new Handler(applicationContext.getMainLooper()).post(new Runnable() {
 				@Override

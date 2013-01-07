@@ -103,7 +103,8 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 	 * 
 	 * @param uri
 	 */
-	public synchronized void precacheImageToDisk(String uri) {
+	public synchronized void precacheImageToDisk(ImageRequest imageRequest) {
+		String uri = imageRequest.getUri();
 		validateUri(uri);
 
 		if (isFileSystemURI(uri)) {
@@ -111,6 +112,17 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 		}
 
 		if (!mAsyncOperationsMap.isNetworkRequestPending(uri) && !mDiskCache.isCached(uri)) {
+			mAsyncOperationsMap.registerListenerForNetworkRequest(imageRequest, new ImageCacherListener() {
+				@Override
+				public void onImageAvailable(ImageResponse imageResponse) {
+					// Intentionally blank.
+				}
+
+				@Override
+				public void onFailure(String message) {
+					// Intentionally blank.
+				}
+			});
 			mNetworkInterface.downloadImageToDisk(uri);
 		} else {
 			mDiskCache.bumpOnDisk(uri);

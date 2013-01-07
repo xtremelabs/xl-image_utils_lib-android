@@ -27,7 +27,7 @@ public class FileEntry {
 		return new Dimensions(width, height);
 	}
 
-	public String getUrl() {
+	public String getUri() {
 		return url;
 	}
 }

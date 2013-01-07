@@ -39,7 +39,7 @@ public class DiskDatabaseHelper extends SQLiteOpenHelper {
 		};
 		Collections.sort(entries, comparator);
 		for (FileEntry entry : entries) {
-			mDatabaseCache.put(entry.getUrl(), entry.getLastAccessTime());
+			mDatabaseCache.put(entry.getUri(), entry.getLastAccessTime());
 		}
 	}
 

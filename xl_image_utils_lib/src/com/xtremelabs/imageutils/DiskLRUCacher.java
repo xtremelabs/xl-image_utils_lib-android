@@ -43,8 +43,8 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 
 		List<FileEntry> entries = mDatabaseHelper.getAllEntries();
 		for (FileEntry entry : entries) {
-			if (mDiskManager.isOnDisk(encode(entry.getUrl()))) {
-				mCachedImagesMap.putDimensions(entry.getUrl(), entry.getDimensions());
+			if (mDiskManager.isOnDisk(encode(entry.getUri()))) {
+				mCachedImagesMap.putDimensions(entry.getUri(), entry.getDimensions());
 			}
 		}
 	}
@@ -113,9 +113,11 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 			if (isFileSystemUri) {
 				mPermanentStorageDimensionsCache.addOrBump(uri, dimensions);
 			} else {
-				mCachedImagesMap.putDimensions(uri, dimensions);
-				mDatabaseHelper.addOrUpdateFile(uri, file.length(), dimensions.width, dimensions.height);
-				clearLeastUsedFilesInCache();
+				synchronized (this) {
+					mCachedImagesMap.putDimensions(uri, dimensions);
+					mDatabaseHelper.addOrUpdateFile(uri, file.length(), dimensions.width, dimensions.height);
+					clearLeastUsedFilesInCache();
+				}
 			}
 
 			mImageDiskObserver.onImageDetailsRetrieved(uri);
@@ -162,11 +164,6 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	@Override
 	public void downloadImageFromInputStream(String uri, InputStream inputStream) throws IOException {
 		mDiskManager.loadStreamToFile(inputStream, encode(uri));
-		File file = getFile(uri);
-		Dimensions dimensions = getImageDimensionsFromDisk(file);
-		mCachedImagesMap.putDimensions(uri, dimensions);
-		mDatabaseHelper.addOrUpdateFile(uri, file.length(), dimensions.width, dimensions.height);
-		clearLeastUsedFilesInCache();
 	}
 
 	@Override
@@ -256,7 +253,8 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 
 	private synchronized void clearLeastUsedFilesInCache() {
 		while (mDatabaseHelper.getTotalSizeOnDisk() > mMaximumCacheSizeInBytes) {
-			String uri = mDatabaseHelper.getLRU().getUrl();
+			FileEntry lru = mDatabaseHelper.getLRU();
+			String uri = lru.getUri();
 			mDiskManager.deleteFile(encode(uri));
 			mDatabaseHelper.removeFile(uri);
 			mCachedImagesMap.removeDimensions(uri);
