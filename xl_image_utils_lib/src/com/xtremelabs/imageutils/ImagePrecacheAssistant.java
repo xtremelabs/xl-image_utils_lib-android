@@ -12,6 +12,9 @@ import android.widget.BaseAdapter;
  * Implement the methods {@link PrecacheInformationProvider#onRowPrecacheRequestsRequired(int)} and {@link PrecacheInformationProvider#getCount()}.<br>
  * In the "getView" method of the adapter, call {@link #onPositionVisited(int)}, and pass in the current position.
  */
+/*
+ * TODO This class still has a couple of inefficiencies. Namely, there are some duplicate calls being made. Find the duplicate calls and code them away.
+ */
 public class ImagePrecacheAssistant {
 	private enum Direction {
 		DOWN, UP
