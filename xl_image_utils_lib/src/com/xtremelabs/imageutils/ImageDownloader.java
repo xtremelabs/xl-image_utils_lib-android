@@ -66,24 +66,39 @@ class ImageDownloader implements ImageNetworkInterface {
 
 		@Override
 		public void run() {
-			mNetworkRequestCreator.getInputStream(mUrl, new InputStreamListener() {
-				@Override
-				public void onInputStreamReady(InputStream inputStream) {
-					String errorMessage = loadInputStreamToDisk(inputStream);
-					removeUrlFromMap(mUrl);
-					if (errorMessage != null) {
-						mImageDownloadObserver.onImageDownloadFailed(mUrl, errorMessage);
-					} else {
-						mImageDownloadObserver.onImageDownloaded(mUrl);
+			try {
+				mNetworkRequestCreator.getInputStream(mUrl, new InputStreamListener() {
+					@Override
+					public void onInputStreamReady(InputStream inputStream) {
+						String errorMessage = loadInputStreamToDisk(inputStream);
+						removeUrlFromMap(mUrl);
+						if (errorMessage != null) {
+							mImageDownloadObserver.onImageDownloadFailed(mUrl, errorMessage);
+						} else {
+							mImageDownloadObserver.onImageDownloaded(mUrl);
+						}
 					}
-				}
 
-				@Override
-				public void onFailure(String errorMessage) {
-					removeUrlFromMap(mUrl);
-					mImageDownloadObserver.onImageDownloadFailed(mUrl, errorMessage);
-				}
-			});
+					@Override
+					public void onFailure(String errorMessage) {
+						removeUrlFromMap(mUrl);
+						mImageDownloadObserver.onImageDownloadFailed(mUrl, errorMessage);
+					}
+				});
+			} catch (IllegalStateException e) {
+				reportIllegalStateExceptionLoadFailure(e);
+			}
+		}
+
+		private void reportIllegalStateExceptionLoadFailure(IllegalStateException e) {
+			/*
+			 * NOTE: If a bad URL is passed in (for example, mUrl = "N/A", the client.execute() call will throw an IllegalStateException. We do not want this exception to crash the app. Rather, we want to log the error
+			 * and report a failure.
+			 */
+			Log.w(AbstractImageLoader.TAG, "IMAGE LOAD FAILED - An error occurred while performing the network request for the image. Stack trace below. URL: " + mUrl);
+			e.printStackTrace();
+			String errorMessage = "Failed to download image. A stack trace has been output to the logs. Message: " + e.getMessage();
+			mImageDownloadObserver.onImageDownloadFailed(mUrl, errorMessage);
 		}
 
 		private String loadInputStreamToDisk(InputStream inputStream) {
