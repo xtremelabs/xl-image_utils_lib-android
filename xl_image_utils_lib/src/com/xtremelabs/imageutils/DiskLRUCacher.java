@@ -51,26 +51,13 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 
 	@Override
 	public boolean isCached(String uri) {
-		boolean isPermanentStorageUri = isPermanentStorageUri(uri);
+		boolean isPermanentStorageUri = GeneralUtils.isFileSystemUri(uri);
 
 		if (isPermanentStorageUri) {
 			return mPermanentStorageDimensionsCache.contains(uri);
 		} else {
 			return mCachedImagesMap.isCached(uri);
 		}
-	}
-
-	private boolean isPermanentStorageUri(String uri) {
-		boolean isPermanentStorageUri = false;
-		try {
-			URI imageUri = new URI(uri);
-			String scheme = imageUri.getScheme();
-			if (scheme != null && scheme.equals("file")) {
-				isPermanentStorageUri = true;
-			}
-		} catch (URISyntaxException e) {
-		}
-		return isPermanentStorageUri;
 	}
 
 	@Override
@@ -97,13 +84,11 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 
 	void cacheImageDetails(String uri) {
 		try {
-			URI imageUri = new URI(uri);
-			String scheme = imageUri.getScheme();
-			boolean isFileSystemUri = scheme == null ? false : scheme.equals("file");
 			File file;
 
+			boolean isFileSystemUri = GeneralUtils.isFileSystemUri(uri);
 			if (isFileSystemUri) {
-				file = new File(imageUri.getPath());
+				file = new File(new URI(uri).getPath());
 			} else {
 				file = getFile(uri);
 			}
@@ -187,7 +172,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 
 	@Override
 	public Dimensions getImageDimensions(String uri) {
-		boolean isFromPermanentStorage = isPermanentStorageUri(uri);
+		boolean isFromPermanentStorage = GeneralUtils.isFileSystemUri(uri);
 
 		Dimensions dimensions;
 		if (isFromPermanentStorage) {
@@ -222,7 +207,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		Bitmap.Config bitmapConfig = decodeSignature.mBitmapConfig;
 
 		File file = null;
-		if (isPermanentStorageUri(uri)) {
+		if (GeneralUtils.isFileSystemUri(uri)) {
 			try {
 				file = new File(new URI(uri).getPath());
 			} catch (URISyntaxException e) {

@@ -1,8 +1,5 @@
 package com.xtremelabs.imageutils;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-
 import com.xtremelabs.imageutils.AbstractImageLoader.Options;
 
 class ImageRequest {
@@ -71,17 +68,10 @@ class ImageRequest {
 	}
 
 	private void setLocationOfImage() {
-		try {
-			URI uri = new URI(mUri);
-			String scheme = uri.getScheme();
-			if (scheme != null && scheme.equals("file")) {
-				mImageRequestType = LocationOfImage.LOCAL_FILE_SYSTEM;
-			} else {
-				mImageRequestType = LocationOfImage.WEB;
-			}
-		} catch (URISyntaxException e) {
+		if (GeneralUtils.isFileSystemUri(mUri)) {
+			mImageRequestType = LocationOfImage.LOCAL_FILE_SYSTEM;
+		} else {
 			mImageRequestType = LocationOfImage.WEB;
 		}
-
 	}
 }

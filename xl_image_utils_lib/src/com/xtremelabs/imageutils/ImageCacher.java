@@ -1,8 +1,5 @@
 package com.xtremelabs.imageutils;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Build;
@@ -15,8 +12,6 @@ import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
  * The job of this class is to "route" messages appropriately in order to ensure synchronized handling of image downloading and caching operations.
  */
 public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, AsyncOperationsObserver {
-	private static final String FILE_SYSTEM_SCHEME = "file";
-
 	private static ImageCacher mImageCacher;
 
 	private ImageDiskCacherInterface mDiskCache;
@@ -76,7 +71,7 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 			} else {
 				decodeBitmapFromDisk(decodeSignature, imageCacherListener);
 			}
-		} else if (isFileSystemURI(uri)) {
+		} else if (GeneralUtils.isFileSystemUri(uri)) {
 			retrieveImageDetails(imageRequest, imageCacherListener);
 		} else {
 			downloadImageFromNetwork(imageRequest, imageCacherListener);
@@ -107,7 +102,7 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 		String uri = imageRequest.getUri();
 		validateUri(uri);
 
-		if (isFileSystemURI(uri)) {
+		if (GeneralUtils.isFileSystemUri(uri)) {
 			return;
 		}
 
@@ -172,19 +167,6 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 
 		if (imageRequest.getScalingInfo() == null) {
 			throw new IllegalArgumentException("The ScalingInfo must not be null.");
-		}
-	}
-
-	private static boolean isFileSystemURI(String uri) {
-		try {
-			URI u = new URI(uri);
-			String scheme = u.getScheme();
-			if (scheme == null) {
-				return false;
-			}
-			return scheme.equals(FILE_SYSTEM_SCHEME);
-		} catch (URISyntaxException e) {
-			return false;
 		}
 	}
 
