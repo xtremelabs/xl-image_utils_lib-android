@@ -90,6 +90,7 @@ class ImageDownloader implements ImageNetworkInterface {
 			String errorMessage = null;
 			if (inputStream != null) {
 				try {
+					Log.d("ImageLoader", "Downloading image: " + mUrl);
 					mNetworkToDiskInterface.downloadImageFromInputStream(mUrl, inputStream);
 				} catch (IOException e) {
 					errorMessage = "IOException when downloading image: " + mUrl + ", Exception type: " + e.getClass().getName() + ", Exception message: " + e.getMessage();
