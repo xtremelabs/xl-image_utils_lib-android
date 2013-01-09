@@ -15,6 +15,7 @@ import java.util.List;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Log;
 
 import com.xtremelabs.imageutils.DiskDatabaseHelper.DiskDatabaseHelperObserver;
 
@@ -88,7 +89,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 
 			boolean isFileSystemUri = GeneralUtils.isFileSystemUri(uri);
 			if (isFileSystemUri) {
-				file = new File(new URI(uri).getPath());
+				file = new File(new URI(uri.replace(" ", "%20")).getPath());
 			} else {
 				file = getFile(uri);
 			}
@@ -109,6 +110,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		} catch (URISyntaxException e) {
 			mImageDiskObserver.onImageDetailsRequestFailed(uri, "URISyntaxException caught when attempting to retrieve image details. URI: " + uri);
 		} catch (FileNotFoundException e) {
+			Log.d("ImageLoader", "File not found for URI: " + uri);
 			mImageDiskObserver.onImageDetailsRequestFailed(uri, "Image file not found. URI: " + uri);
 		}
 	}

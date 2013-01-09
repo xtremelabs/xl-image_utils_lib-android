@@ -2,7 +2,6 @@ package com.xtremelabs.imageutils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URLEncoder;
 import java.util.HashMap;
 
 import android.util.Log;
@@ -91,7 +90,7 @@ class ImageDownloader implements ImageNetworkInterface {
 			String errorMessage = null;
 			if (inputStream != null) {
 				try {
-					mNetworkToDiskInterface.downloadImageFromInputStream(URLEncoder.encode(mUrl, "UTF-8"), inputStream);
+					mNetworkToDiskInterface.downloadImageFromInputStream(mUrl, inputStream);
 				} catch (IOException e) {
 					errorMessage = "IOException when downloading image: " + mUrl + ", Exception type: " + e.getClass().getName() + ", Exception message: " + e.getMessage();
 				} catch (IllegalArgumentException e) {
