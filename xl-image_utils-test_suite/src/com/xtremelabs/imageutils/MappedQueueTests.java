@@ -50,4 +50,48 @@ public class MappedQueueTests extends AndroidTestCase {
 		mMappedQueue.addOrBump("1", "one");
 		assertTrue(mMappedQueue.contains("1"));
 	}
+
+	public void testBounds() {
+		mMappedQueue = new MappedQueue<String, String>(3);
+		mMappedQueue.addOrBump("k1", "v1");
+		mMappedQueue.addOrBump("k2", "v2");
+		mMappedQueue.addOrBump("k3", "v3");
+
+		assertNotNull(mMappedQueue.getValue("k1"));
+		assertNotNull(mMappedQueue.getValue("k2"));
+		assertNotNull(mMappedQueue.getValue("k3"));
+
+		mMappedQueue.addOrBump("k4", "v4");
+
+		assertNull(mMappedQueue.getValue("k1"));
+
+		// Should now have 4 -> 3 -> 2
+
+		assertNotNull(mMappedQueue.getValue("k2"));
+
+		// Should now have 2 -> 4 -> 3
+
+		mMappedQueue.getValue("k4");
+
+		// Should now have 4 -> 2 -> 3
+
+		assertNotNull(mMappedQueue.getValue("k3"));
+		assertNotNull(mMappedQueue.getValue("k2"));
+		assertNotNull(mMappedQueue.getValue("k4"));
+		assertNotNull(mMappedQueue.getValue("k4"));
+		assertNotNull(mMappedQueue.getValue("k3"));
+		assertNotNull(mMappedQueue.getValue("k3"));
+		assertNotNull(mMappedQueue.getValue("k2"));
+		assertNotNull(mMappedQueue.getValue("k4"));
+	}
+
+	public void testDuplicateInitialEntry() {
+		mMappedQueue.addOrBump("k1", "v1");
+		mMappedQueue.addOrBump("k1", "v1");
+	}
+
+	public void testDuplicateKeyButNotValue() {
+		mMappedQueue.addOrBump("k1", "v1");
+		mMappedQueue.addOrBump("k1", "v2");
+	}
 }

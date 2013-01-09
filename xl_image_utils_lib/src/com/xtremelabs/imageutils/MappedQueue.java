@@ -80,6 +80,8 @@ class MappedQueue<KEY, VALUE> {
 
 		if (previous != null) {
 			previous.mNext = next;
+		} else {
+			mHead = next;
 		}
 
 		if (next != null) {
