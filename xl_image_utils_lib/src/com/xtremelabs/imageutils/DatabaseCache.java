@@ -18,7 +18,7 @@ package com.xtremelabs.imageutils;
 
 import java.util.HashMap;
 
-public class DatabaseCache {
+class DatabaseCache {
 	private final HashMap<String, Long> mUrlToLastUpdatedTime = new HashMap<String, Long>();
 	private final HashedQueue<String> hashedUrlQueue = new HashedQueue<String>();
 
