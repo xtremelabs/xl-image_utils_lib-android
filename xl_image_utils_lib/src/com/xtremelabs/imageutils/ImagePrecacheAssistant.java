@@ -78,14 +78,18 @@ public class ImagePrecacheAssistant {
 	}
 
 	private void precacheListToMemory(List<PrecacheRequest> precacheRequests) {
-		for (PrecacheRequest precacheRequest : precacheRequests) {
-			mImageLoader.precacheImageToDiskAndMemory(precacheRequest.mUri, precacheRequest.mBounds.width, precacheRequest.mBounds.height);
+		if (precacheRequests != null) {
+			for (PrecacheRequest precacheRequest : precacheRequests) {
+				mImageLoader.precacheImageToDiskAndMemory(precacheRequest.mUri, precacheRequest.mBounds.width, precacheRequest.mBounds.height);
+			}
 		}
 	}
 
 	private void precacheListToDisk(List<PrecacheRequest> precacheRequests) {
-		for (PrecacheRequest precacheRequest : precacheRequests) {
-			mImageLoader.precacheImageToDisk(precacheRequest.mUri);
+		if (precacheRequests != null) {
+			for (PrecacheRequest precacheRequest : precacheRequests) {
+				mImageLoader.precacheImageToDisk(precacheRequest.mUri);
+			}
 		}
 	}
 
