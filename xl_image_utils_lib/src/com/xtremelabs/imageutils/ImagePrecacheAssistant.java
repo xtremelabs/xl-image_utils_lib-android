@@ -30,6 +30,8 @@ import android.widget.BaseAdapter;
  */
 /*
  * TODO This class still has a couple of inefficiencies. Namely, there are some duplicate calls being made. Find the duplicate calls and code them away.
+ * 
+ * TODO This class' API needs some additional work. The PrecacheInformationProvider needs to be using options and/or accept an ImageView so its API is closer to that of the ImageLoader.loadImage methods.
  */
 public class ImagePrecacheAssistant {
 	private enum Direction {

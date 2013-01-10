@@ -30,10 +30,12 @@ class GeneralUtils {
 
 	public static boolean isFileSystemUri(String uri) {
 		try {
-			URI testUri = new URI(uri.replace(' ', '+'));
-			String scheme = testUri.getScheme();
-			if (scheme != null && scheme.equalsIgnoreCase("file")) {
-				return true;
+			if (uri != null) {
+				URI testUri = new URI(uri.replace(' ', '+'));
+				String scheme = testUri.getScheme();
+				if (scheme != null && scheme.equalsIgnoreCase("file")) {
+					return true;
+				}
 			}
 		} catch (URISyntaxException e) {
 		}
