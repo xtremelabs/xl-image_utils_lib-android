@@ -140,6 +140,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 					mImageDiskObserver.onImageDecoded(decodeSignature, bitmap, returnedFrom);
 				} else {
 					mDiskManager.deleteFile(encode(decodeSignature.mUri));
+					mDatabaseHelper.deleteEntry(decodeSignature.mUri);
 					mImageDiskObserver.onImageDecodeFailed(decodeSignature, errorMessage);
 				}
 			}

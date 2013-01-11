@@ -166,4 +166,9 @@ public class DiskDatabaseHelper extends SQLiteOpenHelper {
 			mObserver.onImageEvicted(uri);
 		}
 	}
+
+	public void deleteEntry(String uri) {
+		mDatabaseCache.remove(uri);
+		removeFileFromDatabase(uri);
+	}
 }
