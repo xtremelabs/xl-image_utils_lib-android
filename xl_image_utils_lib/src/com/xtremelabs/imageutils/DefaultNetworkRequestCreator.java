@@ -19,6 +19,8 @@ package com.xtremelabs.imageutils;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -26,6 +28,8 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.DefaultHttpClient;
+
+import android.util.Log;
 
 class DefaultNetworkRequestCreator implements NetworkRequestCreator {
 	@Override
@@ -35,7 +39,19 @@ class DefaultNetworkRequestCreator implements NetworkRequestCreator {
 
 		HttpClient client = new DefaultHttpClient();
 		client.getConnectionManager().closeExpiredConnections();
-		HttpUriRequest request = new HttpGet(url);
+		HttpUriRequest request;
+		try {
+			request = new HttpGet(url);
+		} catch (IllegalArgumentException e) {
+			try {
+				request = new HttpGet(URLEncoder.encode(url, "UTF-8"));
+			} catch (UnsupportedEncodingException e1) {
+				String errorMessage = "Unable to download image. Reason: Bad URL. URL: " + url;
+				Log.w(AbstractImageLoader.TAG, errorMessage);
+				listener.onFailure(errorMessage);
+				return;
+			}
+		}
 		HttpResponse response;
 		try {
 			response = client.execute(request);
