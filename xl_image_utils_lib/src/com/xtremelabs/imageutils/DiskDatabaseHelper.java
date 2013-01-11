@@ -46,7 +46,7 @@ public class DiskDatabaseHelper extends SQLiteOpenHelper {
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);
 		mObserver = observer;
 
-		List<FileEntry> entries = getAllEntries();
+		List<FileEntry> entries = getAllEntriesFromDatabase();
 		Comparator<FileEntry> comparator = new Comparator<FileEntry>() {
 			@Override
 			public int compare(FileEntry lhs, FileEntry rhs) {
@@ -55,7 +55,7 @@ public class DiskDatabaseHelper extends SQLiteOpenHelper {
 		};
 		Collections.sort(entries, comparator);
 		for (FileEntry entry : entries) {
-			mDatabaseCache.put(entry.getUri(), entry.getLastAccessTime());
+			mDatabaseCache.put(entry.getUri(), entry);
 		}
 	}
 
@@ -70,8 +70,8 @@ public class DiskDatabaseHelper extends SQLiteOpenHelper {
 		mObserver.onDatabaseWiped();
 	}
 
-	public FileEntry getFileEntry(String url) {
-		Cursor cursor = getReadableDatabase().query(DICTIONARY_TABLE_NAME, columns, columns[0] + " = ?", new String[] { url }, null, null, null);
+	public FileEntry getFileEntryFromDatabase(String uri) {
+		Cursor cursor = getReadableDatabase().query(DICTIONARY_TABLE_NAME, columns, columns[0] + " = ?", new String[] { uri }, null, null, null);
 		if (cursor.getCount() == 0) {
 			return null;
 		} else {
@@ -82,7 +82,11 @@ public class DiskDatabaseHelper extends SQLiteOpenHelper {
 		}
 	}
 
-	public List<FileEntry> getAllEntries() {
+	public FileEntry getFileEntryFromCache(String uri) {
+		return mDatabaseCache.getFileEntry(uri);
+	}
+
+	private List<FileEntry> getAllEntriesFromDatabase() {
 		Cursor cursor = getReadableDatabase().query(DICTIONARY_TABLE_NAME, null, null, null, null, null, null);
 		List<FileEntry> list = new ArrayList<FileEntry>();
 		while (cursor.moveToNext()) {
@@ -106,67 +110,38 @@ public class DiskDatabaseHelper extends SQLiteOpenHelper {
 		values.put(columns[3], height);
 		values.put(columns[4], updateTime);
 
+		mDatabaseCache.put(url, new FileEntry(url, size, width, height, updateTime));
 		getWritableDatabase().insertWithOnConflict(DICTIONARY_TABLE_NAME, null, values, SQLiteDatabase.CONFLICT_REPLACE);
-
-		mDatabaseCache.put(url, updateTime);
 	}
 
-	public boolean removeFile(String url) {
-		String[] args = { url };
-		mDatabaseCache.remove(url);
+	private boolean removeFileFromDatabase(String uri) {
+		String[] args = { uri };
 		return 1 == getWritableDatabase().delete(DICTIONARY_TABLE_NAME, columns[0] + " = ?", args);
 	}
 
 	/*
 	 * TODO: Have the LRU information cached in memory. The database updates can take time.
 	 */
-	public void updateFile(final String url) {
-		if (GeneralUtils.isStringBlank(url)) {
+	public void updateFile(final String uri) {
+		if (GeneralUtils.isStringBlank(uri)) {
 			throw new IllegalArgumentException("Cannot add a null URL to the database.");
 		}
-		final ContentValues values = new ContentValues(1);
-		long updateTime = System.currentTimeMillis();
-		values.put(columns[4], System.currentTimeMillis());
 		executor.execute(new Runnable() {
 			@Override
 			public void run() {
-				getWritableDatabase().update(DICTIONARY_TABLE_NAME, values, columns[0] + " = ?", new String[] { url });
+				ContentValues values = new ContentValues(1);
+				long updateTime = System.currentTimeMillis();
+				values.put(columns[4], System.currentTimeMillis());
+				mDatabaseCache.updateTime(uri, updateTime);
+				getWritableDatabase().update(DICTIONARY_TABLE_NAME, values, columns[0] + " = ?", new String[] { uri });
 			}
 		});
-
-		mDatabaseCache.put(url, updateTime);
 	}
 
-	public void resetTable(SQLiteDatabase db) {
+	void resetTable(SQLiteDatabase db) {
 		db.execSQL("DROP TABLE " + DICTIONARY_TABLE_NAME);
 		db.execSQL(DICTIONARY_TABLE_CREATE);
 		mDatabaseCache = new DatabaseCache();
-	}
-
-	public long getTotalSizeOnDisk() {
-		Cursor cursor = getReadableDatabase().rawQuery("SELECT sum(" + columns[1] + ") AS Sum FROM " + DICTIONARY_TABLE_NAME, null);
-		long retval;
-		if (cursor.getCount() == 0) {
-			retval = 0;
-		} else {
-			cursor.moveToFirst();
-			retval = cursor.getLong(0);
-			cursor.close();
-		}
-		return retval;
-	}
-
-	public FileEntry getLRU() {
-		// Cursor cursor = getReadableDatabase().rawQuery(
-		// "SELECT * FROM " + DICTIONARY_TABLE_NAME + " WHERE " + columns[4] + " = (SELECT min(" + columns[4] + ") AS min FROM " + DICTIONARY_TABLE_NAME
-		// + ")", null);
-		// if (cursor.getCount() == 0) {
-		// return null;
-		// }
-		// cursor.moveToFirst();
-		// FileEntry entry = createFileEntry(cursor);
-		// cursor.close();
-		return getFileEntry(mDatabaseCache.getLRU());
 	}
 
 	private FileEntry createFileEntry(Cursor cursor) {
@@ -176,5 +151,19 @@ public class DiskDatabaseHelper extends SQLiteOpenHelper {
 
 	public static interface DiskDatabaseHelperObserver {
 		public void onDatabaseWiped();
+
+		public void onImageEvicted(String uri);
+	}
+
+	public boolean isCached(String uri) {
+		return mDatabaseCache.isCached(uri);
+	}
+
+	public void removeLeastUsedFileFromCache(long maximumCacheSize) {
+		String uri;
+		while ((uri = mDatabaseCache.removeLRU(maximumCacheSize)) != null) {
+			removeFileFromDatabase(uri);
+			mObserver.onImageEvicted(uri);
+		}
 	}
 }

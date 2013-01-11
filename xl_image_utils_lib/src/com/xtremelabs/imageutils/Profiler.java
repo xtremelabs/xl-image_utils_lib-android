@@ -33,7 +33,7 @@ class Profiler {
 		if (previousTime != null) {
 			long time = System.currentTimeMillis() - previousTime;
 
-			if (time >= 1) {
+			if (time >= 4) {
 				Log.i("Profiler", "Operation: " + key + " - Time: " + time);
 			}
 		} else {

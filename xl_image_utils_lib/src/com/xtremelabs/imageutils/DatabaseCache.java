@@ -17,31 +17,61 @@
 package com.xtremelabs.imageutils;
 
 import java.util.HashMap;
+import java.util.Map;
 
 class DatabaseCache {
-	private final HashMap<String, Long> mUrlToLastUpdatedTime = new HashMap<String, Long>();
-	private final HashedQueue<String> hashedUrlQueue = new HashedQueue<String>();
+	private final Map<String, FileEntry> mUriToFileEntry = new HashMap<String, FileEntry>();
+	private final HashedQueue<String> hashedUriQueue = new HashedQueue<String>();
+	private long totalSizeOnDisk = 0;
 
-	public void put(String url, long updateTime) {
-		mUrlToLastUpdatedTime.put(url, updateTime);
-		hashedUrlQueue.add(url);
+	public synchronized void put(String uri, FileEntry fileEntry) {
+		if (mUriToFileEntry.containsKey(uri)) {
+			totalSizeOnDisk -= mUriToFileEntry.get(uri).getSize();
+		}
+		mUriToFileEntry.put(uri, fileEntry);
+		totalSizeOnDisk += fileEntry.getSize();
+		hashedUriQueue.add(uri);
 	}
 
-	public long getUpdateTime(String url) {
-		Long lastUpdatedTime = mUrlToLastUpdatedTime.get(url);
-		if (lastUpdatedTime == null) {
-			return -1;
-		} else {
-			return lastUpdatedTime;
+	public synchronized FileEntry getFileEntry(String uri) {
+		return mUriToFileEntry.get(uri);
+	}
+
+	public synchronized boolean isCached(String uri) {
+		return mUriToFileEntry.containsKey(uri);
+	}
+
+	public synchronized void remove(String uri) {
+		FileEntry entry = mUriToFileEntry.remove(uri);
+		hashedUriQueue.remove(uri);
+
+		if (entry != null) {
+			totalSizeOnDisk -= entry.getSize();
 		}
 	}
 
-	public void remove(String url) {
-		mUrlToLastUpdatedTime.remove(url);
-		hashedUrlQueue.remove(url);
+	public synchronized String getLRU() {
+		return hashedUriQueue.peek();
 	}
 
-	public String getLRU() {
-		return hashedUrlQueue.peek();
+	public synchronized String removeLRU(long maximumCacheSize) {
+		if (totalSizeOnDisk > maximumCacheSize) {
+			String uri = getLRU();
+			remove(uri);
+			return uri;
+		}
+		return null;
+	}
+
+	public synchronized void updateTime(String uri, long updateTime) {
+		FileEntry entry = mUriToFileEntry.get(uri);
+		if (entry != null) {
+			entry.setLastAccessTime(updateTime);
+			hashedUriQueue.add(uri);
+		}
+	}
+
+	public synchronized long getTotalSizeOnDisk() {
+		return totalSizeOnDisk;
 	}
 }

@@ -40,9 +40,11 @@ import android.widget.ImageView;
 import com.xtreme.testactivity.R;
 import com.xtremelabs.imageutils.Dimensions;
 import com.xtremelabs.imageutils.ImageLoader;
+import com.xtremelabs.imageutils.ImageLoaderListener;
 import com.xtremelabs.imageutils.ImagePrecacheAssistant;
 import com.xtremelabs.imageutils.ImagePrecacheAssistant.PrecacheInformationProvider;
 import com.xtremelabs.imageutils.ImagePrecacheAssistant.PrecacheRequest;
+import com.xtremelabs.imageutils.ImageReturnedFrom;
 
 @TargetApi(13)
 public class KittenAdapter extends BaseAdapter {
@@ -129,16 +131,27 @@ public class KittenAdapter extends BaseAdapter {
 			kittenViews = (KittenViews) convertView.getTag();
 
 		if (position % 2 == 0) {
-			mImageLoader.loadImage(kittenViews.kitten1, (String) getItem(position) + "1");
-			mImageLoader.loadImage(kittenViews.kitten2, (String) getItem(position) + "2");
+			mImageLoader.loadImage(kittenViews.kitten1, (String) getItem(position) + "1", null, mListener);
+			mImageLoader.loadImage(kittenViews.kitten2, (String) getItem(position) + "2", null, mListener);
 		} else {
-			Log.d("ImageLoader", "URI: " + (String) getItem(position));
-			mImageLoader.loadImage(kittenViews.kitten1, (String) getItem(position));
-			mImageLoader.loadImage(kittenViews.kitten2, (String) getItem(position));
+			mImageLoader.loadImage(kittenViews.kitten1, (String) getItem(position), null, mListener);
+			mImageLoader.loadImage(kittenViews.kitten2, (String) getItem(position), null, mListener);
 		}
 
 		return convertView;
 	}
+
+	ImageLoaderListener mListener = new ImageLoaderListener() {
+		@Override
+		public void onImageLoadError(String error) {
+			Log.i("ImageLoader", "Image load failed! Message: " + error);
+		}
+
+		@Override
+		public void onImageAvailable(ImageView imageView, Bitmap bitmap, ImageReturnedFrom returnedFrom) {
+			imageView.setImageBitmap(bitmap);
+		}
+	};
 
 	private class KittenViews {
 		ImageView kitten1;

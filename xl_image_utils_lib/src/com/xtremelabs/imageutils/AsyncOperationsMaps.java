@@ -167,8 +167,10 @@ public class AsyncOperationsMaps {
 	public void onDetailsRequestFailed(String uri, String message) {
 		List<RequestParameters> list = mDetailsOperationTracker.removeList(uri, mNetworkAndDetailsKeyReferenceProvider);
 
-		for (RequestParameters networkRequestParameters : list) {
-			networkRequestParameters.mImageCacherListener.onFailure(message);
+		if (list != null) {
+			for (RequestParameters networkRequestParameters : list) {
+				networkRequestParameters.mImageCacherListener.onFailure(message);
+			}
 		}
 	}
 

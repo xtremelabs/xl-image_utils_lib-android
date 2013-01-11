@@ -19,13 +19,14 @@ package com.xtremelabs.imageutils;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 
 public class HashedQueue<T> implements Queue<T> {
 	private Node<T> mHead = null;
 	private Node<T> mTail = null;
-	private HashMap<T, Node<T>> mNodeMap = new HashMap<T, Node<T>>();
+	private Map<T, Node<T>> mNodeMap = new HashMap<T, Node<T>>();
 
 	private static class Node<T> {
 		T data;
@@ -188,6 +189,9 @@ public class HashedQueue<T> implements Queue<T> {
 			 * TODO: This "remove" call is not high performance in this case. We want the node removed from the queue but not the map.
 			 */
 			remove(e);
+
+			node.next = null;
+			node.previous = null;
 		} else {
 			node = new Node<T>(e);
 		}

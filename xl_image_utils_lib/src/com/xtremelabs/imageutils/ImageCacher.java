@@ -20,6 +20,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Build;
 
+import com.xtremelabs.imageutils.AsyncOperationsMaps.AsyncOperationState;
 import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
 
 /**
@@ -59,7 +60,8 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 		String uri = imageRequest.getUri();
 		throwExceptionIfNeeded(imageRequest, imageCacherListener);
 
-		switch (mAsyncOperationsMap.queueListenerIfRequestPending(imageRequest, imageCacherListener)) {
+		AsyncOperationState state = mAsyncOperationsMap.queueListenerIfRequestPending(imageRequest, imageCacherListener);
+		switch (state) {
 		case QUEUED_FOR_NETWORK_REQUEST:
 			mNetworkInterface.bump(uri);
 			return generateQueuedResponse();
@@ -79,7 +81,9 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 
 		// TODO: Look into removing the sampleSize check.
 
-		if (mDiskCache.isCached(uri) && sampleSize != -1) {
+		boolean isCached = mDiskCache.isCached(uri);
+
+		if (isCached && sampleSize != -1) {
 			DecodeSignature decodeSignature = new DecodeSignature(uri, sampleSize, imageRequest.getOptions().preferedConfig);
 			Bitmap bitmap;
 			if ((bitmap = mMemoryCache.getBitmap(decodeSignature)) != null) {
@@ -114,7 +118,7 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 	 * 
 	 * @param uri
 	 */
-	public synchronized void precacheImageToDisk(ImageRequest imageRequest) {
+	public void precacheImageToDisk(ImageRequest imageRequest) {
 		String uri = imageRequest.getUri();
 		validateUri(uri);
 

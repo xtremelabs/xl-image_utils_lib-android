@@ -225,7 +225,7 @@ public abstract class AbstractImageLoader {
 	 * @param imageView
 	 * @param resourceId
 	 */
-	public synchronized void loadImageFromResource(final ImageView imageView, final int resourceId) {
+	public void loadImageFromResource(final ImageView imageView, final int resourceId) {
 		if (ThreadChecker.isOnUiThread()) {
 			if (!mDestroyed) {
 				ThreadChecker.throwErrorIfOffUiThread();

@@ -18,7 +18,7 @@ package com.xtremelabs.imageutils;
 
 public class FileEntry {
 	private final String url;
-	private final long lastAccessTime;
+	private long lastAccessTime;
 	private final int width;
 	private final int height;
 	private final long size;
@@ -45,5 +45,9 @@ public class FileEntry {
 
 	public String getUri() {
 		return url;
+	}
+
+	public void setLastAccessTime(long lastAccessTime) {
+		this.lastAccessTime = lastAccessTime;
 	}
 }

@@ -111,8 +111,10 @@ class OperationTracker<OPERATION_KEY, OPERATION_LIST_VALUE, KEY_REFERENCE> {
 	public synchronized List<OPERATION_LIST_VALUE> removeList(OPERATION_KEY operationKey, KeyReferenceProvider<OPERATION_KEY, OPERATION_LIST_VALUE, KEY_REFERENCE> keyReferenceProvider) {
 		List<OPERATION_LIST_VALUE> list = mOperationKeyToValueList.remove(operationKey);
 
-		for (OPERATION_LIST_VALUE value : list) {
-			mReferenceToOperation.remove(keyReferenceProvider.getKeyReference(operationKey, value));
+		if (list != null) {
+			for (OPERATION_LIST_VALUE value : list) {
+				mReferenceToOperation.remove(keyReferenceProvider.getKeyReference(operationKey, value));
+			}
 		}
 
 		return list;
