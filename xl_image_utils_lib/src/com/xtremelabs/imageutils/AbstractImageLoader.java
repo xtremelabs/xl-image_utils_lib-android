@@ -19,6 +19,7 @@ package com.xtremelabs.imageutils;
 import java.util.List;
 
 import android.app.Activity;
+import android.app.Application;
 import android.app.Fragment;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -270,8 +271,11 @@ public abstract class AbstractImageLoader {
 	 * @param uri
 	 *            The file system URI to remove.
 	 */
-	public void invalidateFileSystemUri(String uri) {
-		ImageCacher.getInstance(mApplicationContext).invalidateFileSystemUri(uri);
+	public static void invalidateFileSystemUri(Context applicationContext, String uri) {
+		if (!(applicationContext instanceof Application)) {
+			throw new IllegalArgumentException("You may only invalidate file system URIs with an application context!");
+		}
+		ImageCacher.getInstance(applicationContext).invalidateFileSystemUri(uri);
 	}
 
 	/**
