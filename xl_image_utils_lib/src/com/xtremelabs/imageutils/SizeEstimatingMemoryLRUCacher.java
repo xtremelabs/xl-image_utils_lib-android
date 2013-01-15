@@ -16,8 +16,10 @@
 
 package com.xtremelabs.imageutils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
@@ -64,12 +66,18 @@ class SizeEstimatingMemoryLRUCacher implements ImageMemoryCacherInterface {
 	@Override
 	public synchronized void removeAllImagesForUri(String uri) {
 		Set<DecodeSignature> set = mCache.keySet();
+		List<DecodeSignature> listToRemove = new ArrayList<DecodeSignature>();
+
 		for (DecodeSignature signature : set) {
 			if (signature.mUri.equals(uri)) {
-				Bitmap bitmap = mCache.remove(signature);
-				mSize -= getBitmapSize(bitmap);
-				mEvictionQueue.remove(signature);
+				listToRemove.add(signature);
 			}
+		}
+
+		for (DecodeSignature signature : listToRemove) {
+			Bitmap bitmap = mCache.remove(signature);
+			mSize -= getBitmapSize(bitmap);
+			mEvictionQueue.remove(signature);
 		}
 	}
 
