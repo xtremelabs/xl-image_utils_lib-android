@@ -24,4 +24,9 @@ public class Dimensions {
 		this.width = width;
 		this.height = height;
 	}
+
+	public Dimensions(Dimensions dimensionsToCopy) {
+		width = dimensionsToCopy.width;
+		height = dimensionsToCopy.height;
+	}
 }

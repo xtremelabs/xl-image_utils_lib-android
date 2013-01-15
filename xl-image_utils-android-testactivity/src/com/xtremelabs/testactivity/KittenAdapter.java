@@ -44,6 +44,7 @@ import com.xtremelabs.imageutils.ImageLoaderListener;
 import com.xtremelabs.imageutils.ImagePrecacheAssistant;
 import com.xtremelabs.imageutils.ImagePrecacheAssistant.PrecacheInformationProvider;
 import com.xtremelabs.imageutils.ImagePrecacheAssistant.PrecacheRequest;
+import com.xtremelabs.imageutils.ImagePrecacheAssistant.PrecacheRequest.UnitType;
 import com.xtremelabs.imageutils.ImageReturnedFrom;
 
 @TargetApi(13)
@@ -56,7 +57,7 @@ public class KittenAdapter extends BaseAdapter {
 	private ImagePrecacheAssistant mImagePrecacheAssistant;
 	private final Dimensions mBounds;
 
-	public KittenAdapter(Activity activity, ImageLoader imageLoader) {
+	public KittenAdapter(final Activity activity, ImageLoader imageLoader) {
 		KITTEN_URI = "file://" + activity.getCacheDir() + File.separator + IMAGE_FILE_NAME;
 
 		mActivity = activity;
@@ -70,20 +71,32 @@ public class KittenAdapter extends BaseAdapter {
 
 		mImagePrecacheAssistant = new ImagePrecacheAssistant(mImageLoader, new PrecacheInformationProvider() {
 			@Override
-			public List<PrecacheRequest> onRowPrecacheRequestsRequired(int position) {
-				List<PrecacheRequest> list = new ArrayList<PrecacheRequest>();
+			public int getCount() {
+				return KittenAdapter.this.getCount();
+			}
+
+			@Override
+			public List<String> onRowPrecacheRequestsForDiskCacheRequired(int position) {
+				List<String> list = new ArrayList<String>();
 				if (position % 2 == 0) {
-					list.add(new PrecacheRequest((String) getItem(position) + "1", mBounds));
-					list.add(new PrecacheRequest((String) getItem(position) + "2", mBounds));
+					list.add((String) getItem(position) + "1");
+					list.add((String) getItem(position) + "2");
 				} else {
-					list.add(new PrecacheRequest((String) getItem(position), mBounds));
+					list.add((String) getItem(position));
 				}
 				return list;
 			}
 
 			@Override
-			public int getCount() {
-				return KittenAdapter.this.getCount();
+			public List<PrecacheRequest> onRowPrecacheRequestsForMemoryCacheRequired(int position) {
+				List<PrecacheRequest> list = new ArrayList<PrecacheRequest>();
+				if (position % 2 == 0) {
+					list.add(PrecacheRequest.generatePrecacheRequest(activity, (String) getItem(position) + "1", mBounds, UnitType.PIXELS));
+					list.add(PrecacheRequest.generatePrecacheRequest(activity, (String) getItem(position) + "2", mBounds, UnitType.PIXELS));
+				} else {
+					list.add(PrecacheRequest.generatePrecacheRequest(activity, (String) getItem(position), mBounds, UnitType.PIXELS));
+				}
+				return list;
 			}
 		});
 
