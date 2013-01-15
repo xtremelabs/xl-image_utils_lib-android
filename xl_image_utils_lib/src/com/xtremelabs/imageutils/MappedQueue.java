@@ -64,7 +64,9 @@ class MappedQueue<KEY, VALUE> {
 
 	public synchronized void remove(KEY key) {
 		Node node = mMap.remove(key);
-		removeFromList(node);
+		if (node != null) {
+			removeFromList(node);
+		}
 	}
 
 	private void bump(final KEY key) {
