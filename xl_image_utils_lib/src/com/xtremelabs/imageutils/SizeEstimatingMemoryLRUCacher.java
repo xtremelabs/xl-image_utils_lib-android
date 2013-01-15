@@ -19,6 +19,7 @@ package com.xtremelabs.imageutils;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 import android.graphics.Bitmap;
 
@@ -58,6 +59,18 @@ class SizeEstimatingMemoryLRUCacher implements ImageMemoryCacherInterface {
 	public synchronized void setMaximumCacheSize(long size) {
 		mMaximumSizeInBytes = size;
 		performEvictions();
+	}
+
+	@Override
+	public synchronized void removeAllImagesForUri(String uri) {
+		Set<DecodeSignature> set = mCache.keySet();
+		for (DecodeSignature signature : set) {
+			if (signature.mUri.equals(uri)) {
+				Bitmap bitmap = mCache.remove(signature);
+				mSize -= getBitmapSize(bitmap);
+				mEvictionQueue.remove(signature);
+			}
+		}
 	}
 
 	private synchronized void onEntryHit(DecodeSignature decodeSignature) {

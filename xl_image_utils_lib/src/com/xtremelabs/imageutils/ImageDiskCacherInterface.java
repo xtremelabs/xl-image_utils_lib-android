@@ -37,4 +37,6 @@ interface ImageDiskCacherInterface extends NetworkToDiskInterface {
 	boolean isDecodeRequestPending(DecodeSignature decodeSignature);
 
 	void retrieveImageDetails(String uri);
+
+	void invalidateFileSystemUri(String uri);
 }

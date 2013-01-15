@@ -270,4 +270,9 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 	private ImageResponse generateQueuedResponse() {
 		return new ImageResponse(null, null, ImageResponseStatus.REQUEST_QUEUED);
 	}
+
+	public void invalidateFileSystemUri(String uri) {
+		mDiskCache.invalidateFileSystemUri(uri);
+		mMemoryCache.removeAllImagesForUri(uri);
+	}
 }

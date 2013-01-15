@@ -26,4 +26,6 @@ public interface ImageMemoryCacherInterface {
 	void clearCache();
 
 	void setMaximumCacheSize(long size);
+
+	void removeAllImagesForUri(String uri);
 }

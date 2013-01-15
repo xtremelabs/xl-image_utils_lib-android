@@ -62,6 +62,11 @@ class MappedQueue<KEY, VALUE> {
 		return mMap.containsKey(key);
 	}
 
+	public synchronized void remove(KEY key) {
+		Node node = mMap.remove(key);
+		removeFromList(node);
+	}
+
 	private void bump(final KEY key) {
 		final Node temp = mMap.get(key);
 		removeFromList(temp);

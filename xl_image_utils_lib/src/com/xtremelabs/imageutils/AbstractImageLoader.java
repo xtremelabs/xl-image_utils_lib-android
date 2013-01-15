@@ -265,6 +265,16 @@ public abstract class AbstractImageLoader {
 	}
 
 	/**
+	 * This method will remove all information regarding this image from the cache. This includes any bitmaps currently saved in the memory cache.
+	 * 
+	 * @param uri
+	 *            The file system URI to remove.
+	 */
+	public void invalidateFileSystemUri(String uri) {
+		ImageCacher.getInstance(mApplicationContext).invalidateFileSystemUri(uri);
+	}
+
+	/**
 	 * Forces the memory cache to release all references to bitmaps.
 	 * 
 	 * NOTE: The images in the memcache will not be garbage collected if the app still has references to the bitmaps. For example, if the bitmap is loaded to an {@link ImageView} and the ImageView is still being

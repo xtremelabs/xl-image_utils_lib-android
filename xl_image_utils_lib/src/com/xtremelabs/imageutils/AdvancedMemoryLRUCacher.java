@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
@@ -62,21 +63,33 @@ public class AdvancedMemoryLRUCacher implements ImageMemoryCacherInterface {
 		performEvictions();
 	}
 
-	public int getNumImagesInCache() {
+	public synchronized int getNumImagesInCache() {
 		return mCache.size();
 	}
 
-	public long getSize() {
+	public synchronized long getSize() {
 		return mSize;
 	}
 
-	public long getCurrentActualSize() {
+	public synchronized long getCurrentActualSize() {
 		long size = 0;
 		Collection<Bitmap> bitmaps = mCache.values();
 		for (Bitmap bitmap : bitmaps) {
 			size += bitmap.getByteCount();
 		}
 		return size;
+	}
+
+	@Override
+	public synchronized void removeAllImagesForUri(String uri) {
+		Set<DecodeSignature> set = mCache.keySet();
+		for (DecodeSignature signature : set) {
+			if (signature.mUri.equals(uri)) {
+				Bitmap bitmap = mCache.remove(signature);
+				mSize -= bitmap.getByteCount();
+				mEvictionQueue.remove(signature);
+			}
+		}
 	}
 
 	private synchronized void onEntryHit(DecodeSignature decodeSignature) {
