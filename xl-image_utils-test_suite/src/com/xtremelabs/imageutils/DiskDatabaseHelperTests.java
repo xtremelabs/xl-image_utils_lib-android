@@ -16,11 +16,12 @@
 
 package com.xtremelabs.imageutils;
 
-import java.util.List;
+import java.util.Collection;
 
 import android.test.ActivityInstrumentationTestCase2;
 
 import com.xtremelabs.imageutils.DiskDatabaseHelper.DiskDatabaseHelperObserver;
+import com.xtremelabs.imageutils.testutils.DelayedLoop;
 import com.xtremelabs.testactivity.MainActivity;
 
 public class DiskDatabaseHelperTests extends ActivityInstrumentationTestCase2<MainActivity> {
@@ -38,6 +39,10 @@ public class DiskDatabaseHelperTests extends ActivityInstrumentationTestCase2<Ma
 			@Override
 			public void onDatabaseWiped() {
 			}
+
+			@Override
+			public void onImageEvicted(String uri) {
+			}
 		});
 		mDatabaseHelper.resetTable(mDatabaseHelper.getWritableDatabase());
 	}
@@ -48,7 +53,7 @@ public class DiskDatabaseHelperTests extends ActivityInstrumentationTestCase2<Ma
 		int width = 100;
 		int height = 100;
 
-		List<FileEntry> entries = mDatabaseHelper.getAllEntries();
+		Collection<FileEntry> entries = mDatabaseHelper.getAllEntries();
 		assertNotNull(entries);
 		assertEquals(entries.size(), 0);
 
@@ -75,7 +80,7 @@ public class DiskDatabaseHelperTests extends ActivityInstrumentationTestCase2<Ma
 		addOrUpdateAndVerifyEntry("url3", 300, width, height);
 		assertEquals(600, mDatabaseHelper.getTotalSizeOnDisk());
 
-		mDatabaseHelper.removeFile("url1");
+		mDatabaseHelper.deleteEntry("url1");
 		assertEquals(500, mDatabaseHelper.getTotalSizeOnDisk());
 	}
 
@@ -94,24 +99,26 @@ public class DiskDatabaseHelperTests extends ActivityInstrumentationTestCase2<Ma
 		addOrUpdateAndVerifyEntry("url5", 100, width, height);
 		sleep(1);
 
-		FileEntry entry;
+		String entry;
 
 		entry = mDatabaseHelper.getLRU();
-		assertEquals("url1", entry.getUri());
-		mDatabaseHelper.removeFile(entry.getUri());
+		assertEquals("url1", entry);
+		mDatabaseHelper.deleteEntry(entry);
 
 		mDatabaseHelper.updateFile("url2");
+
+		DelayedLoop.sleep(2000);
 		entry = mDatabaseHelper.getLRU();
-		assertEquals("url3", entry.getUri());
+		assertEquals("url3", entry);
 
 		mDatabaseHelper.updateFile("url3");
 		entry = mDatabaseHelper.getLRU();
-		assertEquals("url4", entry.getUri());
+		assertEquals("url4", entry);
 	}
 
 	private void addOrUpdateAndVerifyEntry(String url, long size, int width, int height) {
 		mDatabaseHelper.addOrUpdateFile(url, size, width, height);
-		FileEntry entry = mDatabaseHelper.getFileEntry(url);
+		FileEntry entry = mDatabaseHelper.getFileEntryFromCache(url);
 		assertEquals(url, entry.getUri());
 		assertEquals(size, entry.getSize());
 		Dimensions dimensions = entry.getDimensions();

@@ -36,4 +36,8 @@ public class MemCacheStub implements ImageMemoryCacherInterface {
 	@Override
 	public void cacheBitmap(Bitmap bitmap, DecodeSignature decodeSignature) {
 	}
+
+	@Override
+	public void removeAllImagesForUri(String uri) {
+	}
 }

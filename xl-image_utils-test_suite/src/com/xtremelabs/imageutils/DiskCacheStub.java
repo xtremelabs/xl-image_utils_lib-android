@@ -63,4 +63,8 @@ public class DiskCacheStub implements ImageDiskCacherInterface {
 	@Override
 	public void bumpInQueue(DecodeSignature decodeSignature) {
 	}
+
+	@Override
+	public void invalidateFileSystemUri(String uri) {
+	}
 }

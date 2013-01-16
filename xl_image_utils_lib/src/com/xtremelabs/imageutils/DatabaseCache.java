@@ -16,6 +16,7 @@
 
 package com.xtremelabs.imageutils;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -73,5 +74,9 @@ class DatabaseCache {
 
 	public synchronized long getTotalSizeOnDisk() {
 		return totalSizeOnDisk;
+	}
+
+	public Collection<FileEntry> getAllEntries() {
+		return mUriToFileEntry.values();
 	}
 }

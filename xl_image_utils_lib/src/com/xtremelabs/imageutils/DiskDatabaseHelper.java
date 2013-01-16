@@ -17,6 +17,7 @@
 package com.xtremelabs.imageutils;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -170,5 +171,17 @@ public class DiskDatabaseHelper extends SQLiteOpenHelper {
 	public void deleteEntry(String uri) {
 		mDatabaseCache.remove(uri);
 		removeFileFromDatabase(uri);
+	}
+
+	public long getTotalSizeOnDisk() {
+		return mDatabaseCache.getTotalSizeOnDisk();
+	}
+
+	public Collection<FileEntry> getAllEntries() {
+		return mDatabaseCache.getAllEntries();
+	}
+
+	public String getLRU() {
+		return mDatabaseCache.getLRU();
 	}
 }
