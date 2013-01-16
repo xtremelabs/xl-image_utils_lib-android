@@ -24,7 +24,6 @@ import android.app.Fragment;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Point;
-import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
 import android.widget.ImageView;
@@ -300,9 +299,16 @@ public abstract class AbstractImageLoader {
 	 * @param maxSizeInBytes
 	 */
 	public void setMaximumMemCacheSize(long maxSizeInBytes) {
-		if (Build.VERSION.SDK_INT >= 12) {
-			ImageCacher.getInstance(mApplicationContext).setMaximumCacheSize(maxSizeInBytes);
-		}
+		ImageCacher.getInstance(mApplicationContext).setMaximumMemCacheSize(maxSizeInBytes);
+	}
+
+	/**
+	 * Sets the maximum disk cache size. This value defaults to 50MB. Most applications will probably need much less space.
+	 * 
+	 * @param maxSizeInBytes
+	 */
+	public void setMaximumDiskCacheSize(long maxSizeInBytes) {
+		ImageCacher.getInstance(mApplicationContext).setMaximumDiskCacheSize(maxSizeInBytes);
 	}
 
 	/**
