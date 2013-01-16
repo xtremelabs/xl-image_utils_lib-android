@@ -22,7 +22,7 @@ interface ReferenceManager {
 
 	void getBitmap(Object key, ImageRequest imageRequest, ImageManagerListener imageManagerListener);
 
-	List<ImageManagerListener> removeListenersForKey(Object key);
+	List<ImageManagerListener> cancelRequestsForKey(Object key);
 
 	void cancelRequest(ImageManagerListener imageManagerListener);
 
