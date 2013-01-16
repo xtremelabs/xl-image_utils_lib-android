@@ -105,8 +105,22 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 		return generateQueuedResponse();
 	}
 
-	public ImageResponse getBitmapSynchronouslyFromDiskOrMemory(ImageRequest imageRequest) {
+	public ImageResponse getBitmapSynchronouslyFromDiskOrMemory(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
 		String uri = imageRequest.getUri();
+
+		synchronized (mAsyncOperationsMap) {
+			AsyncOperationState state = mAsyncOperationsMap.queueListenerIfRequestPending(imageRequest, imageCacherListener);
+			switch (state) {
+			case QUEUED_FOR_NETWORK_REQUEST:
+				return generateQueuedResponse();
+			case QUEUED_FOR_DETAILS_REQUEST:
+			case QUEUED_FOR_DECODE_REQUEST:
+				mAsyncOperationsMap.cancelPendingRequest(imageCacherListener);
+				break;
+			case NOT_QUEUED:
+				break;
+			}
+		}
 
 		int sampleSize = getSampleSize(imageRequest);
 		boolean isCached = mDiskCache.isCached(uri);
@@ -134,6 +148,10 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 			Log.w(AbstractImageLoader.TAG, "Unable to load bitmap synchronously. File format exception.");
 		} catch (URISyntaxException e) {
 			Log.w(AbstractImageLoader.TAG, "Unable to load bitmap synchronously. URISyntaxException. URI: " + uri);
+		}
+
+		if (!GeneralUtils.isFileSystemUri(uri)) {
+			downloadImageFromNetwork(imageRequest, imageCacherListener);
 		}
 
 		return null;
