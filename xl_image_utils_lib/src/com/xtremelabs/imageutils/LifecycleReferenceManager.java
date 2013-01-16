@@ -82,8 +82,8 @@ class LifecycleReferenceManager implements ReferenceManager {
 	}
 
 	@Override
-	public List<ImageManagerListener> removeListenersForKey(Object key) {
-		return mListenerHelper.removeAllEntriesForKey(key);
+	public List<ImageManagerListener> cancelRequestsForKey(Object key) {
+		return mListenerHelper.removeAndCancelAllRequestsByKey(mImageCacher, key);
 	}
 
 	@Override

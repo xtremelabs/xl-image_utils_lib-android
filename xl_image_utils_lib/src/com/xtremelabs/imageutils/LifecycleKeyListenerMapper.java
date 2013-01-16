@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
 import com.xtremelabs.imageutils.LifecycleReferenceManager.ImageManagerCacheListener;
 
 /**
@@ -71,13 +72,15 @@ class LifecycleKeyListenerMapper {
 		return listener;
 	}
 
-	public synchronized List<ImageManagerListener> removeAllEntriesForKey(Object key) {
+	public synchronized List<ImageManagerListener> removeAndCancelAllRequestsByKey(ImageCacher imageCacher, Object key) {
 		List<ImageManagerListener> listeners = mKeyToListenersMap.remove(key);
 		if (listeners != null) {
 			for (ImageManagerListener listener : listeners) {
 				ListenerInfo info = mListenerToInfoMap.remove(listener);
 				if (info != null) {
-					mCacheListenerToImageReceivedListenerMap.remove(info.mCacheListener);
+					ImageCacherListener imageCacherListener = info.mCacheListener;
+					mCacheListenerToImageReceivedListenerMap.remove(imageCacherListener);
+					imageCacher.cancelRequestForBitmap(imageCacherListener);
 				}
 			}
 		}
