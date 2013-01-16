@@ -191,6 +191,14 @@ public abstract class AbstractImageLoader {
 		loadImage(imageView, uri, null, listener);
 	}
 
+	public void loadImage(String uri, BitmapListener listener) {
+		baseLoadImage(null, uri, null, listener.getImageLoaderListener());
+	}
+
+	public void loadImage(String uri, Options options, BitmapListener listener) {
+		baseLoadImage(null, uri, options, listener.getImageLoaderListener());
+	}
+
 	/**
 	 * Loads the image located at the provided URI. If the image is located on the web, it will be cached on disk and in memory. If the image is located on the file system, it will be cached in memory.<br>
 	 * <br>
@@ -223,6 +231,13 @@ public abstract class AbstractImageLoader {
 	 *            {@link ImageLoaderListener#onImageAvailable(ImageView, android.graphics.Bitmap, ImageReturnedFrom)} method will be called.
 	 */
 	public void loadImage(ImageView imageView, String uri, Options options, final ImageLoaderListener listener) {
+		if (imageView == null) {
+			throw new IllegalArgumentException("The method \"loadImage(ImageView, String)\" requires a non-null ImageView to be passed in.");
+		}
+		baseLoadImage(imageView, uri, options, listener);
+	}
+
+	private void baseLoadImage(ImageView imageView, String uri, Options options, ImageLoaderListener listener) {
 		if (!mDestroyed) {
 			if (options == null) {
 				options = mDefaultOptions;
@@ -283,7 +298,19 @@ public abstract class AbstractImageLoader {
 	 * @returns True if an image load was stopped. False on failure.
 	 */
 	public boolean stopLoadingImage(ImageView imageView) {
-		return mViewMapper.removeListener(imageView) != null;
+		ImageManagerListener imageManagerListener = mViewMapper.removeListener(imageView);
+
+		if (imageManagerListener != null) {
+			mReferenceManager.cancelRequest(imageManagerListener);
+			return true;
+		}
+
+		return false;
+	}
+
+	public void stopLoadingImage(ImageManagerListener imageManagerListener) {
+		mViewMapper.removeImageView(imageManagerListener);
+		mReferenceManager.cancelRequest(imageManagerListener);
 	}
 
 	/**
@@ -479,7 +506,7 @@ public abstract class AbstractImageLoader {
 	}
 
 	private void setPreLoadImage(ImageView imageView, Options options) {
-		if (options.wipeOldImageOnPreload) {
+		if (imageView != null && options.wipeOldImageOnPreload) {
 			if (options.placeholderImageResourceId != null) {
 				imageView.setImageResource(options.placeholderImageResourceId);
 			} else {
@@ -516,7 +543,7 @@ public abstract class AbstractImageLoader {
 			height = Math.min(screenSize.height, height == null ? screenSize.height : height);
 		}
 
-		if (options.autoDetectBounds) {
+		if (options.autoDetectBounds && imageView != null) {
 			Point imageBounds = ViewDimensionsUtil.getImageViewDimensions(imageView);
 			if (imageBounds.x != -1) {
 				if (width == null) {
@@ -544,7 +571,7 @@ public abstract class AbstractImageLoader {
 		if (oldListener != null) {
 			mReferenceManager.cancelRequest(oldListener);
 		}
-		mViewMapper.registerImageViewToListener(view, listener);
+		mViewMapper.registerRequest(view, listener);
 	}
 
 	/**
@@ -594,9 +621,7 @@ public abstract class AbstractImageLoader {
 			@Override
 			public void onImageReceived(ImageResponse imageResponse) {
 				ImageView imageView = mViewMapper.removeImageView(this);
-				if (imageView != null) {
-					listener.onImageAvailable(imageView, imageResponse.getBitmap(), imageResponse.getImageReturnedFrom());
-				}
+				listener.onImageAvailable(imageView, imageResponse.getBitmap(), imageResponse.getImageReturnedFrom());
 			}
 		};
 	}
