@@ -130,8 +130,8 @@ public abstract class AbstractImageLoader {
 	 *            If using a file system URI, the image will be cached in the memory cache.<br>
 	 */
 	/*
-	 * FIXME Potential memory leak - This method is not synchronized. If onDestroy is called while this is running, it is possible that references will be retained to the Activity or Fragment. Review this for all
-	 * loadImage calls.
+	 * FIXME Potential memory leak - This method is not synchronized. If onDestroy is called while this is running, it is possible that references will be retained to the Activity or Fragment. Review
+	 * this for all loadImage calls.
 	 */
 	public void loadImage(ImageView imageView, String uri) {
 		if (!mDestroyed) {
@@ -156,8 +156,8 @@ public abstract class AbstractImageLoader {
 	 *            If using a file system URI, the image will be cached in the memory cache.<br>
 	 * <br>
 	 * @param options
-	 *            If options is set to null, the {@link ImageLoader} will use the default options. The default options can be modified by calling {@link #setDefaultOptions(Options)}. See the {@link Options} docs for
-	 *            additional details.
+	 *            If options is set to null, the {@link ImageLoader} will use the default options. The default options can be modified by calling {@link #setDefaultOptions(Options)}. See the
+	 *            {@link Options} docs for additional details.
 	 */
 	public void loadImage(ImageView imageView, String uri, Options options) {
 		if (!mDestroyed) {
@@ -173,10 +173,11 @@ public abstract class AbstractImageLoader {
 	}
 
 	/**
-	 * Loads the image located at the provided URI. If the image is located on the web, it will be cached on disk and in memory. If the image is located on the file system, it will be cached in memory.<br>
+	 * Loads the image located at the provided URI. If the image is located on the web, it will be cached on disk and in memory. If the image is located on the file system, it will be cached in
+	 * memory.<br>
 	 * <br>
-	 * The image WILL NOT BE AUTOMATICALLY LOADED to the {@link ImageView}. Instead, the {@link ImageLoaderListener} will have its onImageAvailable() method called on the UI thread with a reference to both the
-	 * {@link ImageView} and the bitmap. It is up to the developer to load the bitmap to the view.<br>
+	 * The image WILL NOT BE AUTOMATICALLY LOADED to the {@link ImageView}. Instead, the {@link ImageLoaderListener} will have its onImageAvailable() method called on the UI thread with a reference to
+	 * both the {@link ImageView} and the bitmap. It is up to the developer to load the bitmap to the view.<br>
 	 * <br>
 	 * This method should be used if the app needs to:<br>
 	 * - perform additional logic when the bitmap is returned<br>
@@ -196,8 +197,8 @@ public abstract class AbstractImageLoader {
 	 *            If using a file system URI, the image will be cached in the memory cache.<br>
 	 * <br>
 	 * @param options
-	 *            If options is set to null, the {@link ImageLoader} will use the default options. The default options can be modified by calling {@link #setDefaultOptions(Options)}. See the {@link Options} docs for
-	 *            additional details.<br>
+	 *            If options is set to null, the {@link ImageLoader} will use the default options. The default options can be modified by calling {@link #setDefaultOptions(Options)}. See the
+	 *            {@link Options} docs for additional details.<br>
 	 * <br>
 	 * @param listener
 	 *            This listener will be called once the image request is complete. If the bitmap was retrieved successfully, the
@@ -256,7 +257,8 @@ public abstract class AbstractImageLoader {
 	 * 
 	 * Please note it will not prevent any future loadImage calls from loading an image into that view.
 	 * 
-	 * This is useful if you have a ListView that occasionally needs images from the ImageLoader, and other times from a resources file. Before loading the resource file's image, you would call this method.
+	 * This is useful if you have a ListView that occasionally needs images from the ImageLoader, and other times from a resources file. Before loading the resource file's image, you would call this
+	 * method.
 	 * 
 	 * @param imageView
 	 * @returns True if an image load was stopped. False on failure.
@@ -282,8 +284,8 @@ public abstract class AbstractImageLoader {
 	/**
 	 * Forces the memory cache to release all references to bitmaps.
 	 * 
-	 * NOTE: The images in the memcache will not be garbage collected if the app still has references to the bitmaps. For example, if the bitmap is loaded to an {@link ImageView} and the ImageView is still being
-	 * referenced.
+	 * NOTE: The images in the memcache will not be garbage collected if the app still has references to the bitmaps. For example, if the bitmap is loaded to an {@link ImageView} and the ImageView is
+	 * still being referenced.
 	 */
 	public void clearMemCache() {
 		ImageCacher.getInstance(mApplicationContext).clearMemCache();
@@ -292,8 +294,8 @@ public abstract class AbstractImageLoader {
 	/**
 	 * Sets the maximum size of the memory cache in bytes.<br>
 	 * <br>
-	 * WARNING: Setting the memory cache size value too high will result in OutOfMemory exceptions. Developers should test their apps thoroughly and modify the value set using this method based on memory consumption and
-	 * app performance. A larger cache size means better performance but worse memory usage. A smaller cache size means worse performance but better memory usage.<br>
+	 * WARNING: Setting the memory cache size value too high will result in OutOfMemory exceptions. Developers should test their apps thoroughly and modify the value set using this method based on
+	 * memory consumption and app performance. A larger cache size means better performance but worse memory usage. A smaller cache size means worse performance but better memory usage.<br>
 	 * <br>
 	 * The image system will only violate the maximum size specified if a single image is loaded that is larger than the specified maximum size.
 	 * 
@@ -373,8 +375,8 @@ public abstract class AbstractImageLoader {
 	 * <br>
 	 * This method call is useful for pre-caching smaller images. If used for a ListView that has many small images, the quality of scrolling will be vastly improved.<br>
 	 * <br>
-	 * The Width and Height allow you to specify the size of the view that the image will be loaded to. If the image is significantly larger than the provided width and/or height, the image will be scaled down in memory,
-	 * allowing for significant improvements to memory usage and performance, at no cost to image detail.
+	 * The Width and Height allow you to specify the size of the view that the image will be loaded to. If the image is significantly larger than the provided width and/or height, the image will be
+	 * scaled down in memory, allowing for significant improvements to memory usage and performance, at no cost to image detail.
 	 * 
 	 * @param uri
 	 * @param applicationContext
@@ -383,18 +385,20 @@ public abstract class AbstractImageLoader {
 	 * @param height
 	 *            See comment above. Pass in NULL if you want the width to be ignored.
 	 * 
+	 * @param options
+	 * 
 	 * @throws CalledFromWrongThreadException
 	 *             This is thrown if the method is called from off the UI thread.
 	 */
-	public void precacheImageToDiskAndMemory(String uri, Integer width, Integer height) {
+	public void precacheImageToDiskAndMemory(String uri, Dimensions bounds, Options options) {
 		// TODO: Replace the width and height with options?
 		ThreadChecker.throwErrorIfOffUiThread();
 
 		ScalingInfo scalingInfo = new ScalingInfo();
-		scalingInfo.height = height;
-		scalingInfo.width = width;
+		scalingInfo.height = bounds.height;
+		scalingInfo.width = bounds.width;
 
-		ImageRequest imageRequest = new ImageRequest(uri, scalingInfo);
+		ImageRequest imageRequest = new ImageRequest(uri, scalingInfo, options == null ? mDefaultOptions : options);
 		mReferenceManager.getBitmap(mApplicationContext, imageRequest, getBlankImageManagerListener());
 	}
 
@@ -459,7 +463,8 @@ public abstract class AbstractImageLoader {
 	}
 
 	/**
-	 * Calculates the scaling information needed by the ImageCacher. The scaling info contains either the bounds used for reducing image size, or an override sample size to force manual memory savings.
+	 * Calculates the scaling information needed by the ImageCacher. The scaling info contains either the bounds used for reducing image size, or an override sample size to force manual memory
+	 * savings.
 	 * 
 	 * @param imageView
 	 *            Depending on the options that are passed in, this imageView's bounds may be auto detected and loaded into the ScalingInfo.
@@ -596,25 +601,25 @@ public abstract class AbstractImageLoader {
 	public static class Options {
 		/**
 		 * {@link ScalingPreference#LARGER_THAN_VIEW_OR_FULL_SIZE}<br>
-		 * This option guarantees that the image being returned will be larger than the view's bounds, or it's maximum size. The image may be scaled down if it is possible to do so without becoming smaller than either of
-		 * the provided bounds. The image will not be scaled unless both a width and height bounds are specified.<br>
+		 * This option guarantees that the image being returned will be larger than the view's bounds, or it's maximum size. The image may be scaled down if it is possible to do so without becoming
+		 * smaller than either of the provided bounds. The image will not be scaled unless both a width and height bounds are specified.<br>
 		 * <br>
 		 * {@link ScalingPreference#MATCH_TO_LARGER_DIMENSION}<br>
-		 * This option is nearly identical to {@link ScalingPreference#LARGER_THAN_VIEW_OR_FULL_SIZE}. The only difference is that if bounds are provided for only one dimension of the ImageView (ie. width OR height), the
-		 * image may be scaled according to that dimension.<br>
+		 * This option is nearly identical to {@link ScalingPreference#LARGER_THAN_VIEW_OR_FULL_SIZE}. The only difference is that if bounds are provided for only one dimension of the ImageView (ie.
+		 * width OR height), the image may be scaled according to that dimension.<br>
 		 * <br>
 		 * {@link ScalingPreference#MATCH_TO_SMALLER_DIMENSION}<br>
-		 * This option is nearly identical to {@link ScalingPreference#LARGER_THAN_VIEW_OR_FULL_SIZE}. They differ in that if bounds are provided for only one dimension of the ImageView (ie. width OR height), the image
-		 * may be scaled according to that dimension, and if both width and height are provided, the image will scale to best fit within the bounds (as opposed to the other two options above, which will scale to the
-		 * larger of the two dimensions only).<br>
+		 * This option is nearly identical to {@link ScalingPreference#LARGER_THAN_VIEW_OR_FULL_SIZE}. They differ in that if bounds are provided for only one dimension of the ImageView (ie. width OR
+		 * height), the image may be scaled according to that dimension, and if both width and height are provided, the image will scale to best fit within the bounds (as opposed to the other two
+		 * options above, which will scale to the larger of the two dimensions only).<br>
 		 * <br>
 		 * {@link ScalingPreference#ROUND_TO_CLOSEST_MATCH}<br>
-		 * The dimensions of the image returned will be as close to the dimension of the bounds as possible. The bitmap returned may be scaled down to be smaller than the view. This option may degrade image quality, but
-		 * often will consume less memory. This option will give preference to the smaller of the two bounds.<br>
+		 * The dimensions of the image returned will be as close to the dimension of the bounds as possible. The bitmap returned may be scaled down to be smaller than the view. This option may degrade
+		 * image quality, but often will consume less memory. This option will give preference to the smaller of the two bounds.<br>
 		 * <br>
 		 * {@link ScalingPreference#SMALLER_THAN_VIEW}<br>
-		 * The dimensions of the image being returned is guaranteed to be equal to or smaller than the size of the bounds provided. This guarantees memory savings in the event that images are larger than the ImageViews
-		 * they are being loaded into.
+		 * The dimensions of the image being returned is guaranteed to be equal to or smaller than the size of the bounds provided. This guarantees memory savings in the event that images are larger
+		 * than the ImageViews they are being loaded into.
 		 */
 		public static enum ScalingPreference {
 			SMALLER_THAN_VIEW, ROUND_TO_CLOSEST_MATCH, LARGER_THAN_VIEW_OR_FULL_SIZE, MATCH_TO_LARGER_DIMENSION, MATCH_TO_SMALLER_DIMENSION
@@ -632,14 +637,16 @@ public abstract class AbstractImageLoader {
 		public Integer overrideSampleSize = null;
 
 		/**
-		 * If specified, this value allows the cacher to conserve memory by estimating the optimal sample size. This works in conjunction with the widthBounds field, so both can be specified at the same time.<br>
+		 * If specified, this value allows the cacher to conserve memory by estimating the optimal sample size. This works in conjunction with the widthBounds field, so both can be specified at the
+		 * same time.<br>
 		 * <br>
 		 * Default value: null.
 		 */
 		public Integer heightBounds = null;
 
 		/**
-		 * If specified, this value allows the cacher to conserve memory by estimating the optimal sample size. This works in conjunction with the heightBounds field, so both can be specified at the same time.<br>
+		 * If specified, this value allows the cacher to conserve memory by estimating the optimal sample size. This works in conjunction with the heightBounds field, so both can be specified at the
+		 * same time.<br>
 		 * <br>
 		 * Default value: null.
 		 */
@@ -660,13 +667,14 @@ public abstract class AbstractImageLoader {
 		public boolean useScreenSizeAsBounds = true;
 
 		/**
-		 * The ImageLoader has the ability to automatically scale down images according to the bounds of the ImageView provided, or the bounds specified within this options object. This parameter is a flag for the sample
-		 * size calculation logic that changes how it chooses sample sizes. See {@link ScalingPreference} for further details.
+		 * The ImageLoader has the ability to automatically scale down images according to the bounds of the ImageView provided, or the bounds specified within this options object. This parameter is a
+		 * flag for the sample size calculation logic that changes how it chooses sample sizes. See {@link ScalingPreference} for further details.
 		 */
-		public ScalingPreference scalingPreference = ScalingPreference.SMALLER_THAN_VIEW;
+		public ScalingPreference scalingPreference = ScalingPreference.MATCH_TO_LARGER_DIMENSION;
 
 		/**
-		 * If set to true, the ImageLoader will, before getting the Bitmap, replace the current image within the ImageView with either a null Bitmap or the image resource indicated by the placeholderImageResourceId.<br>
+		 * If set to true, the ImageLoader will, before getting the Bitmap, replace the current image within the ImageView with either a null Bitmap or the image resource indicated by the
+		 * placeholderImageResourceId.<br>
 		 * <br>
 		 * If set to false, the ImageLoader will only attempt to load the requested Bitmap to the view.
 		 */
@@ -692,6 +700,9 @@ public abstract class AbstractImageLoader {
 		 * This options can be used to manually raise or lower the bit depth of images, which may result in memory savings.<br>
 		 * <br>
 		 * Default value: null.
+		 */
+		/*
+		 * FIXME The SizeEstimatingMemCache does not take into account pixel format for size estimations.
 		 */
 		public Bitmap.Config preferedConfig = null;
 	}

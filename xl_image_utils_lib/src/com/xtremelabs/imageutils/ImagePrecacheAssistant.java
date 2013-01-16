@@ -18,7 +18,12 @@ package com.xtremelabs.imageutils;
 
 import java.util.List;
 
+import android.content.Context;
+import android.content.res.Resources;
+import android.util.TypedValue;
 import android.widget.BaseAdapter;
+
+import com.xtremelabs.imageutils.AbstractImageLoader.Options;
 
 /**
  * This utility simplifies the process of implementing precaching in adapters for use in widgets such as ListViews and ViewPagers.<br>
@@ -31,7 +36,10 @@ import android.widget.BaseAdapter;
 /*
  * TODO This class still has a couple of inefficiencies. Namely, there are some duplicate calls being made. Find the duplicate calls and code them away.
  * 
- * TODO This class' API needs some additional work. The PrecacheInformationProvider needs to be using options and/or accept an ImageView so its API is closer to that of the ImageLoader.loadImage methods.
+ * TODO This class' API needs some additional work. The PrecacheInformationProvider needs to be using options and/or accept an ImageView so its API is closer to that of the ImageLoader.loadImage
+ * methods.
+ * 
+ * TODO This class needs the ability to support adapters that loop from position 0 -> count - 1, and count-1 -> 0.
  */
 public class ImagePrecacheAssistant {
 	private enum Direction {
@@ -67,12 +75,12 @@ public class ImagePrecacheAssistant {
 		RangesToCache ranges = calculateRanges(position);
 
 		for (int i = ranges.diskCacheLowerIndex; i < ranges.diskCacheUpperIndex; i++) {
-			List<PrecacheRequest> precacheRequests = mPrecacheInformationProvider.onRowPrecacheRequestsRequired(i);
-			precacheListToDisk(precacheRequests);
+			List<String> precacheRequestUris = mPrecacheInformationProvider.onRowPrecacheRequestsForDiskCacheRequired(i);
+			precacheListToDisk(precacheRequestUris);
 		}
 
 		for (int i = ranges.memCacheLowerIndex; i < ranges.memCacheUpperIndex; i++) {
-			List<PrecacheRequest> precacheRequests = mPrecacheInformationProvider.onRowPrecacheRequestsRequired(i);
+			List<PrecacheRequest> precacheRequests = mPrecacheInformationProvider.onRowPrecacheRequestsForMemoryCacheRequired(i);
 			precacheListToMemory(precacheRequests);
 		}
 	}
@@ -98,15 +106,15 @@ public class ImagePrecacheAssistant {
 	private void precacheListToMemory(List<PrecacheRequest> precacheRequests) {
 		if (precacheRequests != null) {
 			for (PrecacheRequest precacheRequest : precacheRequests) {
-				mImageLoader.precacheImageToDiskAndMemory(precacheRequest.mUri, precacheRequest.mBounds.width, precacheRequest.mBounds.height);
+				mImageLoader.precacheImageToDiskAndMemory(precacheRequest.mUri, precacheRequest.mBounds, precacheRequest.mOptions);
 			}
 		}
 	}
 
-	private void precacheListToDisk(List<PrecacheRequest> precacheRequests) {
-		if (precacheRequests != null) {
-			for (PrecacheRequest precacheRequest : precacheRequests) {
-				mImageLoader.precacheImageToDisk(precacheRequest.mUri);
+	private void precacheListToDisk(List<String> precacheRequestUris) {
+		if (precacheRequestUris != null) {
+			for (String precacheRequestUri : precacheRequestUris) {
+				mImageLoader.precacheImageToDisk(precacheRequestUri);
 			}
 		}
 	}
@@ -207,28 +215,60 @@ public class ImagePrecacheAssistant {
 		 * 
 		 * @param position
 		 *            The position for which images will be precached.
-		 * @return A list of {@link PrecacheRequest}s. Each PrecacheRequest should contain a URI for a particular image and the bounds of the view the image will be loaded into. The bounds should be provided in pixels,
-		 *         or be given as null.
+		 * @return A list of {@link PrecacheRequest}s. Each PrecacheRequest should contain a URI for a particular image and the bounds of the view the image will be loaded into. The bounds should be
+		 *         provided in pixels, or be given as null.
 		 */
-		public List<PrecacheRequest> onRowPrecacheRequestsRequired(int position);
+		// public List<PrecacheRequest> onRowPrecacheRequestsRequired(int position);
+
+		public List<String> onRowPrecacheRequestsForDiskCacheRequired(int position);
+
+		public List<PrecacheRequest> onRowPrecacheRequestsForMemoryCacheRequired(int position);
 	}
 
 	public static class PrecacheRequest {
-		private final String mUri;
-		private final Dimensions mBounds;
+		public static enum UnitType {
+			PIXELS, DENSITY_INDEPENDENT_PIXELS
+		}
+
+		private String mUri;
+		private Dimensions mBounds;
+		private Options mOptions;
 
 		/**
 		 * @param uri
 		 * @param bounds
 		 *            The dimensions of the image view the URI will be loaded into. If one or more dimensions are unknown, simply specify the dimensions as null.
 		 */
-		public PrecacheRequest(String uri, Dimensions bounds) {
-			mUri = uri;
-			if (bounds == null) {
-				mBounds = new Dimensions(null, null);
-			} else {
-				mBounds = bounds;
+		public static PrecacheRequest generatePrecacheRequest(Context context, String uri, Dimensions bounds, UnitType unitType) {
+			PrecacheRequest request = new PrecacheRequest();
+
+			request.mUri = uri;
+
+			Dimensions dimensions = null;
+			switch (unitType) {
+			case DENSITY_INDEPENDENT_PIXELS:
+				dimensions = new Dimensions(convertToPixels(context, bounds.width), convertToPixels(context, bounds.height));
+				break;
+			case PIXELS:
+				dimensions = new Dimensions(bounds);
+				break;
 			}
+			request.mBounds = dimensions;
+
+			return request;
+		}
+
+		public void setOptions(Options options) {
+			mOptions = options;
+		}
+
+		private static Integer convertToPixels(Context context, Integer sizeInDp) {
+			if (sizeInDp == null) {
+				return null;
+			}
+
+			Resources resources = context.getResources();
+			return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, sizeInDp, resources.getDisplayMetrics());
 		}
 	}
 
