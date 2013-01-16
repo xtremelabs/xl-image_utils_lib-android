@@ -1,9 +1,9 @@
 package com.xtremelabs.imageutils;
 
-import android.app.Service;
+import android.content.Context;
 
 public class WidgetImageLoader extends AbstractImageLoader {
-	public WidgetImageLoader(Service service) {
-		super(service, service.getApplicationContext());
+	public WidgetImageLoader(Object imageLoaderClass, Context applicationContext) {
+		super(imageLoaderClass, applicationContext);
 	}
 }
