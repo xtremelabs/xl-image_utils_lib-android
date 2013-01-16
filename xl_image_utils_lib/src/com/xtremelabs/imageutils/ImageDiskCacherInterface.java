@@ -16,6 +16,13 @@
 
 package com.xtremelabs.imageutils;
 
+import java.io.FileNotFoundException;
+import java.net.URISyntaxException;
+
+import android.graphics.Bitmap;
+
+import com.xtremelabs.imageutils.DiskLRUCacher.FileFormatException;
+
 /**
  * This interface defines the mechanisms that the ImageCacher uses to interract with the Disk Cache.
  */
@@ -39,4 +46,8 @@ interface ImageDiskCacherInterface extends NetworkToDiskInterface {
 	void retrieveImageDetails(String uri);
 
 	void invalidateFileSystemUri(String uri);
+
+	Bitmap getBitmapSynchronouslyFromDisk(DecodeSignature decodeSignature) throws FileNotFoundException, FileFormatException;
+
+	void calculateAndSaveImageDetails(String uri) throws URISyntaxException, FileNotFoundException;
 }

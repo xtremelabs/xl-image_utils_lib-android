@@ -91,29 +91,34 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 
 	void cacheImageDetails(String uri) {
 		try {
-			File file;
-
-			boolean isFileSystemUri = GeneralUtils.isFileSystemUri(uri);
-			if (isFileSystemUri) {
-				file = new File(new URI(uri.replace(" ", "%20")).getPath());
-			} else {
-				file = getFile(uri);
-			}
-
-			Dimensions dimensions = getImageDimensionsFromDisk(file);
-
-			if (isFileSystemUri) {
-				mPermanentStorageDimensionsCache.addOrBump(uri, dimensions);
-			} else {
-				mDatabaseHelper.addOrUpdateFile(uri, file.length(), dimensions.width, dimensions.height);
-				clearLeastUsedFilesInCache();
-			}
+			calculateAndSaveImageDetails(uri);
 
 			mImageDiskObserver.onImageDetailsRetrieved(uri);
 		} catch (URISyntaxException e) {
 			mImageDiskObserver.onImageDetailsRequestFailed(uri, "URISyntaxException caught when attempting to retrieve image details. URI: " + uri);
 		} catch (FileNotFoundException e) {
 			mImageDiskObserver.onImageDetailsRequestFailed(uri, "Image file not found. URI: " + uri);
+		}
+	}
+
+	@Override
+	public void calculateAndSaveImageDetails(String uri) throws URISyntaxException, FileNotFoundException {
+		File file;
+
+		boolean isFileSystemUri = GeneralUtils.isFileSystemUri(uri);
+		if (isFileSystemUri) {
+			file = new File(new URI(uri.replace(" ", "%20")).getPath());
+		} else {
+			file = getFile(uri);
+		}
+
+		Dimensions dimensions = getImageDimensionsFromDisk(file);
+
+		if (isFileSystemUri) {
+			mPermanentStorageDimensionsCache.addOrBump(uri, dimensions);
+		} else {
+			mDatabaseHelper.addOrUpdateFile(uri, file.length(), dimensions.width, dimensions.height);
+			clearLeastUsedFilesInCache();
 		}
 	}
 
@@ -216,7 +221,8 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		}
 	}
 
-	Bitmap getBitmapSynchronouslyFromDisk(DecodeSignature decodeSignature) throws FileNotFoundException, FileFormatException {
+	@Override
+	public Bitmap getBitmapSynchronouslyFromDisk(DecodeSignature decodeSignature) throws FileNotFoundException, FileFormatException {
 		String uri = decodeSignature.mUri;
 		int sampleSize = decodeSignature.mSampleSize;
 		Bitmap.Config bitmapConfig = decodeSignature.mBitmapConfig;
