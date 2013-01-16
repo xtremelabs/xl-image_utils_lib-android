@@ -26,6 +26,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.util.HashMap;
+import java.util.Map;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -40,7 +41,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	private final DiskManager mDiskManager;
 	private final DiskDatabaseHelper mDatabaseHelper;
 	private ImageDiskObserver mImageDiskObserver;
-	private final MappedQueue<String, Dimensions> mPermanentStorageDimensionsCache = new MappedQueue<String, Dimensions>(MAX_PERMANENT_STORAGE_IMAGE_DIMENSIONS_CACHED);
+	private final Map<String, Dimensions> mPermanentStorageMap = new LRUMap<String, Dimensions>(34, MAX_PERMANENT_STORAGE_IMAGE_DIMENSIONS_CACHED);
 	private final HashMap<DecodeSignature, Runnable> mRequestToRunnableMap = new HashMap<DecodeSignature, Runnable>();
 
 	/*
@@ -59,12 +60,18 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	@Override
 	public boolean isCached(String uri) {
 		boolean isPermanentStorageUri = GeneralUtils.isFileSystemUri(uri);
+		boolean isCached = false;
 
 		if (isPermanentStorageUri) {
-			return mPermanentStorageDimensionsCache.contains(uri);
+			isCached = mPermanentStorageMap.containsKey(uri);
+			if (isCached) {
+				mPermanentStorageMap.get(uri);
+			}
 		} else {
-			return mDatabaseHelper.isCached(uri);
+			isCached = mDatabaseHelper.isCached(uri);
 		}
+
+		return isCached;
 	}
 
 	@Override
@@ -79,7 +86,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 
 	@Override
 	public void retrieveImageDetails(final String uri) {
-		if (mPermanentStorageDimensionsCache.getValue(uri) == null) {
+		if (mPermanentStorageMap.get(uri) == null) {
 			mThreadPool.execute(new Runnable() {
 				@Override
 				public void run() {
@@ -115,7 +122,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		Dimensions dimensions = getImageDimensionsFromDisk(file);
 
 		if (isFileSystemUri) {
-			mPermanentStorageDimensionsCache.addOrBump(uri, dimensions);
+			mPermanentStorageMap.put(uri, dimensions);
 		} else {
 			mDatabaseHelper.addOrUpdateFile(uri, file.length(), dimensions.width, dimensions.height);
 			clearLeastUsedFilesInCache();
@@ -186,7 +193,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 
 		Dimensions dimensions;
 		if (isFromPermanentStorage) {
-			dimensions = mPermanentStorageDimensionsCache.getValue(uri);
+			dimensions = mPermanentStorageMap.get(uri);
 		} else {
 			FileEntry fileEntry = mDatabaseHelper.getFileEntryFromCache(uri);
 			if (fileEntry != null) {
@@ -201,7 +208,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 
 	@Override
 	public void invalidateFileSystemUri(String uri) {
-		mPermanentStorageDimensionsCache.remove(uri);
+		mPermanentStorageMap.remove(uri);
 	}
 
 	private boolean mapRunnableToParameters(Runnable runnable, DecodeSignature parameters) {
