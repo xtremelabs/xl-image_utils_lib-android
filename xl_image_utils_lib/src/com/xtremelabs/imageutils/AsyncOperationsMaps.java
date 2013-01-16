@@ -18,6 +18,7 @@ ess or implied.
 
 package com.xtremelabs.imageutils;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -136,6 +137,7 @@ public class AsyncOperationsMaps {
 
 	public void onDetailsRequestComplete(String uri) {
 		final Set<DecodeSignature> decodeRequestsToMake = new HashSet<DecodeSignature>();
+		final List<ImageCacherListener> diskCacheRequestsToReportSuccess = new ArrayList<ImageCacherListener>();
 
 		synchronized (this) {
 			mDetailsOperationTracker.transferOperation(uri, new OperationTransferer<String, RequestParameters, ImageCacherListener>() {
@@ -145,6 +147,7 @@ public class AsyncOperationsMaps {
 
 					switch (requestType) {
 					case CACHE_TO_DISK:
+						diskCacheRequestsToReportSuccess.add(imageCacherListener);
 						return;
 					case CACHE_TO_DISK_AND_MEMORY:
 					case FULL_REQUEST:
@@ -157,6 +160,10 @@ public class AsyncOperationsMaps {
 					}
 				}
 			}, mNetworkAndDetailsKeyReferenceProvider);
+		}
+
+		for (ImageCacherListener listener : diskCacheRequestsToReportSuccess) {
+			listener.onImageAvailable(new ImageResponse(null, null, ImageResponseStatus.CACHED_ON_DISK));
 		}
 
 		for (DecodeSignature decodeSignature : decodeRequestsToMake) {

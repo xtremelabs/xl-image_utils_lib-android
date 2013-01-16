@@ -20,7 +20,7 @@ import android.graphics.Bitmap;
 
 class ImageResponse {
 	public static enum ImageResponseStatus {
-		REQUEST_QUEUED, SUCCESS
+		REQUEST_QUEUED, SUCCESS, CACHED_ON_DISK
 	}
 
 	private final ImageResponseStatus mImageResponseStatus;
