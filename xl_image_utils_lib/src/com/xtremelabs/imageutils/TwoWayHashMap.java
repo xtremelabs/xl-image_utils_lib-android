@@ -23,8 +23,13 @@ class TwoWayHashMap<T, U> {
 	private final HashMap<U, T> mUToTMap = new HashMap<U, T>();
 
 	public synchronized void put(T firstKey, U secondKey) {
-		mTToUMap.put(firstKey, secondKey);
-		mUToTMap.put(secondKey, firstKey);
+		if (firstKey != null) {
+			mTToUMap.put(firstKey, secondKey);
+		}
+
+		if (secondKey != null) {
+			mUToTMap.put(secondKey, firstKey);
+		}
 	}
 
 	public synchronized T getPrimaryItem(U key) {

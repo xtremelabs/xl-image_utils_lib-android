@@ -24,7 +24,7 @@ import android.widget.ImageView;
 class ImageViewReferenceMapper {
 	private final TwoWayHashMap<ImageView, ImageManagerListener> map = new TwoWayHashMap<ImageView, ImageManagerListener>();
 
-	public synchronized void registerImageViewToListener(ImageView view, ImageManagerListener listener) {
+	public synchronized void registerRequest(ImageView view, ImageManagerListener listener) {
 		map.put(view, listener);
 	}
 
