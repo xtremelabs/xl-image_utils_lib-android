@@ -273,8 +273,9 @@ public abstract class AbstractImageLoader {
 	 */
 	public static void invalidateFileSystemUri(Context applicationContext, String uri) {
 		if (!(applicationContext instanceof Application)) {
-			throw new IllegalArgumentException("You may only invalidate file system URIs with an application context!");
+			applicationContext = applicationContext.getApplicationContext();
 		}
+
 		ImageCacher.getInstance(applicationContext).invalidateFileSystemUri(uri);
 	}
 
@@ -345,16 +346,21 @@ public abstract class AbstractImageLoader {
 	 * @param applicationContext
 	 */
 	// TODO Test what happens if precache image to disk is called with a file system URI.
-	public static void precacheImageToDisk(final String uri, final Context applicationContext) {
+	public static void precacheImageToDisk(final String uri, Context applicationContext) {
+		if (!(applicationContext instanceof Application)) {
+			applicationContext = applicationContext.getApplicationContext();
+		}
+
 		if (ThreadChecker.isOnUiThread()) {
 			ImageRequest imageRequest = new ImageRequest(uri);
 			imageRequest.setRequestType(RequestType.CACHE_TO_DISK);
 			ImageCacher.getInstance(applicationContext).precacheImageToDisk(imageRequest);
 		} else {
+			final Context finalContext = applicationContext;
 			new Handler(applicationContext.getMainLooper()).post(new Runnable() {
 				@Override
 				public void run() {
-					precacheImageToDisk(uri, applicationContext);
+					precacheImageToDisk(uri, finalContext);
 				}
 			});
 		}
