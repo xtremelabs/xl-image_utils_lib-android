@@ -16,11 +16,16 @@
 
 package com.xtremelabs.imageutils;
 
+import java.io.FileNotFoundException;
+import java.net.URISyntaxException;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Build;
+import android.util.Log;
 
 import com.xtremelabs.imageutils.AsyncOperationsMaps.AsyncOperationState;
+import com.xtremelabs.imageutils.DiskLRUCacher.FileFormatException;
 import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
 
 /**
@@ -98,6 +103,46 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 		}
 
 		return generateQueuedResponse();
+	}
+
+	public ImageResponse getBitmapSynchronouslyFromDiskOrMemory(ImageRequest imageRequest) {
+		String uri = imageRequest.getUri();
+
+		int sampleSize = getSampleSize(imageRequest);
+		boolean isCached = mDiskCache.isCached(uri);
+
+		try {
+			if (isCached && sampleSize != -1) {
+				DecodeSignature decodeSignature = new DecodeSignature(uri, sampleSize, imageRequest.getOptions().preferedConfig);
+				Bitmap bitmap;
+				if ((bitmap = mMemoryCache.getBitmap(decodeSignature)) != null) {
+					return new ImageResponse(bitmap, ImageReturnedFrom.MEMORY, ImageResponseStatus.SUCCESS);
+				} else {
+					return getBitmapSynchronouslyFromDisk(decodeSignature);
+				}
+			} else if (GeneralUtils.isFileSystemUri(uri)) {
+				mDiskCache.calculateAndSaveImageDetails(uri);
+				sampleSize = getSampleSize(imageRequest);
+				if (sampleSize != -1) {
+					DecodeSignature decodeSignature = new DecodeSignature(uri, sampleSize, imageRequest.getOptions().preferedConfig);
+					return getBitmapSynchronouslyFromDisk(decodeSignature);
+				}
+			}
+		} catch (FileNotFoundException e) {
+			Log.w(AbstractImageLoader.TAG, "Unable to load bitmap synchronously. File not found.");
+		} catch (FileFormatException e) {
+			Log.w(AbstractImageLoader.TAG, "Unable to load bitmap synchronously. File format exception.");
+		} catch (URISyntaxException e) {
+			Log.w(AbstractImageLoader.TAG, "Unable to load bitmap synchronously. URISyntaxException. URI: " + uri);
+		}
+
+		return null;
+	}
+
+	private ImageResponse getBitmapSynchronouslyFromDisk(DecodeSignature decodeSignature) throws FileNotFoundException, FileFormatException {
+		Bitmap bitmap;
+		bitmap = mDiskCache.getBitmapSynchronouslyFromDisk(decodeSignature);
+		return new ImageResponse(bitmap, ImageReturnedFrom.DISK, ImageResponseStatus.SUCCESS);
 	}
 
 	@Override

@@ -471,6 +471,18 @@ public abstract class AbstractImageLoader {
 		mReferenceManager.getBitmap(applicationContext, imageRequest, getBlankImageManagerListener());
 	}
 
+	protected boolean isDestroyed() {
+		return mDestroyed;
+	}
+
+	protected Options getDefaultOptions() {
+		return mDefaultOptions;
+	}
+
+	protected Context getApplicationContext() {
+		return mApplicationContext;
+	}
+
 	private void initKeyAndAppContext(Object key, Context applicationContext) {
 		mApplicationContext = applicationContext;
 		mKey = key;
