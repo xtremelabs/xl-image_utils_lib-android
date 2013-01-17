@@ -32,7 +32,7 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
-		mImageLoader = new ImageLoader(this);
+		mImageLoader = ImageLoader.buildImageLoaderForActivity(this);
 
 		ListView list = (ListView) findViewById(R.id.list);
 		list.setAdapter(new KittenAdapter(this, mImageLoader));

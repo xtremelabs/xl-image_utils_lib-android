@@ -16,8 +16,14 @@
 
 package com.xtremelabs.imageutils;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
+
+import android.graphics.Bitmap;
+
+import com.xtremelabs.imageutils.DiskLRUCacher.FileFormatException;
 
 public class DiskCacheStub implements ImageDiskCacherInterface {
 	@Override
@@ -66,5 +72,17 @@ public class DiskCacheStub implements ImageDiskCacherInterface {
 
 	@Override
 	public void invalidateFileSystemUri(String uri) {
+	}
+
+	@Override
+	public void calculateAndSaveImageDetails(String arg0) throws URISyntaxException, FileNotFoundException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public Bitmap getBitmapSynchronouslyFromDisk(DecodeSignature arg0) throws FileNotFoundException, FileFormatException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

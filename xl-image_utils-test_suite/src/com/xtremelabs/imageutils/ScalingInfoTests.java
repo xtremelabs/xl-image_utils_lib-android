@@ -21,7 +21,7 @@ import android.test.UiThreadTest;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.ImageView;
 
-import com.xtremelabs.imageutils.AbstractImageLoader.Options;
+import com.xtremelabs.imageutils.ImageLoader.Options;
 import com.xtremelabs.testactivity.MainActivity;
 
 public class ScalingInfoTests extends ActivityInstrumentationTestCase2<MainActivity> {
@@ -43,7 +43,7 @@ public class ScalingInfoTests extends ActivityInstrumentationTestCase2<MainActiv
 
 	@UiThreadTest
 	public void testOptionsOff() {
-		mImageLoader = new ImageLoader(getActivity());
+		mImageLoader = ImageLoader.buildImageLoaderForActivity(getActivity());
 
 		options.autoDetectBounds = false;
 		options.useScreenSizeAsBounds = false;
@@ -55,7 +55,7 @@ public class ScalingInfoTests extends ActivityInstrumentationTestCase2<MainActiv
 
 	@UiThreadTest
 	public void testScreenBounds() {
-		mImageLoader = new ImageLoader(getActivity());
+		mImageLoader = ImageLoader.buildImageLoaderForActivity(getActivity());
 		options.autoDetectBounds = false;
 		options.useScreenSizeAsBounds = true;
 		scalingInfo = mImageLoader.getScalingInfo(imageView, options);
@@ -76,7 +76,7 @@ public class ScalingInfoTests extends ActivityInstrumentationTestCase2<MainActiv
 
 	@UiThreadTest
 	public void testAutoDetectBounds() {
-		mImageLoader = new ImageLoader(getActivity());
+		mImageLoader = ImageLoader.buildImageLoaderForActivity(getActivity());
 		options.autoDetectBounds = true;
 		options.useScreenSizeAsBounds = false;
 
@@ -101,7 +101,7 @@ public class ScalingInfoTests extends ActivityInstrumentationTestCase2<MainActiv
 
 	@UiThreadTest
 	public void testAutoDetectBoundsWithScreenSize() {
-		mImageLoader = new ImageLoader(getActivity());
+		mImageLoader = ImageLoader.buildImageLoaderForActivity(getActivity());
 		options.autoDetectBounds = true;
 		options.useScreenSizeAsBounds = true;
 
@@ -132,7 +132,7 @@ public class ScalingInfoTests extends ActivityInstrumentationTestCase2<MainActiv
 
 	@UiThreadTest
 	public void testOverrideSampleSize() {
-		mImageLoader = new ImageLoader(getActivity());
+		mImageLoader = ImageLoader.buildImageLoaderForActivity(getActivity());
 
 		options.overrideSampleSize = 4;
 		options.autoDetectBounds = true;

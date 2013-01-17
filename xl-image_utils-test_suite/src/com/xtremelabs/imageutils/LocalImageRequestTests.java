@@ -36,7 +36,7 @@ public class LocalImageRequestTests extends ActivityInstrumentationTestCase2<Mai
 	}
 
 	private void initImageLoader() {
-		mImageLoader = new ImageLoader(getActivity());
+		mImageLoader = ImageLoader.buildImageLoaderForActivity(getActivity());
 		mImageLoader.stubReferenceManager(new ReferenceManager() {
 			@Override
 			public void getBitmap(Object key, ImageRequest imageRequest, ImageManagerListener imageManagerListener) {
@@ -44,12 +44,12 @@ public class LocalImageRequestTests extends ActivityInstrumentationTestCase2<Mai
 			}
 
 			@Override
-			public List<ImageManagerListener> removeListenersForKey(Object key) {
-				return null;
+			public void cancelRequest(ImageManagerListener imageManagerListener) {
 			}
 
 			@Override
-			public void cancelRequest(ImageManagerListener imageManagerListener) {
+			public List<ImageManagerListener> cancelRequestsForKey(Object arg0) {
+				return null;
 			}
 		});
 	}

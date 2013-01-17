@@ -18,8 +18,8 @@ package com.xtremelabs.imageutils;
 
 import android.test.ActivityInstrumentationTestCase2;
 
-import com.xtremelabs.imageutils.AbstractImageLoader.Options;
-import com.xtremelabs.imageutils.AbstractImageLoader.Options.ScalingPreference;
+import com.xtremelabs.imageutils.ImageLoader.Options;
+import com.xtremelabs.imageutils.ImageLoader.Options.ScalingPreference;
 import com.xtremelabs.testactivity.MainActivity;
 
 public class SampleSizeTests extends ActivityInstrumentationTestCase2<MainActivity> {

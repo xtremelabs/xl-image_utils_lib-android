@@ -47,7 +47,7 @@ class DefaultNetworkRequestCreator implements NetworkRequestCreator {
 				request = new HttpGet(URLEncoder.encode(url, "UTF-8"));
 			} catch (UnsupportedEncodingException e1) {
 				String errorMessage = "Unable to download image. Reason: Bad URL. URL: " + url;
-				Log.w(AbstractImageLoader.TAG, errorMessage);
+				Log.w(ImageLoader.TAG, errorMessage);
 				listener.onFailure(errorMessage);
 				return;
 			}
