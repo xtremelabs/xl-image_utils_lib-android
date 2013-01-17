@@ -111,7 +111,7 @@ class ImageDownloader implements ImageNetworkInterface {
 			 * NOTE: If a bad URL is passed in (for example, mUrl = "N/A", the client.execute() call will throw an IllegalStateException. We do not want this exception to crash the app. Rather, we want to log the error
 			 * and report a failure.
 			 */
-			Log.w(AbstractImageLoader.TAG, "IMAGE LOAD FAILED - An error occurred while performing the network request for the image. Stack trace below. URL: " + mUrl);
+			Log.w(ImageLoader.TAG, "IMAGE LOAD FAILED - An error occurred while performing the network request for the image. Stack trace below. URL: " + mUrl);
 			e.printStackTrace();
 			String errorMessage = "Failed to download image. A stack trace has been output to the logs. Message: " + e.getMessage();
 			mImageDownloadObserver.onImageDownloadFailed(mUrl, errorMessage);
@@ -131,7 +131,7 @@ class ImageDownloader implements ImageNetworkInterface {
 					 * NOTE: If a bad URL is passed in (for example, mUrl = "N/A", the client.execute() call will throw an IllegalStateException. We do not want this exception to crash the app. Rather, we want to log the
 					 * error and report a failure.
 					 */
-					Log.w(AbstractImageLoader.TAG, "IMAGE LOAD FAILED - An error occurred while performing the network request for the image. Stack trace below. URL: " + mUrl);
+					Log.w(ImageLoader.TAG, "IMAGE LOAD FAILED - An error occurred while performing the network request for the image. Stack trace below. URL: " + mUrl);
 					e.printStackTrace();
 					errorMessage = "Failed to download image. A stack trace has been output to the logs. Message: " + e.getMessage();
 				} finally {

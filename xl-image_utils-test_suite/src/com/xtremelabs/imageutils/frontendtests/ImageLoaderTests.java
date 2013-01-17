@@ -61,7 +61,7 @@ public class ImageLoaderTests extends ActivityInstrumentationTestCase2<MainActiv
 
 				@Override
 				public void run() {
-					ImageLoader imageLoader = new ImageLoader(getActivity());
+					ImageLoader imageLoader = ImageLoader.buildImageLoaderForActivity(getActivity());
 
 					mDiskManagerAccessUtil = new DiskManagerAccessUtil(getActivity().getApplicationContext());
 					mDiskManagerAccessUtil.clearDiskCache();
@@ -121,7 +121,7 @@ public class ImageLoaderTests extends ActivityInstrumentationTestCase2<MainActiv
 
 				@Override
 				public void run() {
-					ImageLoader imageLoader = new ImageLoader(getActivity());
+					ImageLoader imageLoader = ImageLoader.buildImageLoaderForActivity(getActivity());
 
 					mDiskManagerAccessUtil = new DiskManagerAccessUtil(getActivity().getApplicationContext());
 

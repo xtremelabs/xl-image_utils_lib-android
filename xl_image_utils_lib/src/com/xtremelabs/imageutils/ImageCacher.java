@@ -143,11 +143,11 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 				}
 			}
 		} catch (FileNotFoundException e) {
-			Log.w(AbstractImageLoader.TAG, "Unable to load bitmap synchronously. File not found.");
+			Log.w(ImageLoader.TAG, "Unable to load bitmap synchronously. File not found.");
 		} catch (FileFormatException e) {
-			Log.w(AbstractImageLoader.TAG, "Unable to load bitmap synchronously. File format exception.");
+			Log.w(ImageLoader.TAG, "Unable to load bitmap synchronously. File format exception.");
 		} catch (URISyntaxException e) {
-			Log.w(AbstractImageLoader.TAG, "Unable to load bitmap synchronously. URISyntaxException. URI: " + uri);
+			Log.w(ImageLoader.TAG, "Unable to load bitmap synchronously. URISyntaxException. URI: " + uri);
 		}
 
 		if (!GeneralUtils.isFileSystemUri(uri)) {

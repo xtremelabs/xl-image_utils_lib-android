@@ -6,9 +6,9 @@ import android.util.Log;
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
 import com.xtremelabs.imageutils.ImageRequest.RequestType;
 
-public class WidgetImageLoader extends AbstractImageLoader {
-	public WidgetImageLoader(Object imageLoaderClass, Context applicationContext) {
-		super(imageLoaderClass, applicationContext);
+public class WidgetImageLoader extends ImageLoader {
+	WidgetImageLoader(Object imageLoaderClass, Context context) {
+		super(imageLoaderClass, context);
 	}
 
 	public ImageResponse loadImageSynchronouslyOrQueueNetworkRequest(String uri, Options options, ImageDownloadedListener listener) {

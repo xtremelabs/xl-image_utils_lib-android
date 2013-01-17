@@ -23,7 +23,7 @@ import android.content.res.Resources;
 import android.util.TypedValue;
 import android.widget.BaseAdapter;
 
-import com.xtremelabs.imageutils.AbstractImageLoader.Options;
+import com.xtremelabs.imageutils.ImageLoader.Options;
 
 /**
  * This utility simplifies the process of implementing precaching in adapters for use in widgets such as ListViews and ViewPagers.<br>
@@ -52,14 +52,14 @@ public class ImagePrecacheAssistant {
 	private int mMemCacheRange = DEFAULT_MEM_CACHE_RANGE;
 	private int mDiskCacheRange = DEFAULT_DISK_CACHE_RANGE;
 
-	private final AbstractImageLoader mImageLoader;
+	private final ImageLoader mImageLoader;
 	private final PrecacheInformationProvider mPrecacheInformationProvider;
 
 	private int mCurrentPosition = 0;
 	private Direction mCurrentDirection = Direction.UP;
 	private boolean isFirstCalculation = true;
 
-	public ImagePrecacheAssistant(AbstractImageLoader imageLoader, PrecacheInformationProvider precacheInformationProvider) {
+	public ImagePrecacheAssistant(ImageLoader imageLoader, PrecacheInformationProvider precacheInformationProvider) {
 		mImageLoader = imageLoader;
 		mPrecacheInformationProvider = precacheInformationProvider;
 	}

@@ -16,7 +16,7 @@
 
 package com.xtremelabs.imageutils;
 
-import com.xtremelabs.imageutils.AbstractImageLoader.Options;
+import com.xtremelabs.imageutils.ImageLoader.Options;
 
 class ImageRequest {
 	static enum LocationOfImage {

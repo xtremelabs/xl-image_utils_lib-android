@@ -458,7 +458,7 @@ public abstract class AbstractImageLoader {
 	 */
 	// TODO The URI/Bounds/Options should be packaged together as an ImageRequest object
 	// FIXME Null bounds will crash the app.
-	public void precacheImageToDiskAndMemory(String uri, Dimensions bounds, Options options) {
+	public void precacheImageToDiskAndMemory(String uri, Dimensions bounds, com.xtremelabs.imageutils.ImageLoader.Options options) {
 		// TODO: Replace the width and height with options?
 		ThreadChecker.throwErrorIfOffUiThread();
 
@@ -466,8 +466,8 @@ public abstract class AbstractImageLoader {
 		scalingInfo.height = bounds.height;
 		scalingInfo.width = bounds.width;
 
-		ImageRequest imageRequest = new ImageRequest(uri, scalingInfo, options == null ? mDefaultOptions : options);
-		mReferenceManager.getBitmap(mApplicationContext, imageRequest, getBlankImageManagerListener());
+		// ImageRequest imageRequest = new ImageRequest(uri, scalingInfo, options == null ? mDefaultOptions : options);
+		// mReferenceManager.getBitmap(mApplicationContext, imageRequest, getBlankImageManagerListener());
 	}
 
 	/**
@@ -523,13 +523,13 @@ public abstract class AbstractImageLoader {
 	}
 
 	private void performImageRequest(ImageView imageView, String uri, Options options, ImageManagerListener imageManagerListener) {
-		mapImageView(imageView, imageManagerListener);
-		setPreLoadImage(imageView, options);
+		// mapImageView(imageView, imageManagerListener);
+		// setPreLoadImage(imageView, options);
 
-		ScalingInfo scalingInfo = getScalingInfo(imageView, options);
+		// ScalingInfo scalingInfo = getScalingInfo(imageView, options);
 
-		ImageRequest imageRequest = new ImageRequest(uri, scalingInfo, options);
-		mReferenceManager.getBitmap(mKey, imageRequest, imageManagerListener);
+		// ImageRequest imageRequest = new ImageRequest(uri, scalingInfo, options);
+		// mReferenceManager.getBitmap(mKey, imageRequest, imageManagerListener);
 	}
 
 	private void setPreLoadImage(ImageView imageView, Options options) {

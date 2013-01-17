@@ -1,9 +1,20 @@
 CHANGE LOG
 
+v1.2
+API CHANGES:
+- ImageLoader objects are now created via ImageLoader.build...() methods rather than directly constructed.
+- The ImageLoaderSupport and AbstractImageLoader classes have been removed. All ImageLoader classes now directly inherit from ImageLoader.
+- The import has changed for the Options object. This class now directly belongs to the ImageLoader class.
+
+New Features:
+- You can now request bitmaps without an ImageView. Methods: loadImage(String uri, BitmapListener listener), loadImage(String uri, Options options, BitmapListener listener)
+- There is a new loadImage request that takes a listener without an Options object. This method will use the default options for its requests and report back to the listener when the request is complete.
+- Widgets are now supported. A WidgetImageLoader can now be constructed via the method ImageLoader.buildWidgetImageLoader(Object key, Context context).
+
 v1.1.1
 - Critical bug fix: Bad comparator logic was causing a crash if images lingered in the disk cache for several weeks.
 
-v1.1
+v1.1.0
 - URIs can now refer to files on disk. These images will be cached in the memory cache.
 - A utility has been added called the ImagePrecacheAssistant. It can be used to rapidly implement precaching in adapters. Please note this is an early version that may undergo heavy API changes in the near future.
 - The SampleSize calculation code has been completely re-written. The image system now loads images significantly faster and uses less memory when large images are being loaded into smaller views.
@@ -15,5 +26,5 @@ v1.1
 - Refactored some of the system's internals. Future patches should take less time to develop.
 - Bug fixes.
 
-v1.0
+v1.0.0
 - The image library is now stable.
