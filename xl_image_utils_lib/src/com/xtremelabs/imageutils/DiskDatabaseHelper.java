@@ -51,7 +51,14 @@ public class DiskDatabaseHelper extends SQLiteOpenHelper {
 		Comparator<FileEntry> comparator = new Comparator<FileEntry>() {
 			@Override
 			public int compare(FileEntry lhs, FileEntry rhs) {
-				return (int) (lhs.getLastAccessTime() - rhs.getLastAccessTime());
+				long difference = lhs.getLastAccessTime() - rhs.getLastAccessTime();
+				if (difference < 0) {
+					return -1;
+				} else if (difference > 0) {
+					return 1;
+				} else {
+					return 0;
+				}
 			}
 		};
 		Collections.sort(entries, comparator);
