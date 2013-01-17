@@ -1,5 +1,8 @@
 CHANGE LOG
 
+v1.1.1
+- Critical bug fix: Bad comparator logic was causing a crash if images lingered in the disk cache for several weeks.
+
 v1.1
 - URIs can now refer to files on disk. These images will be cached in the memory cache.
 - A utility has been added called the ImagePrecacheAssistant. It can be used to rapidly implement precaching in adapters. Please note this is an early version that may undergo heavy API changes in the near future.
