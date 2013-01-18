@@ -68,6 +68,7 @@ public class DiskLRUCacherTests extends ActivityInstrumentationTestCase2<MainAct
 	public void testImageDetailsIsOffUIThread() {
 		StrictMode.setThreadPolicy(new ThreadPolicy.Builder().detectAll().penaltyDeath().build());
 		mDiskCacher.retrieveImageDetails(TEST_URI);
+		StrictMode.setThreadPolicy(ThreadPolicy.LAX);
 	}
 
 	public void testImageDetailRetrieval() {
