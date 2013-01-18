@@ -106,12 +106,12 @@ public class DiskDatabaseHelperTests extends ActivityInstrumentationTestCase2<Ma
 		mDatabaseHelper.deleteEntry(entry);
 
 		mDatabaseHelper.updateFile("url2");
-
-		DelayedLoop.sleep(2000);
+		DelayedLoop.sleep(100);
 		entry = mDatabaseHelper.getLRU();
 		assertEquals("url3", entry);
 
 		mDatabaseHelper.updateFile("url3");
+		DelayedLoop.sleep(100);
 		entry = mDatabaseHelper.getLRU();
 		assertEquals("url4", entry);
 	}
