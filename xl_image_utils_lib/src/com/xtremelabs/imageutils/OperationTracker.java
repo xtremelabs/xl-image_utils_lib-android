@@ -74,7 +74,7 @@ class OperationTracker<OPERATION_KEY, OPERATION_LIST_VALUE, KEY_REFERENCE> {
 		}
 	}
 
-	private void initializeList(OPERATION_KEY operationKey) {
+	private synchronized void initializeList(OPERATION_KEY operationKey) {
 		mOperationKeyToValueList.put(operationKey, new ArrayList<OPERATION_LIST_VALUE>());
 	}
 
@@ -120,7 +120,7 @@ class OperationTracker<OPERATION_KEY, OPERATION_LIST_VALUE, KEY_REFERENCE> {
 		return list;
 	}
 
-	public boolean removeRequest(KEY_REFERENCE keyReference, KeyReferenceProvider<OPERATION_KEY, OPERATION_LIST_VALUE, KEY_REFERENCE> keyReferenceProvider, boolean deleteMapIfEmpty) {
+	public synchronized boolean removeRequest(KEY_REFERENCE keyReference, KeyReferenceProvider<OPERATION_KEY, OPERATION_LIST_VALUE, KEY_REFERENCE> keyReferenceProvider, boolean deleteMapIfEmpty) {
 		boolean removed = false;
 
 		OPERATION_KEY operationKey = mReferenceToOperation.remove(keyReference);
