@@ -11,6 +11,9 @@ New Features:
 - There is a new loadImage request that takes a listener without an Options object. This method will use the default options for its requests and report back to the listener when the request is complete.
 - Widgets are now supported. A WidgetImageLoader can now be constructed via the method ImageLoader.buildWidgetImageLoader(Object key, Context context).
 
+Bug Fixes:
+- Fixed a rare crash caused by a ConcurrentModificationException.
+
 v1.1.1
 - Critical bug fix: Bad comparator logic was causing a crash if images lingered in the disk cache for several weeks.
 
