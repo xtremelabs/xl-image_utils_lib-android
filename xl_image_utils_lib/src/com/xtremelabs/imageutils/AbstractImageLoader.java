@@ -110,6 +110,9 @@ public abstract class AbstractImageLoader {
 		ImageCacher.getInstance(appContext).setNetworkRequestCreator(networkRequestCreator);
 	}
 
+	// TODO Write a loadImage call that accepts a URI object, as well as a File object.
+	// TODO All image requests coming in to the ImageLoader should be ImageRequest objects.
+
 	/**
 	 * Loads the image located at the provided URI into the provided {@link ImageView}.<br>
 	 * <br>
@@ -264,6 +267,16 @@ public abstract class AbstractImageLoader {
 		return mViewMapper.removeListener(imageView) != null;
 	}
 
+	// TODO Allow for the invalidation of URIs in general (not just file system URIs)
+	/*
+	 * TODO Allow a check for a modified file that may already be within the caching system
+	 * 
+	 * - Check headers for URLs
+	 * 
+	 * - Last modified time MAY be correct as of ICS.
+	 */
+	// TODO See if last modified time can be used in the disk system.
+
 	/**
 	 * This method will remove all information regarding this image from the cache. This includes any bitmaps currently saved in the memory cache.
 	 * 
@@ -394,6 +407,8 @@ public abstract class AbstractImageLoader {
 	 * @throws CalledFromWrongThreadException
 	 *             This is thrown if the method is called from off the UI thread.
 	 */
+	// TODO The URI/Bounds/Options should be packaged together as an ImageRequest object
+	// FIXME Null bounds will crash the app.
 	public void precacheImageToDiskAndMemory(String uri, Dimensions bounds, Options options) {
 		// TODO: Replace the width and height with options?
 		ThreadChecker.throwErrorIfOffUiThread();
@@ -624,6 +639,7 @@ public abstract class AbstractImageLoader {
 		 * The dimensions of the image being returned is guaranteed to be equal to or smaller than the size of the bounds provided. This guarantees memory savings in the event that images are larger than the ImageViews
 		 * they are being loaded into.
 		 */
+		// TODO Research into the Android naming conventions for ScaleTypes.
 		public static enum ScalingPreference {
 			SMALLER_THAN_VIEW, ROUND_TO_CLOSEST_MATCH, LARGER_THAN_VIEW_OR_FULL_SIZE, MATCH_TO_LARGER_DIMENSION, MATCH_TO_SMALLER_DIMENSION
 		}
