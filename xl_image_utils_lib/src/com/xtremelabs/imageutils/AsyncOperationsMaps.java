@@ -81,6 +81,8 @@ public class AsyncOperationsMaps {
 			return AsyncOperationState.QUEUED_FOR_NETWORK_REQUEST;
 		}
 
+		// FIXME We need to check for a details request here.
+
 		int sampleSize = mAsyncOperationsObserver.getSampleSize(imageRequest);
 		DecodeSignature decodeSignature = new DecodeSignature(uri, sampleSize, bitmapConfig);
 		if (isDecodeRequestPendingForParams(decodeSignature)) {

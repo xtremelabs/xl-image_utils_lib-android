@@ -154,6 +154,7 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 			downloadImageFromNetwork(imageRequest, imageCacherListener);
 		}
 
+		// FIXME We should be returning an ImageResponse with the result "Request Queued"
 		return null;
 	}
 

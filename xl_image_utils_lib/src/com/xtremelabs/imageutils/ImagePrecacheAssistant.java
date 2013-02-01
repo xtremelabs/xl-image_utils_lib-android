@@ -36,10 +36,11 @@ import com.xtremelabs.imageutils.ImageLoader.Options;
 /*
  * TODO This class still has a couple of inefficiencies. Namely, there are some duplicate calls being made. Find the duplicate calls and code them away.
  * 
- * TODO This class' API needs some additional work. The PrecacheInformationProvider needs to be using options and/or accept an ImageView so its API is closer to that of the ImageLoader.loadImage
- * methods.
+ * TODO This class' API needs some additional work. The PrecacheInformationProvider needs to be using options and/or accept an ImageView so its API is closer to that of the ImageLoader.loadImage methods.
  * 
  * TODO This class needs the ability to support adapters that loop from position 0 -> count - 1, and count-1 -> 0.
+ * 
+ * TODO Research into extending different kinds of adapters. (Start with ListViews)
  */
 public class ImagePrecacheAssistant {
 	private enum Direction {
@@ -70,17 +71,22 @@ public class ImagePrecacheAssistant {
 	 * @param position
 	 *            The current position within the adapter.
 	 */
+	/*
+	 * TODO Should the disk requests use Strings? Or URIs?
+	 * 
+	 * TODO Consider changing the List to a Set so that requests are not duplicated.
+	 */
 	public void onPositionVisited(int position) {
 		calculateDirection(position);
 		RangesToCache ranges = calculateRanges(position);
 
 		for (int i = ranges.diskCacheLowerIndex; i < ranges.diskCacheUpperIndex; i++) {
-			List<String> precacheRequestUris = mPrecacheInformationProvider.onRowPrecacheRequestsForDiskCacheRequired(i);
+			List<String> precacheRequestUris = mPrecacheInformationProvider.getRequestsForDiskPrecache(i);
 			precacheListToDisk(precacheRequestUris);
 		}
 
 		for (int i = ranges.memCacheLowerIndex; i < ranges.memCacheUpperIndex; i++) {
-			List<PrecacheRequest> precacheRequests = mPrecacheInformationProvider.onRowPrecacheRequestsForMemoryCacheRequired(i);
+			List<PrecacheRequest> precacheRequests = mPrecacheInformationProvider.getImageRequestsForMemoryPrecache(i);
 			precacheListToMemory(precacheRequests);
 		}
 	}
@@ -90,6 +96,7 @@ public class ImagePrecacheAssistant {
 	 * 
 	 * @param range
 	 */
+	// TODO Fix the javadoc to be more descriptive here.
 	public void setMemCacheRange(int range) {
 		mMemCacheRange = range;
 	}
@@ -99,6 +106,7 @@ public class ImagePrecacheAssistant {
 	 * 
 	 * @param range
 	 */
+	// TODO Fix the javadoc to be more descriptive here.
 	public void setDiskCacheRange(int range) {
 		mDiskCacheRange = range;
 	}
@@ -215,14 +223,16 @@ public class ImagePrecacheAssistant {
 		 * 
 		 * @param position
 		 *            The position for which images will be precached.
-		 * @return A list of {@link PrecacheRequest}s. Each PrecacheRequest should contain a URI for a particular image and the bounds of the view the image will be loaded into. The bounds should be
-		 *         provided in pixels, or be given as null.
+		 * @return A list of {@link PrecacheRequest}s. Each PrecacheRequest should contain a URI for a particular image and the bounds of the view the image will be loaded into. The bounds should be provided in pixels,
+		 *         or be given as null.
 		 */
 		// public List<PrecacheRequest> onRowPrecacheRequestsRequired(int position);
 
-		public List<String> onRowPrecacheRequestsForDiskCacheRequired(int position);
+		public List<String> getRequestsForDiskPrecache(int position);
 
-		public List<PrecacheRequest> onRowPrecacheRequestsForMemoryCacheRequired(int position);
+		// TODO Try to map the requests by R.id to ImageViews within the rows.
+		// TODO This will need to be an ImageRequest object rather than a PrecacheRequest object.
+		public List<PrecacheRequest> getImageRequestsForMemoryPrecache(int position);
 	}
 
 	public static class PrecacheRequest {
