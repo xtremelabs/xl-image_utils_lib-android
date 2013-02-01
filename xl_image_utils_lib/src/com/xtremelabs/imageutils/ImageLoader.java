@@ -48,6 +48,9 @@ public class ImageLoader {
 	// TODO Have an API call that can get a bitmap without an ImageView.
 	// TODO Make the disk thread pool a priority pool so that preloaded images take lower priority until directly requested.
 
+	/*
+	 * TODO Add documentation that explains that this call should not be used for loading images into fragments.
+	 */
 	public static ImageLoader buildImageLoaderForActivity(Activity activity) {
 		return new ImageLoader(activity, activity.getApplicationContext());
 	}
@@ -61,6 +64,9 @@ public class ImageLoader {
 		return new ImageLoader(fragment, fragment.getActivity().getApplicationContext());
 	}
 
+	/*
+	 * TODO See if we can have a reusable constructor for the ImageLoader so we can auto-detect the kind of ImageLoader we need to return.
+	 */
 	public static WidgetImageLoader buildWidgetImageLoader(Object key, Context context) {
 		return new WidgetImageLoader(key, context.getApplicationContext());
 	}
@@ -91,6 +97,9 @@ public class ImageLoader {
 	 * 
 	 * @throws CalledFromWrongThreadException
 	 *             This is thrown if the method is called from off the UI thread.
+	 */
+	/*
+	 * FIXME This call does not work effectively for widgets. This needs to be overridden by the WidgetImageLoader.
 	 */
 	public void destroy() {
 		ThreadChecker.throwErrorIfOffUiThread();

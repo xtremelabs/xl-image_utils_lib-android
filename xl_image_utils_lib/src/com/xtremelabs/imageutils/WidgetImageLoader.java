@@ -11,6 +11,7 @@ public class WidgetImageLoader extends ImageLoader {
 		super(imageLoaderClass, context);
 	}
 
+	// TODO This does not handle bad URIs. The system just crashes.
 	public ImageResponse loadImageSynchronouslyOrQueueNetworkRequest(String uri, Options options, ImageDownloadedListener listener) {
 		if (!isDestroyed()) {
 			if (options == null) {
@@ -39,6 +40,11 @@ public class WidgetImageLoader extends ImageLoader {
 				listener.onImageDownloadFailure();
 			}
 		};
+	}
+
+	@Override
+	public void destroy() {
+		// FIXME We need to implement the destroy method for widgets, and this needs to work off the UI thread.
 	}
 
 	public static interface ImageDownloadedListener {
