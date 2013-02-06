@@ -269,8 +269,8 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	}
 
 	private Dimensions getImageDimensionsFromDisk(File file) throws FileNotFoundException {
+		FileInputStream fileInputStream = null;
 		try {
-			FileInputStream fileInputStream;
 			fileInputStream = new FileInputStream(file);
 			BitmapFactory.Options o = new BitmapFactory.Options();
 			o.inJustDecodeBounds = true;
@@ -279,6 +279,14 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			throw e;
+		} finally {
+			if (fileInputStream != null) {
+				try {
+					fileInputStream.close();
+				} catch (IOException e) {
+					// Do nothing.
+				}
+			}
 		}
 	}
 
