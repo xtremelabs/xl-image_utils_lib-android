@@ -101,6 +101,7 @@ public class DiskDatabaseHelperTests extends ActivityInstrumentationTestCase2<Ma
 
 		String entry;
 
+		// TODO The getLRU logic should be added back in.
 		entry = mDatabaseHelper.getLRU();
 		assertEquals("url1", entry);
 		mDatabaseHelper.deleteEntry(entry);

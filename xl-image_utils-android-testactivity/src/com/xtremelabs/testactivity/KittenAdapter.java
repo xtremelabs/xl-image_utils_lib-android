@@ -76,7 +76,7 @@ public class KittenAdapter extends BaseAdapter {
 			}
 
 			@Override
-			public List<String> onRowPrecacheRequestsForDiskCacheRequired(int position) {
+			public List<String> getRequestsForDiskPrecache(int position) {
 				List<String> list = new ArrayList<String>();
 				if (position % 2 == 0) {
 					list.add((String) getItem(position) + "1");
@@ -88,7 +88,7 @@ public class KittenAdapter extends BaseAdapter {
 			}
 
 			@Override
-			public List<PrecacheRequest> onRowPrecacheRequestsForMemoryCacheRequired(int position) {
+			public List<PrecacheRequest> getImageRequestsForMemoryPrecache(int position) {
 				List<PrecacheRequest> list = new ArrayList<PrecacheRequest>();
 				if (position % 2 == 0) {
 					list.add(PrecacheRequest.generatePrecacheRequest(activity, (String) getItem(position) + "1", mBounds, UnitType.PIXELS));

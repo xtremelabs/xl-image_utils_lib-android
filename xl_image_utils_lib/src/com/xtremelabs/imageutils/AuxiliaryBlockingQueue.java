@@ -7,15 +7,16 @@ import java.util.concurrent.TimeUnit;
 
 public class AuxiliaryBlockingQueue implements BlockingQueue<Runnable> {
 
-	private final AuxiliaryQueue mAuxiliaryQueue;
+	// private final AuxiliaryQueue mAuxiliaryQueue;
 
 	public AuxiliaryBlockingQueue(PriorityAccessor[] accessors) {
-		mAuxiliaryQueue = new AuxiliaryQueue(accessors);
+		// mAuxiliaryQueue = new AuxiliaryQueue(accessors);
 	}
 
 	@Override
 	public Runnable element() {
-		return mAuxiliaryQueue.peek();
+		// return mAuxiliaryQueue.peek();
+		return null;
 	}
 
 	@Override
