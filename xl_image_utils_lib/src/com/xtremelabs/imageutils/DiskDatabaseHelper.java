@@ -187,8 +187,4 @@ public class DiskDatabaseHelper extends SQLiteOpenHelper {
 	public Collection<FileEntry> getAllEntries() {
 		return mDatabaseCache.getAllEntries();
 	}
-
-	public String getLRU() {
-		return mDatabaseCache.getLRU();
-	}
 }
