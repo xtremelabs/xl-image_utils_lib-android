@@ -76,25 +76,25 @@ public class KittenAdapter extends BaseAdapter {
 			}
 
 			@Override
-			public List<String> onRowPrecacheRequestsForDiskCacheRequired(int position) {
-				List<String> list = new ArrayList<String>();
-				if (position % 2 == 0) {
-					list.add((String) getItem(position) + "1");
-					list.add((String) getItem(position) + "2");
-				} else {
-					list.add((String) getItem(position));
-				}
-				return list;
-			}
-
-			@Override
-			public List<PrecacheRequest> onRowPrecacheRequestsForMemoryCacheRequired(int position) {
+			public List<PrecacheRequest> getImageRequestsForMemoryPrecache(int position) {
 				List<PrecacheRequest> list = new ArrayList<PrecacheRequest>();
 				if (position % 2 == 0) {
 					list.add(PrecacheRequest.generatePrecacheRequest(activity, (String) getItem(position) + "1", mBounds, UnitType.PIXELS));
 					list.add(PrecacheRequest.generatePrecacheRequest(activity, (String) getItem(position) + "2", mBounds, UnitType.PIXELS));
 				} else {
 					list.add(PrecacheRequest.generatePrecacheRequest(activity, (String) getItem(position), mBounds, UnitType.PIXELS));
+				}
+				return list;
+			}
+
+			@Override
+			public List<String> getRequestsForDiskPrecache(int position) {
+				List<String> list = new ArrayList<String>();
+				if (position % 2 == 0) {
+					list.add((String) getItem(position) + "1");
+					list.add((String) getItem(position) + "2");
+				} else {
+					list.add((String) getItem(position));
 				}
 				return list;
 			}

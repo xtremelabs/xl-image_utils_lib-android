@@ -1,8 +1,18 @@
 package com.xtremelabs.imageutils;
 
-public abstract class PriorityAccessor {
+public interface PriorityAccessor {
 
-	public abstract Prioritizable pop();
+	public void attach(Prioritizable prioritizable);
 
-	public abstract void attach(Prioritizable prioritizable);
+	public boolean detach(Prioritizable p);
+
+	public Prioritizable detachHighestPriorityItem();
+
+	public int size();
+
+	public Prioritizable peek();
+
+	public void clear();
+
+	boolean contains(Prioritizable prioritizable);
 }
