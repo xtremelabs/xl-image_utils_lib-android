@@ -1,166 +1,183 @@
 package com.xtremelabs.imageutils;
 
+import java.util.AbstractQueue;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
-public class AuxiliaryBlockingQueue implements BlockingQueue<Runnable> {
+public class AuxiliaryBlockingQueue extends AbstractQueue<Runnable> implements BlockingQueue<Runnable> {
 
-	// private final AuxiliaryQueue mAuxiliaryQueue;
+	private final AuxiliaryQueue mQueue;
+	private final ReentrantLock mLock = new ReentrantLock(true);
+	private final Condition mNotEmpty;
+	private int mCount = 0;
 
 	public AuxiliaryBlockingQueue(PriorityAccessor[] accessors) {
-		// mAuxiliaryQueue = new AuxiliaryQueue(accessors);
-	}
-
-	@Override
-	public Runnable element() {
-		// return mAuxiliaryQueue.peek();
-		return null;
-	}
-
-	@Override
-	public Runnable peek() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Runnable poll() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Runnable remove() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public boolean addAll(Collection<? extends Runnable> arg0) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public void clear() {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public boolean containsAll(Collection<?> arg0) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean isEmpty() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public Iterator<Runnable> iterator() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public boolean removeAll(Collection<?> arg0) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean retainAll(Collection<?> arg0) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public int size() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public Object[] toArray() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public <T> T[] toArray(T[] array) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public boolean add(Runnable e) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean contains(Object o) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public int drainTo(Collection<? super Runnable> arg0) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public int drainTo(Collection<? super Runnable> arg0, int arg1) {
-		// TODO Auto-generated method stub
-		return 0;
+		mQueue = new AuxiliaryQueue(accessors);
+		mNotEmpty = mLock.newCondition();
 	}
 
 	@Override
 	public boolean offer(Runnable e) {
-		// TODO Auto-generated method stub
-		return false;
+		checkNotNull(e);
+		mLock.lock();
+		try {
+			insert(e);
+			return true;
+		} finally {
+			mLock.unlock();
+		}
+	}
+
+	@Override
+	public synchronized Runnable peek() {
+		mLock.lock();
+		try {
+			return mQueue.peek();
+		} finally {
+			mLock.unlock();
+		}
+	}
+
+	@Override
+	public Runnable poll() {
+		mLock.lock();
+		try {
+			return extract();
+		} finally {
+			mLock.unlock();
+		}
+	}
+
+	@Override
+	public Iterator<Runnable> iterator() {
+		// TODO Fill this in.
+		return null;
+	}
+
+	@Override
+	public int size() {
+		mLock.lock();
+		try {
+			return mQueue.size();
+		} finally {
+			mLock.unlock();
+		}
+	}
+
+	@Override
+	public int drainTo(Collection<? super Runnable> collection) {
+		checkNotNull(collection);
+		mLock.lock();
+		try {
+			int numDrained = 0;
+			while (mQueue.size() > 0) {
+				collection.add(extract());
+				numDrained++;
+			}
+			// FIXME We need to signal an empty queue here.
+			return numDrained;
+		} finally {
+			mLock.unlock();
+		}
+	}
+
+	@Override
+	public int drainTo(Collection<? super Runnable> collection, int maxNumberToDrain) {
+		checkNotNull(collection);
+		mLock.lock();
+		try {
+			int numDrained = 0;
+			for (int i = 0; i < maxNumberToDrain; i++) {
+				Runnable runnable = extract();
+				if (runnable == null) {
+					break;
+				} else {
+					collection.add(runnable);
+					numDrained++;
+				}
+			}
+			return numDrained;
+		} finally {
+			mLock.unlock();
+		}
 	}
 
 	@Override
 	public boolean offer(Runnable e, long timeout, TimeUnit unit) throws InterruptedException {
-		// TODO Auto-generated method stub
-		return false;
+		checkNotNull(e);
+		mLock.lockInterruptibly();
+		try {
+			insert(e);
+			return true;
+		} finally {
+			mLock.unlock();
+		}
 	}
 
 	@Override
 	public Runnable poll(long timeout, TimeUnit unit) throws InterruptedException {
-		// TODO Auto-generated method stub
-		return null;
+		long nanos = unit.toNanos(timeout);
+		mLock.lockInterruptibly();
+		try {
+			while (mQueue.size() == 0) {
+				if (nanos <= 0)
+					return null;
+				nanos = mNotEmpty.awaitNanos(nanos);
+			}
+			return extract();
+		} finally {
+			mLock.unlock();
+		}
 	}
 
 	@Override
 	public void put(Runnable e) throws InterruptedException {
-		// TODO Auto-generated method stub
-
+		checkNotNull(e);
+		mLock.lockInterruptibly();
+		try {
+			insert(e);
+		} finally {
+			mLock.unlock();
+		}
 	}
 
 	@Override
 	public int remainingCapacity() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public boolean remove(Object o) {
-		// TODO Auto-generated method stub
-		return false;
+		return Integer.MAX_VALUE;
 	}
 
 	@Override
 	public Runnable take() throws InterruptedException {
-		// TODO Auto-generated method stub
-		return null;
+		mLock.lockInterruptibly();
+		try {
+			while (mQueue.isEmpty())
+				mNotEmpty.await();
+			return extract();
+		} finally {
+			mLock.unlock();
+		}
 	}
 
+	private void insert(Runnable r) {
+		mQueue.add((Prioritizable) r);
+		mCount++;
+		if (mCount == 1)
+			mNotEmpty.signal();
+	}
+
+	private Runnable extract() {
+		Runnable runnable = mQueue.removeHighestPriorityRunnable();
+		if (runnable != null)
+			mCount--;
+		return runnable;
+	}
+
+	private void checkNotNull(Object o) {
+		if (o == null)
+			throw new NullPointerException();
+	}
 }
