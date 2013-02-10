@@ -8,6 +8,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+import android.os.AsyncTask;
+
 public class AuxiliaryBlockingQueue extends AbstractQueue<Runnable> implements BlockingQueue<Runnable> {
 
 	private final AuxiliaryQueue mQueue;
@@ -18,6 +20,21 @@ public class AuxiliaryBlockingQueue extends AbstractQueue<Runnable> implements B
 	public AuxiliaryBlockingQueue(PriorityAccessor[] accessors) {
 		mQueue = new AuxiliaryQueue(accessors);
 		mNotEmpty = mLock.newCondition();
+	}
+
+	public void bump(final Runnable e) {
+		new AsyncTask<Void, Void, Void>() {
+			@Override
+			protected Void doInBackground(Void... params) {
+				mLock.lock();
+				try {
+					mQueue.bump((Prioritizable) e);
+					return null;
+				} finally {
+					mLock.unlock();
+				}
+			}
+		}.execute();
 	}
 
 	@Override

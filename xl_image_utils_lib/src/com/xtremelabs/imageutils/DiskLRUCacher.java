@@ -27,6 +27,8 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -49,7 +51,9 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	 * 
 	 * It is highly recommended to leave the number of decode threads at one. Increasing this number too high will cause performance problems.
 	 */
-	private final LifoThreadPool mThreadPool = new LifoThreadPool(1);
+	// private final LifoThreadPool mThreadPool = new LifoThreadPool(1);
+	private final AuxiliaryBlockingQueue mBlockingQueue = new AuxiliaryBlockingQueue(new PriorityAccessor[] { new StackPriorityAccessor(), new StackPriorityAccessor() });
+	private final ThreadPoolExecutor mExecutor = new ThreadPoolExecutor(1, 1, 0, TimeUnit.MILLISECONDS, mBlockingQueue);
 
 	public DiskLRUCacher(Context appContext, ImageDiskObserver imageDecodeObserver) {
 		mDiskManager = new DiskManager("img", appContext);
@@ -87,7 +91,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	@Override
 	public void retrieveImageDetails(final String uri) {
 		if (mPermanentStorageMap.get(uri) == null) {
-			mThreadPool.execute(new Runnable() {
+			mExecutor.execute(new DiskRunnable() {
 				@Override
 				public void run() {
 					cacheImageDetails(uri);
@@ -131,7 +135,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 
 	@Override
 	public void getBitmapAsynchronouslyFromDisk(final DecodeSignature decodeSignature, final ImageReturnedFrom returnedFrom, final boolean noPreviousNetworkRequest) {
-		Runnable runnable = new Runnable() {
+		Runnable runnable = new DiskRunnable() {
 			@Override
 			public void run() {
 				boolean failed = false;
@@ -159,7 +163,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		};
 
 		if (mapRunnableToParameters(runnable, decodeSignature)) {
-			mThreadPool.execute(runnable);
+			mExecutor.execute(runnable);
 		}
 	}
 
@@ -177,7 +181,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	@Override
 	public void bumpInQueue(DecodeSignature decodeSignature) {
 		synchronized (mRequestToRunnableMap) {
-			mThreadPool.bump(mRequestToRunnableMap.get(decodeSignature));
+			mBlockingQueue.bump(mRequestToRunnableMap.get(decodeSignature));
 		}
 	}
 
@@ -329,5 +333,12 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 
 	void stubImageDiskObserver(ImageDiskObserver imageDecodeObserver) {
 		mImageDiskObserver = imageDecodeObserver;
+	}
+
+	private abstract class DiskRunnable implements Prioritizable {
+		@Override
+		public int getTargetPriorityAccessorIndex() {
+			return 0;
+		}
 	}
 }
