@@ -34,15 +34,14 @@ class ImageDownloader implements ImageNetworkInterface {
 	private final HashMap<String, ImageDownloadingRunnable> mUrlToRunnableMap = new HashMap<String, ImageDownloadingRunnable>();
 	private NetworkRequestCreator mNetworkRequestCreator = new DefaultNetworkRequestCreator();
 
-	/*
-	 * TODO: Research into lowering the number of available threads for the network
-	 */
-	// private final LifoThreadPool mThreadPool = new LifoThreadPool(3);
-	// private final AuxiliaryBlockingQueue mBlockingQueue = new AuxiliaryBlockingQueue(new PriorityAccessor[] { new StackPriorityAccessor() });
 	private final AuxiliaryExecutor mExecutor;
 
 	public ImageDownloader(NetworkToDiskInterface networkToDiskInterface, ImageDownloadObserver imageDownloadObserver) {
+		/*
+		 * TODO: Research into lowering the number of available threads for the network
+		 */
 		Builder builder = new Builder(new PriorityAccessor[] { new StackPriorityAccessor() });
+		builder.setCorePoolSize(3);
 		mExecutor = builder.create();
 		mNetworkToDiskInterface = networkToDiskInterface;
 		mImageDownloadObserver = imageDownloadObserver;
@@ -78,7 +77,7 @@ class ImageDownloader implements ImageNetworkInterface {
 		mUrlToRunnableMap.remove(url);
 	}
 
-	class ImageDownloadingRunnable implements Prioritizable {
+	class ImageDownloadingRunnable extends Prioritizable {
 		private final String mUrl;
 
 		public ImageDownloadingRunnable(String url) {
@@ -86,7 +85,7 @@ class ImageDownloader implements ImageNetworkInterface {
 		}
 
 		@Override
-		public void run() {
+		public void execute() {
 			try {
 				mNetworkRequestCreator.getInputStream(mUrl, new InputStreamListener() {
 					@Override
@@ -154,6 +153,11 @@ class ImageDownloader implements ImageNetworkInterface {
 		@Override
 		public int getTargetPriorityAccessorIndex() {
 			return 0;
+		}
+
+		@Override
+		public Request<?> getRequest() {
+			return null;
 		}
 	}
 
