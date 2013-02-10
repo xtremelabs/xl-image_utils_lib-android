@@ -19,11 +19,10 @@ package com.xtremelabs.imageutils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import android.util.Log;
 
+import com.xtremelabs.imageutils.AuxiliaryExecutor.Builder;
 import com.xtremelabs.imageutils.NetworkRequestCreator.InputStreamListener;
 
 class ImageDownloader implements ImageNetworkInterface {
@@ -39,10 +38,12 @@ class ImageDownloader implements ImageNetworkInterface {
 	 * TODO: Research into lowering the number of available threads for the network
 	 */
 	// private final LifoThreadPool mThreadPool = new LifoThreadPool(3);
-	private final AuxiliaryBlockingQueue mBlockingQueue = new AuxiliaryBlockingQueue(new PriorityAccessor[] { new StackPriorityAccessor() });
-	private final ThreadPoolExecutor mExecutor = new ThreadPoolExecutor(3, 3, 0, TimeUnit.MILLISECONDS, mBlockingQueue);
+	// private final AuxiliaryBlockingQueue mBlockingQueue = new AuxiliaryBlockingQueue(new PriorityAccessor[] { new StackPriorityAccessor() });
+	private final AuxiliaryExecutor mExecutor;
 
 	public ImageDownloader(NetworkToDiskInterface networkToDiskInterface, ImageDownloadObserver imageDownloadObserver) {
+		Builder builder = new Builder(new PriorityAccessor[] { new StackPriorityAccessor() });
+		mExecutor = builder.create();
 		mNetworkToDiskInterface = networkToDiskInterface;
 		mImageDownloadObserver = imageDownloadObserver;
 	}
@@ -51,7 +52,7 @@ class ImageDownloader implements ImageNetworkInterface {
 	public synchronized void bump(String url) {
 		ImageDownloadingRunnable runnable = mUrlToRunnableMap.get(url);
 		if (runnable != null) {
-			mBlockingQueue.bump(runnable);
+			mExecutor.bump(runnable);
 		}
 	}
 
