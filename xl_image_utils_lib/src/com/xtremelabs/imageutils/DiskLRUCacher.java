@@ -45,15 +45,16 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	private final Map<String, Dimensions> mPermanentStorageMap = new LRUMap<String, Dimensions>(34, MAX_PERMANENT_STORAGE_IMAGE_DIMENSIONS_CACHED);
 	private final HashMap<DecodeSignature, Runnable> mRequestToRunnableMap = new HashMap<DecodeSignature, Runnable>();
 
-	/*
-	 * WARNING: Increasing the number of threads for image decoding will lag the UI thread.
-	 * 
-	 * It is highly recommended to leave the number of decode threads at one. Increasing this number too high will cause performance problems.
-	 */
 	private final AuxiliaryExecutor mExecutor;
 
 	public DiskLRUCacher(Context appContext, ImageDiskObserver imageDecodeObserver) {
+		/*
+		 * WARNING: Increasing the number of threads for image decoding will lag the UI thread.
+		 * 
+		 * It is highly recommended to leave the number of decode threads at one. Increasing this number too high will cause performance problems.
+		 */
 		Builder builder = new Builder(new PriorityAccessor[] { new StackPriorityAccessor() });
+		builder.setCorePoolSize(1);
 		mExecutor = builder.create();
 		mDiskManager = new DiskManager("img", appContext);
 		mDatabaseHelper = new DiskDatabaseHelper(appContext, mDiskDatabaseHelperObserver);
@@ -92,7 +93,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		if (mPermanentStorageMap.get(uri) == null) {
 			mExecutor.execute(new DiskRunnable() {
 				@Override
-				public void run() {
+				public void execute() {
 					cacheImageDetails(uri);
 				}
 			});
@@ -136,7 +137,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	public void getBitmapAsynchronouslyFromDisk(final DecodeSignature decodeSignature, final ImageReturnedFrom returnedFrom, final boolean noPreviousNetworkRequest) {
 		Runnable runnable = new DiskRunnable() {
 			@Override
-			public void run() {
+			public void execute() {
 				boolean failed = false;
 				String errorMessage = null;
 				Bitmap bitmap = null;
@@ -334,10 +335,15 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		mImageDiskObserver = imageDecodeObserver;
 	}
 
-	private abstract class DiskRunnable implements Prioritizable {
+	private abstract class DiskRunnable extends Prioritizable {
 		@Override
 		public int getTargetPriorityAccessorIndex() {
 			return 0;
+		}
+
+		@Override
+		public Request<?> getRequest() {
+			return null;
 		}
 	}
 }

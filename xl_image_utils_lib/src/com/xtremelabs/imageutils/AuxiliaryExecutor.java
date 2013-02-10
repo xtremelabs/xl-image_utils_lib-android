@@ -1,5 +1,11 @@
 package com.xtremelabs.imageutils;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -7,8 +13,10 @@ class AuxiliaryExecutor {
 
 	private final ThreadPoolExecutor mExecutor;
 	private final AuxiliaryBlockingQueue mQueue;
+	private final Map<Request<?>, List<Prioritizable>> mQueuedRequests = new HashMap<Request<?>, List<Prioritizable>>();
+	private final Set<Request<?>> mRunningRequests = new HashSet<Request<?>>();
 
-	public AuxiliaryExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, AuxiliaryBlockingQueue queue) {
+	private AuxiliaryExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, AuxiliaryBlockingQueue queue) {
 		mQueue = queue;
 		mExecutor = new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, unit, mQueue);
 	}
@@ -52,6 +60,24 @@ class AuxiliaryExecutor {
 			AuxiliaryBlockingQueue queue = new AuxiliaryBlockingQueue(mPriorityAccessors);
 			AuxiliaryExecutor executor = new AuxiliaryExecutor(mCorePoolSize, mCorePoolSize + mAdditionalThreads, mKeepAliveTime, mTimeUnit, queue);
 			return executor;
+		}
+	}
+
+	private class AuxiliaryThreadPool extends ThreadPoolExecutor {
+
+		public AuxiliaryThreadPool(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue) {
+			super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
+		}
+
+		@Override
+		protected void beforeExecute(Thread t, Runnable r) {
+
+			super.beforeExecute(t, r);
+		}
+
+		@Override
+		protected void afterExecute(Runnable r, Throwable t) {
+			super.afterExecute(r, t);
 		}
 	}
 }

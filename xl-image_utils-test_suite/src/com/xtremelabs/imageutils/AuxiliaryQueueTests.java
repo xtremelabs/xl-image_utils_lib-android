@@ -6,34 +6,49 @@ public class AuxiliaryQueueTests extends AndroidTestCase {
 	private AuxiliaryQueue mQueue;
 	private final Prioritizable mValidPrioritizable1 = new Prioritizable() {
 		@Override
-		public void run() {
+		public int getTargetPriorityAccessorIndex() {
+			return 0;
 		}
 
 		@Override
-		public int getTargetPriorityAccessorIndex() {
-			return 0;
+		public Request<?> getRequest() {
+			return null;
+		}
+
+		@Override
+		public void execute() {
 		}
 	};
 
 	private final Prioritizable mValidPrioritizable2 = new Prioritizable() {
 		@Override
-		public void run() {
+		public int getTargetPriorityAccessorIndex() {
+			return 0;
 		}
 
 		@Override
-		public int getTargetPriorityAccessorIndex() {
-			return 0;
+		public Request<?> getRequest() {
+			return null;
+		}
+
+		@Override
+		public void execute() {
 		}
 	};
 
 	private final Prioritizable mInvalidPrioritizable = new Prioritizable() {
 		@Override
-		public void run() {
+		public int getTargetPriorityAccessorIndex() {
+			return -1;
 		}
 
 		@Override
-		public int getTargetPriorityAccessorIndex() {
-			return -1;
+		public Request<?> getRequest() {
+			return null;
+		}
+
+		@Override
+		public void execute() {
 		}
 	};
 
