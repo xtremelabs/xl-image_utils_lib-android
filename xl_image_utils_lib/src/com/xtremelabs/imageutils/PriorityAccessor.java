@@ -15,4 +15,6 @@ public interface PriorityAccessor {
 	public void clear();
 
 	boolean contains(Prioritizable prioritizable);
+
+	public void bump(Prioritizable prioritizable);
 }

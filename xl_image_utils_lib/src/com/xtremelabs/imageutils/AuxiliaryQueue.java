@@ -19,6 +19,11 @@ public class AuxiliaryQueue {
 		}
 	}
 
+	public synchronized void add(Prioritizable e) {
+		int index = e.getTargetPriorityAccessorIndex();
+		mPriorityAccessors[index].attach(e);
+	}
+
 	public synchronized Prioritizable removeHighestPriorityRunnable() {
 		Prioritizable prioritizable;
 		for (int i = 0; i < mNumAccessors; i++) {
@@ -27,11 +32,6 @@ public class AuxiliaryQueue {
 			}
 		}
 		return null;
-	}
-
-	public synchronized void add(Prioritizable e) {
-		int index = e.getTargetPriorityAccessorIndex();
-		mPriorityAccessors[index].attach(e);
 	}
 
 	public synchronized int size() {
@@ -127,5 +127,9 @@ public class AuxiliaryQueue {
 
 	public boolean isEmpty() {
 		return size() == 0;
+	}
+
+	public void bump(Prioritizable prioritizable) {
+		mPriorityAccessors[prioritizable.getTargetPriorityAccessorIndex()].bump(prioritizable);
 	}
 }

@@ -19,6 +19,8 @@ package com.xtremelabs.imageutils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import android.util.Log;
 
@@ -36,7 +38,9 @@ class ImageDownloader implements ImageNetworkInterface {
 	/*
 	 * TODO: Research into lowering the number of available threads for the network
 	 */
-	private final LifoThreadPool mThreadPool = new LifoThreadPool(3);
+	// private final LifoThreadPool mThreadPool = new LifoThreadPool(3);
+	private final AuxiliaryBlockingQueue mBlockingQueue = new AuxiliaryBlockingQueue(new PriorityAccessor[] { new StackPriorityAccessor() });
+	private final ThreadPoolExecutor mExecutor = new ThreadPoolExecutor(3, 3, 0, TimeUnit.MILLISECONDS, mBlockingQueue);
 
 	public ImageDownloader(NetworkToDiskInterface networkToDiskInterface, ImageDownloadObserver imageDownloadObserver) {
 		mNetworkToDiskInterface = networkToDiskInterface;
@@ -47,7 +51,7 @@ class ImageDownloader implements ImageNetworkInterface {
 	public synchronized void bump(String url) {
 		ImageDownloadingRunnable runnable = mUrlToRunnableMap.get(url);
 		if (runnable != null) {
-			mThreadPool.bump(runnable);
+			mBlockingQueue.bump(runnable);
 		}
 	}
 
@@ -56,7 +60,7 @@ class ImageDownloader implements ImageNetworkInterface {
 		ImageDownloadingRunnable runnable = new ImageDownloadingRunnable(url);
 		if (!mUrlToRunnableMap.containsKey(url)) {
 			mUrlToRunnableMap.put(url, runnable);
-			mThreadPool.execute(runnable);
+			mExecutor.execute(runnable);
 		}
 	}
 
@@ -73,7 +77,7 @@ class ImageDownloader implements ImageNetworkInterface {
 		mUrlToRunnableMap.remove(url);
 	}
 
-	class ImageDownloadingRunnable implements Runnable {
+	class ImageDownloadingRunnable implements Prioritizable {
 		private final String mUrl;
 
 		public ImageDownloadingRunnable(String url) {
@@ -144,6 +148,11 @@ class ImageDownloader implements ImageNetworkInterface {
 				}
 			}
 			return errorMessage;
+		}
+
+		@Override
+		public int getTargetPriorityAccessorIndex() {
+			return 0;
 		}
 	}
 

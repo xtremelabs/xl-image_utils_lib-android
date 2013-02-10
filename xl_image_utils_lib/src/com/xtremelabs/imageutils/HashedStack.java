@@ -168,8 +168,8 @@ public class HashedStack<T> implements Iterable<T> {
 	}
 
 	public synchronized void bump(T e) {
-		remove(e);
-		push(e);
+		if (remove(e))
+			push(e);
 	}
 
 	public T peek() {
