@@ -27,13 +27,12 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
+import com.xtremelabs.imageutils.AuxiliaryExecutor.Builder;
 import com.xtremelabs.imageutils.DiskDatabaseHelper.DiskDatabaseHelperObserver;
 
 public class DiskLRUCacher implements ImageDiskCacherInterface {
@@ -51,11 +50,11 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	 * 
 	 * It is highly recommended to leave the number of decode threads at one. Increasing this number too high will cause performance problems.
 	 */
-	// private final LifoThreadPool mThreadPool = new LifoThreadPool(1);
-	private final AuxiliaryBlockingQueue mBlockingQueue = new AuxiliaryBlockingQueue(new PriorityAccessor[] { new StackPriorityAccessor(), new StackPriorityAccessor() });
-	private final ThreadPoolExecutor mExecutor = new ThreadPoolExecutor(1, 1, 0, TimeUnit.MILLISECONDS, mBlockingQueue);
+	private final AuxiliaryExecutor mExecutor;
 
 	public DiskLRUCacher(Context appContext, ImageDiskObserver imageDecodeObserver) {
+		Builder builder = new Builder(new PriorityAccessor[] { new StackPriorityAccessor() });
+		mExecutor = builder.create();
 		mDiskManager = new DiskManager("img", appContext);
 		mDatabaseHelper = new DiskDatabaseHelper(appContext, mDiskDatabaseHelperObserver);
 		mImageDiskObserver = imageDecodeObserver;
@@ -181,7 +180,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	@Override
 	public void bumpInQueue(DecodeSignature decodeSignature) {
 		synchronized (mRequestToRunnableMap) {
-			mBlockingQueue.bump(mRequestToRunnableMap.get(decodeSignature));
+			mExecutor.bump(mRequestToRunnableMap.get(decodeSignature));
 		}
 	}
 
