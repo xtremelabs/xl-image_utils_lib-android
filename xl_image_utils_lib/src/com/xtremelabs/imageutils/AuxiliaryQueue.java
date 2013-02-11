@@ -102,11 +102,13 @@ public class AuxiliaryQueue {
 		}
 	}
 
-	public boolean remove(Prioritizable prioritizable, OnRemovedListener listener) {
+	public boolean remove(Prioritizable prioritizable) {
 		PriorityAccessor accessor = mPriorityAccessors[prioritizable.getTargetPriorityAccessorIndex()];
-		boolean detached = accessor.detach(prioritizable);
+		return accessor.detach(prioritizable);
+	}
 
-		if (detached) {
+	public boolean remove(Prioritizable prioritizable, OnRemovedListener listener) {
+		if (remove(prioritizable)) {
 			if (listener != null) {
 				listener.onRemoved();
 			}

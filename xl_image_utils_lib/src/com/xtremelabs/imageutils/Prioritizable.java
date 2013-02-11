@@ -1,7 +1,7 @@
 package com.xtremelabs.imageutils;
 
 public abstract class Prioritizable implements Runnable {
-	public boolean mIsCancelled = false;
+	private boolean mIsCancelled = false;
 
 	public abstract int getTargetPriorityAccessorIndex();
 

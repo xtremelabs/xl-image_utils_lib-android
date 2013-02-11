@@ -1,10 +1,5 @@
 package com.xtremelabs.imageutils;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -13,20 +8,58 @@ class AuxiliaryExecutor {
 
 	private final ThreadPoolExecutor mExecutor;
 	private final AuxiliaryBlockingQueue mQueue;
-	private final Map<Request<?>, List<Prioritizable>> mQueuedRequests = new HashMap<Request<?>, List<Prioritizable>>();
-	private final Set<Request<?>> mRunningRequests = new HashSet<Request<?>>();
+
+	// private final Map<Request<?>, List<Prioritizable>> mQueuedRequests = new HashMap<Request<?>, List<Prioritizable>>();
+	// private final Set<Request<?>> mRunningRequests = new HashSet<Request<?>>();
 
 	private AuxiliaryExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, AuxiliaryBlockingQueue queue) {
 		mQueue = queue;
-		mExecutor = new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, unit, mQueue);
+		mExecutor = new AuxiliaryThreadPool(corePoolSize, maximumPoolSize, keepAliveTime, unit, mQueue);
 	}
 
-	public void execute(Runnable runnable) {
-		mExecutor.execute(runnable);
+	public synchronized void execute(Prioritizable prioritizable) {
+		// Request<?> request = prioritizable.getRequest();
+		//
+		// if (mRunningRequests.contains(request)) {
+		// prioritizable.cleanUp();
+		// Log.d(ImageLoader.TAG, "Preventing execution.");
+		// } else {
+		// Log.d(ImageLoader.TAG, "Queuing runnable...");
+		// List<Prioritizable> list = mQueuedRequests.get(request);
+		// if (list == null) {
+		// list = new ArrayList<Prioritizable>();
+		// mQueuedRequests.put(request, list);
+		// }
+		// list.add(prioritizable);
+
+		mExecutor.execute(prioritizable);
+		// }
 	}
 
-	public void bump(Runnable runnable) {
+	public void bump(Prioritizable runnable) {
 		mQueue.bump(runnable);
+	}
+
+	private synchronized void onPreExecute(Prioritizable prioritizable) {
+		// Request<?> request = prioritizable.getRequest();
+		// if (mRunningRequests.contains(request)) {
+		// Log.d(ImageLoader.TAG, "Forcing cancel.");
+		// prioritizable.cancel();
+		// prioritizable.cleanUp();
+		// } else {
+		// mRunningRequests.add(request);
+		// List<Prioritizable> list = mQueuedRequests.remove(request);
+		// if (list != null) {
+		// mQueue.removeAll(list);
+		// for (Prioritizable p : list) {
+		// p.cleanUp();
+		// }
+		// }
+		// }
+	}
+
+	private synchronized void onPostExecute(Prioritizable prioritizable) {
+		// mRunningRequests.remove(prioritizable.getRequest());
 	}
 
 	static class Builder {
@@ -64,13 +97,13 @@ class AuxiliaryExecutor {
 	}
 
 	private class AuxiliaryThreadPool extends ThreadPoolExecutor {
-
-		public AuxiliaryThreadPool(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue) {
+		private AuxiliaryThreadPool(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue) {
 			super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
 		}
 
 		@Override
 		protected void beforeExecute(Thread t, Runnable r) {
+			onPreExecute((Prioritizable) r);
 
 			super.beforeExecute(t, r);
 		}
@@ -78,6 +111,8 @@ class AuxiliaryExecutor {
 		@Override
 		protected void afterExecute(Runnable r, Throwable t) {
 			super.afterExecute(r, t);
+
+			onPostExecute((Prioritizable) r);
 		}
 	}
 }
