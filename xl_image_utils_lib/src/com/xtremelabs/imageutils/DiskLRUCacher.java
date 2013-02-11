@@ -43,7 +43,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	private final DiskDatabaseHelper mDatabaseHelper;
 	private ImageDiskObserver mImageDiskObserver;
 	private final Map<String, Dimensions> mPermanentStorageMap = new LRUMap<String, Dimensions>(34, MAX_PERMANENT_STORAGE_IMAGE_DIMENSIONS_CACHED);
-	private final HashMap<DecodeSignature, Runnable> mRequestToRunnableMap = new HashMap<DecodeSignature, Runnable>();
+	private final Map<DecodeSignature, DiskRunnable> mRequestToRunnableMap = new HashMap<DecodeSignature, DiskRunnable>();
 
 	private final AuxiliaryExecutor mExecutor;
 
@@ -96,6 +96,11 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 				public void execute() {
 					cacheImageDetails(uri);
 				}
+
+				@Override
+				public Request<?> getRequest() {
+					return new Request<String>(uri);
+				}
 			});
 		}
 	}
@@ -135,7 +140,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 
 	@Override
 	public void getBitmapAsynchronouslyFromDisk(final DecodeSignature decodeSignature, final ImageReturnedFrom returnedFrom, final boolean noPreviousNetworkRequest) {
-		Runnable runnable = new DiskRunnable() {
+		DiskRunnable runnable = new DiskRunnable() {
 			@Override
 			public void execute() {
 				boolean failed = false;
@@ -159,6 +164,11 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 					mDatabaseHelper.deleteEntry(decodeSignature.mUri);
 					mImageDiskObserver.onImageDecodeFailed(decodeSignature, errorMessage);
 				}
+			}
+
+			@Override
+			public Request<?> getRequest() {
+				return new Request<DecodeSignature>(decodeSignature);
 			}
 		};
 
@@ -215,7 +225,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		mPermanentStorageMap.remove(uri);
 	}
 
-	private boolean mapRunnableToParameters(Runnable runnable, DecodeSignature parameters) {
+	private boolean mapRunnableToParameters(DiskRunnable runnable, DecodeSignature parameters) {
 		synchronized (mRequestToRunnableMap) {
 			if (!mRequestToRunnableMap.containsKey(parameters)) {
 				mRequestToRunnableMap.put(parameters, runnable);
@@ -339,11 +349,6 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		@Override
 		public int getTargetPriorityAccessorIndex() {
 			return 0;
-		}
-
-		@Override
-		public Request<?> getRequest() {
-			return null;
 		}
 	}
 }

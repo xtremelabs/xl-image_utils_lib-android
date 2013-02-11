@@ -124,6 +124,34 @@ public class AuxiliaryBlockingQueue extends AbstractQueue<Runnable> implements B
 	}
 
 	@Override
+	public boolean remove(Object object) {
+		mLock.lock();
+		try {
+			return mQueue.remove((Prioritizable) object);
+		} finally {
+			mLock.unlock();
+		}
+	}
+
+	@Override
+	public boolean removeAll(java.util.Collection<?> collection) {
+		checkNotNull(collection);
+
+		mLock.lock();
+		try {
+			boolean modified = false;
+			for (Object o : collection) {
+				if (mQueue.remove((Prioritizable) o)) {
+					modified = true;
+				}
+			}
+			return modified;
+		} finally {
+			mLock.unlock();
+		}
+	}
+
+	@Override
 	public boolean offer(Runnable e, long timeout, TimeUnit unit) throws InterruptedException {
 		checkNotNull(e);
 		mLock.lockInterruptibly();
