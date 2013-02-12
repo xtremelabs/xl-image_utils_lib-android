@@ -19,17 +19,11 @@ package com.xtremelabs.imageutils;
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
-import android.test.ActivityInstrumentationTestCase2;
+import android.test.AndroidTestCase;
 
-import com.xtremelabs.testactivity.MainActivity;
-
-public class AdvancedMemoryCacherTests extends ActivityInstrumentationTestCase2<MainActivity> {
+public class AdvancedMemoryCacherTests extends AndroidTestCase {
 	private AdvancedMemoryLRUCacher mMemCache;
 	private Bitmap.Config mBitmapConfig;
-
-	public AdvancedMemoryCacherTests() {
-		super(MainActivity.class);
-	}
 
 	@Override
 	protected void setUp() throws Exception {
@@ -73,6 +67,6 @@ public class AdvancedMemoryCacherTests extends ActivityInstrumentationTestCase2<
 	}
 
 	private Bitmap getBitmap() {
-		return ((BitmapDrawable) getActivity().getResources().getDrawable(android.R.drawable.ic_input_add)).getBitmap();
+		return ((BitmapDrawable) getContext().getResources().getDrawable(android.R.drawable.ic_input_add)).getBitmap();
 	}
 }

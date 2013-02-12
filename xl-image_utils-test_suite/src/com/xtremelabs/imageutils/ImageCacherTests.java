@@ -54,20 +54,9 @@ public class ImageCacherTests extends AndroidTestCase {
 			public synchronized AsyncOperationState queueListenerIfRequestPending(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
 				return AsyncOperationState.NOT_QUEUED;
 			}
-
-			@Override
-			public void registerListenerForDetailsRequest(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
-				mCallComplete = true;
-			}
 		});
 
 		mImageCacher.stubDiskCache(new DiskCacheStub() {
-			@Override
-			public void retrieveImageDetails(String uri) {
-				if (mCallComplete) {
-					delayedLoop.flagSuccess();
-				}
-			}
 		});
 
 		ImageRequest imageRequest = new ImageRequest(TEST_URI, new ScalingInfo());
@@ -99,19 +88,6 @@ public class ImageCacherTests extends AndroidTestCase {
 		});
 
 		mImageCacher.stubDiskCache(new DiskCacheStub() {
-			@Override
-			public void retrieveImageDetails(String uri) {
-				delayedLoop.flagFailure();
-			}
-
-			@Override
-			public void bumpInQueue(DecodeSignature decodeSignature) {
-				if (decodeSignature.mSampleSize == 0) {
-					delayedLoop.flagSuccess();
-				} else {
-					delayedLoop.flagFailure();
-				}
-			}
 		});
 
 		ImageRequest imageRequest = new ImageRequest(TEST_URI, new ScalingInfo());
@@ -272,21 +248,9 @@ public class ImageCacherTests extends AndroidTestCase {
 		mCallComplete = false;
 
 		mImageCacher.stubAsynchOperationsMaps(new AsyncOperationsMaps(mImageCacher) {
-			@Override
-			public synchronized void registerListenerForNetworkRequest(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
-				if (imageRequest != null && imageRequest.getRequestType() == RequestType.CACHE_TO_DISK) {
-					delayedLoop.flagSuccess();
-				} else {
-					delayedLoop.flagFailure();
-				}
-			}
 		});
 
 		mImageCacher.stubNetwork(new NetworkInterfaceStub() {
-			@Override
-			public void downloadImageToDisk(String url) {
-				mCallComplete = true;
-			}
 		});
 
 		mImageCacher.stubDiskCache(new DiskCacheStub() {

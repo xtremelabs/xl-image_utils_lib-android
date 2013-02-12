@@ -52,7 +52,7 @@ class OperationTracker<OPERATION_KEY, OPERATION_LIST_VALUE, KEY_REFERENCE> {
 		return mReferenceToOperation.containsKey(keyReference);
 	}
 
-	public void transferOperationToTracker(OPERATION_KEY operationKey, OperationTracker<OPERATION_KEY, OPERATION_LIST_VALUE, KEY_REFERENCE> targetTracker,
+	public List<OPERATION_LIST_VALUE> transferOperationToTracker(OPERATION_KEY operationKey, OperationTracker<OPERATION_KEY, OPERATION_LIST_VALUE, KEY_REFERENCE> targetTracker,
 			KeyReferenceProvider<OPERATION_KEY, OPERATION_LIST_VALUE, KEY_REFERENCE> keyReferenceProvider) {
 
 		List<OPERATION_LIST_VALUE> operationValueList;
@@ -72,6 +72,8 @@ class OperationTracker<OPERATION_KEY, OPERATION_LIST_VALUE, KEY_REFERENCE> {
 				targetTracker.register(operationKey, value, keyReference);
 			}
 		}
+
+		return operationValueList == null ? new ArrayList<OPERATION_LIST_VALUE>() : operationValueList;
 	}
 
 	private synchronized void initializeList(OPERATION_KEY operationKey) {
@@ -120,16 +122,16 @@ class OperationTracker<OPERATION_KEY, OPERATION_LIST_VALUE, KEY_REFERENCE> {
 		return list;
 	}
 
-	public synchronized boolean removeRequest(KEY_REFERENCE keyReference, KeyReferenceProvider<OPERATION_KEY, OPERATION_LIST_VALUE, KEY_REFERENCE> keyReferenceProvider, boolean deleteMapIfEmpty) {
-		boolean removed = false;
+	public synchronized OPERATION_LIST_VALUE removeRequest(KEY_REFERENCE keyReference, KeyReferenceProvider<OPERATION_KEY, OPERATION_LIST_VALUE, KEY_REFERENCE> keyReferenceProvider, boolean deleteMapIfEmpty) {
+		OPERATION_LIST_VALUE valueToRemove = null;
 
 		OPERATION_KEY operationKey = mReferenceToOperation.remove(keyReference);
 		if (operationKey != null) {
 			List<OPERATION_LIST_VALUE> list = mOperationKeyToValueList.get(operationKey);
 			if (list != null) {
-				OPERATION_LIST_VALUE valueToRemove = findOperationListValueToRemove(keyReference, keyReferenceProvider, operationKey, list);
+				valueToRemove = findOperationListValueToRemove(keyReference, keyReferenceProvider, operationKey, list);
 				if (valueToRemove != null) {
-					removed = list.remove(valueToRemove);
+					list.remove(valueToRemove);
 
 					if (deleteMapIfEmpty && list.isEmpty()) {
 						mOperationKeyToValueList.remove(operationKey);
@@ -138,7 +140,7 @@ class OperationTracker<OPERATION_KEY, OPERATION_LIST_VALUE, KEY_REFERENCE> {
 			}
 		}
 
-		return removed;
+		return valueToRemove;
 	}
 
 	private OPERATION_LIST_VALUE findOperationListValueToRemove(KEY_REFERENCE keyReference, KeyReferenceProvider<OPERATION_KEY, OPERATION_LIST_VALUE, KEY_REFERENCE> keyReferenceProvider, OPERATION_KEY operationKey,

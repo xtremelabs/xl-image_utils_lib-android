@@ -16,34 +16,30 @@
 
 package com.xtremelabs.imageutils;
 
-import android.test.ActivityInstrumentationTestCase2;
+import android.app.Activity;
+import android.test.AndroidTestCase;
 import android.test.UiThreadTest;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.ImageView;
 
 import com.xtremelabs.imageutils.ImageLoader.Options;
-import com.xtremelabs.testactivity.MainActivity;
 
-public class ScalingInfoTests extends ActivityInstrumentationTestCase2<MainActivity> {
+public class ScalingInfoTests extends AndroidTestCase {
 	private ImageLoader mImageLoader;
 	private Options options;
 	private ScalingInfo scalingInfo;
 	private ImageView imageView;
 
-	public ScalingInfoTests() {
-		super(MainActivity.class);
-	}
-
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 		options = new Options();
-		imageView = new ImageView(getActivity());
+		imageView = new ImageView(new Activity());
 	}
 
 	@UiThreadTest
 	public void testOptionsOff() {
-		mImageLoader = ImageLoader.buildImageLoaderForActivity(getActivity());
+		mImageLoader = ImageLoader.buildImageLoaderForActivity(new Activity());
 
 		options.autoDetectBounds = false;
 		options.useScreenSizeAsBounds = false;
@@ -55,14 +51,14 @@ public class ScalingInfoTests extends ActivityInstrumentationTestCase2<MainActiv
 
 	@UiThreadTest
 	public void testScreenBounds() {
-		mImageLoader = ImageLoader.buildImageLoaderForActivity(getActivity());
+		mImageLoader = ImageLoader.buildImageLoaderForActivity(new Activity());
 		options.autoDetectBounds = false;
 		options.useScreenSizeAsBounds = true;
 		scalingInfo = mImageLoader.getScalingInfo(imageView, options);
 		assertNotNull(scalingInfo.width);
 		assertNotNull(scalingInfo.height);
 
-		Dimensions screenDimensions = DisplayUtility.getDisplaySize(getActivity().getApplicationContext());
+		Dimensions screenDimensions = DisplayUtility.getDisplaySize(new Activity().getApplicationContext());
 		options.useScreenSizeAsBounds = true;
 		scalingInfo = mImageLoader.getScalingInfo(imageView, options);
 
@@ -76,7 +72,7 @@ public class ScalingInfoTests extends ActivityInstrumentationTestCase2<MainActiv
 
 	@UiThreadTest
 	public void testAutoDetectBounds() {
-		mImageLoader = ImageLoader.buildImageLoaderForActivity(getActivity());
+		mImageLoader = ImageLoader.buildImageLoaderForActivity(new Activity());
 		options.autoDetectBounds = true;
 		options.useScreenSizeAsBounds = false;
 
@@ -101,20 +97,20 @@ public class ScalingInfoTests extends ActivityInstrumentationTestCase2<MainActiv
 
 	@UiThreadTest
 	public void testAutoDetectBoundsWithScreenSize() {
-		mImageLoader = ImageLoader.buildImageLoaderForActivity(getActivity());
+		mImageLoader = ImageLoader.buildImageLoaderForActivity(new Activity());
 		options.autoDetectBounds = true;
 		options.useScreenSizeAsBounds = true;
 
 		setParams(LayoutParams.WRAP_CONTENT, 100);
 		scalingInfo = mImageLoader.getScalingInfo(imageView, options);
-		assertEquals(DisplayUtility.getDisplaySize(getActivity().getApplicationContext()).width.intValue(), scalingInfo.width.intValue());
+		assertEquals(DisplayUtility.getDisplaySize(new Activity().getApplicationContext()).width.intValue(), scalingInfo.width.intValue());
 		assertEquals(100, scalingInfo.height.intValue());
 		assertNull(scalingInfo.sampleSize);
 
 		setParams(100, LayoutParams.WRAP_CONTENT);
 		scalingInfo = mImageLoader.getScalingInfo(imageView, options);
 		assertEquals(100, scalingInfo.width.intValue());
-		assertEquals(DisplayUtility.getDisplaySize(getActivity().getApplicationContext()).height.intValue(), scalingInfo.height.intValue());
+		assertEquals(DisplayUtility.getDisplaySize(new Activity().getApplicationContext()).height.intValue(), scalingInfo.height.intValue());
 		assertNull(scalingInfo.sampleSize);
 
 		setParams(100, 50);
@@ -125,14 +121,14 @@ public class ScalingInfoTests extends ActivityInstrumentationTestCase2<MainActiv
 
 		setParams(50000, 50000);
 		scalingInfo = mImageLoader.getScalingInfo(imageView, options);
-		assertEquals(DisplayUtility.getDisplaySize(getActivity().getApplicationContext()).width.intValue(), scalingInfo.width.intValue());
-		assertEquals(DisplayUtility.getDisplaySize(getActivity().getApplicationContext()).height.intValue(), scalingInfo.height.intValue());
+		assertEquals(DisplayUtility.getDisplaySize(new Activity().getApplicationContext()).width.intValue(), scalingInfo.width.intValue());
+		assertEquals(DisplayUtility.getDisplaySize(new Activity().getApplicationContext()).height.intValue(), scalingInfo.height.intValue());
 		assertNull(scalingInfo.sampleSize);
 	}
 
 	@UiThreadTest
 	public void testOverrideSampleSize() {
-		mImageLoader = ImageLoader.buildImageLoaderForActivity(getActivity());
+		mImageLoader = ImageLoader.buildImageLoaderForActivity(new Activity());
 
 		options.overrideSampleSize = 4;
 		options.autoDetectBounds = true;

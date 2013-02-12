@@ -92,7 +92,10 @@ public class AuxiliaryBlockingQueue extends AbstractQueue<Runnable> implements B
 		try {
 			int numDrained = 0;
 			while (mQueue.size() > 0) {
-				collection.add(extract());
+				Runnable runnable = extract();
+				if (runnable == null)
+					break;
+				collection.add(runnable);
 				numDrained++;
 			}
 			// FIXME We need to signal an empty queue here.
@@ -168,12 +171,14 @@ public class AuxiliaryBlockingQueue extends AbstractQueue<Runnable> implements B
 		long nanos = unit.toNanos(timeout);
 		mLock.lockInterruptibly();
 		try {
-			while (mQueue.size() == 0) {
+			Runnable runnable = null;
+			while (runnable == null) {
 				if (nanos <= 0)
 					return null;
 				nanos = mNotEmpty.awaitNanos(nanos);
+				runnable = extract();
 			}
-			return extract();
+			return runnable;
 		} finally {
 			mLock.unlock();
 		}
@@ -199,9 +204,12 @@ public class AuxiliaryBlockingQueue extends AbstractQueue<Runnable> implements B
 	public Runnable take() throws InterruptedException {
 		mLock.lockInterruptibly();
 		try {
-			while (mQueue.isEmpty())
+			Runnable runnable = extract();
+			while (runnable == null) {
 				mNotEmpty.await();
-			return extract();
+				runnable = extract();
+			}
+			return runnable;
 		} finally {
 			mLock.unlock();
 		}
@@ -215,10 +223,13 @@ public class AuxiliaryBlockingQueue extends AbstractQueue<Runnable> implements B
 	}
 
 	private Runnable extract() {
-		Runnable runnable = mQueue.removeHighestPriorityRunnable();
-		if (runnable != null)
-			mCount--;
-		return runnable;
+		Prioritizable prioritizable;
+		do {
+			prioritizable = mQueue.removeHighestPriorityRunnable();
+			if (prioritizable != null && mCount > 0)
+				mCount--;
+		} while (prioritizable.isCancelled() && mCount > 0);
+		return prioritizable;
 	}
 
 	private void checkNotNull(Object o) {

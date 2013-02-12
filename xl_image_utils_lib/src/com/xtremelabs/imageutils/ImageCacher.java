@@ -25,6 +25,7 @@ import android.os.Build;
 import android.util.Log;
 
 import com.xtremelabs.imageutils.AsyncOperationsMaps.AsyncOperationState;
+import com.xtremelabs.imageutils.AsyncOperationsMaps.OperationsObserver;
 import com.xtremelabs.imageutils.DiskLRUCacher.FileFormatException;
 import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
 
@@ -33,7 +34,7 @@ import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
  * 
  * The job of this class is to "route" messages appropriately in order to ensure synchronized handling of image downloading and caching operations.
  */
-public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, AsyncOperationsObserver {
+public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, OperationsObserver {
 	private static ImageCacher mImageCacher;
 
 	private ImageDiskCacherInterface mDiskCache;
@@ -68,16 +69,10 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 		AsyncOperationState state = mAsyncOperationsMap.queueListenerIfRequestPending(imageRequest, imageCacherListener);
 		switch (state) {
 		case QUEUED_FOR_NETWORK_REQUEST:
-			mNetworkInterface.bump(uri);
-			return generateQueuedResponse();
 		case QUEUED_FOR_DECODE_REQUEST:
-			mDiskCache.bumpInQueue(new DecodeSignature(uri, getSampleSize(imageRequest), imageRequest.getOptions().preferedConfig));
-			return generateQueuedResponse();
 		case QUEUED_FOR_DETAILS_REQUEST:
-			mDiskCache.bumpInQueue(new DecodeSignature(uri, 0, imageRequest.getOptions().preferedConfig));
 			return generateQueuedResponse();
 		case NOT_QUEUED:
-			break;
 		default:
 			break;
 		}
@@ -115,7 +110,8 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 				return generateQueuedResponse();
 			case QUEUED_FOR_DETAILS_REQUEST:
 			case QUEUED_FOR_DECODE_REQUEST:
-				mAsyncOperationsMap.cancelPendingRequest(imageCacherListener);
+				// FIXME I do not believe the "Cancel Pending Request" method does what it should be doing. Needs investigation.
+				// mAsyncOperationsMap.cancelPendingRequest(imageCacherListener);
 				break;
 			case NOT_QUEUED:
 				break;
@@ -190,8 +186,8 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 			return;
 		}
 
-		if (!mAsyncOperationsMap.isNetworkRequestPending(uri) && !mDiskCache.isCached(uri)) {
-			mAsyncOperationsMap.registerListenerForNetworkRequest(imageRequest, new ImageCacherListener() {
+		if (!mAsyncOperationsMap.isNetworkRequestPending(imageRequest) && !mDiskCache.isCached(uri)) {
+			mAsyncOperationsMap.registerNetworkRequest(imageRequest, new ImageCacherListener() {
 				@Override
 				public void onImageAvailable(ImageResponse imageResponse) {
 					// Intentionally blank.
@@ -202,7 +198,6 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 					// Intentionally blank.
 				}
 			});
-			mNetworkInterface.downloadImageToDisk(uri);
 		} else {
 			mDiskCache.bumpOnDisk(uri);
 		}
@@ -225,18 +220,15 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 	}
 
 	private void downloadImageFromNetwork(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
-		mAsyncOperationsMap.registerListenerForNetworkRequest(imageRequest, imageCacherListener);
-		mNetworkInterface.downloadImageToDisk(imageRequest.getUri());
+		mAsyncOperationsMap.registerNetworkRequest(imageRequest, imageCacherListener);
 	}
 
 	private void retrieveImageDetails(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
-		mAsyncOperationsMap.registerListenerForDetailsRequest(imageRequest, imageCacherListener);
-		mDiskCache.retrieveImageDetails(imageRequest.getUri());
+		mAsyncOperationsMap.registerDetailsRequest(imageRequest, imageCacherListener);
 	}
 
 	private void decodeBitmapFromDisk(DecodeSignature decodeSignature, ImageCacherListener imageCacherListener) {
-		mAsyncOperationsMap.registerListenerForDecode(decodeSignature, imageCacherListener);
-		mDiskCache.getBitmapAsynchronouslyFromDisk(decodeSignature, ImageReturnedFrom.DISK, true);
+		mAsyncOperationsMap.registerDecodeRequest(imageCacherListener, decodeSignature);
 	}
 
 	private void validateUri(String uri) {
@@ -276,6 +268,16 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 	}
 
 	@Override
+	public void onImageDetailsRetrieved(String uri) {
+		mAsyncOperationsMap.onDetailsRequestComplete(uri);
+	}
+
+	@Override
+	public void onImageDetailsRequestFailed(String uri, String message) {
+		mAsyncOperationsMap.onDetailsRequestFailed(uri, message);
+	}
+
+	@Override
 	public void onImageDownloaded(String uri) {
 		mAsyncOperationsMap.onDownloadComplete(uri);
 	}
@@ -286,18 +288,18 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 	}
 
 	@Override
-	public void onImageDecodeRequired(DecodeSignature decodeSignature) {
-		mDiskCache.getBitmapAsynchronouslyFromDisk(decodeSignature, ImageReturnedFrom.NETWORK, false);
+	public Prioritizable getNetworkRunnable(ImageRequest imageRequest) {
+		return mNetworkInterface.getNetworkPrioritizable(imageRequest);
 	}
 
 	@Override
-	public boolean isNetworkRequestPending(String uri) {
-		return mNetworkInterface.isNetworkRequestPendingForUrl(uri);
+	public Prioritizable getDetailsRunnable(ImageRequest imageRequest) {
+		return mDiskCache.getDetailsPrioritizable(imageRequest);
 	}
 
 	@Override
-	public boolean isDecodeRequestPending(DecodeSignature decodeSignature) {
-		return mDiskCache.isDecodeRequestPending(decodeSignature);
+	public Prioritizable getDecodeRunnable(DecodeSignature decodeSignature) {
+		return mDiskCache.getDecodePrioritizable(decodeSignature, null);
 	}
 
 	public void setNetworkRequestCreator(NetworkRequestCreator networkRequestCreator) {
@@ -318,21 +320,6 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, As
 
 	void stubAsynchOperationsMaps(AsyncOperationsMaps asyncOperationsMaps) {
 		mAsyncOperationsMap = asyncOperationsMaps;
-	}
-
-	@Override
-	public void onImageDetailsRetrieved(String uri) {
-		mAsyncOperationsMap.onDetailsRequestComplete(uri);
-	}
-
-	@Override
-	public void onImageDetailsRequestFailed(String uri, String message) {
-		mAsyncOperationsMap.onDetailsRequestFailed(uri, message);
-	}
-
-	@Override
-	public void onImageDetailsRequired(String uri) {
-		mDiskCache.retrieveImageDetails(uri);
 	}
 
 	private ImageResponse generateQueuedResponse() {

@@ -18,23 +18,18 @@ package com.xtremelabs.imageutils;
 
 import java.io.IOException;
 
-import android.test.ActivityInstrumentationTestCase2;
+import android.test.AndroidTestCase;
 
 import com.xtremelabs.imageutils.testutils.OneKilobyteStream;
-import com.xtremelabs.testactivity.MainActivity;
 
-public class DiskManagerTests extends ActivityInstrumentationTestCase2<MainActivity> {
+public class DiskManagerTests extends AndroidTestCase {
 	private DiskManager mDiskManager;
-
-	public DiskManagerTests() {
-		super(MainActivity.class);
-	}
 
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 
-		mDiskManager = new DiskManager("testdir", getActivity().getApplicationContext());
+		mDiskManager = new DiskManager("testdir", getContext());
 	}
 
 	public void testBasics() {
