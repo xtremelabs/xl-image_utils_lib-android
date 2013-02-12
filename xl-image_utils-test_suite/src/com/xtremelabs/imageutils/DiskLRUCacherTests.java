@@ -27,35 +27,29 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.StrictMode;
 import android.os.StrictMode.ThreadPolicy;
-import android.test.ActivityInstrumentationTestCase2;
+import android.test.AndroidTestCase;
 
 import com.xtremelabs.imageutils.DiskLRUCacher.FileFormatException;
 import com.xtremelabs.imageutils.test.R;
 import com.xtremelabs.imageutils.testutils.DelayedLoop;
-import com.xtremelabs.testactivity.MainActivity;
 
 @SuppressLint("NewApi")
-public class DiskLRUCacherTests extends ActivityInstrumentationTestCase2<MainActivity> {
+public class DiskLRUCacherTests extends AndroidTestCase {
 	private static final String IMAGE_FILE_NAME = "disk_cache_test_image.jpg";
-	private static final String TEST_URI = "file:///my/image.jpg";
 
 	private DiskLRUCacher mDiskCacher;
 	private String mKittenImageUri = null;
-
-	public DiskLRUCacherTests() {
-		super(MainActivity.class);
-	}
 
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 
 		if (mKittenImageUri == null) {
-			mKittenImageUri = "file://" + getActivity().getCacheDir() + File.separator + IMAGE_FILE_NAME;
+			mKittenImageUri = "file://" + getContext().getCacheDir() + File.separator + IMAGE_FILE_NAME;
 			loadKittenToFile();
 		}
 
-		mDiskCacher = new DiskLRUCacher(getActivity().getApplicationContext(), new BlankImageDiskObserver());
+		mDiskCacher = new DiskLRUCacher(getContext().getApplicationContext(), new BlankImageDiskObserver());
 	}
 
 	@Override
@@ -63,12 +57,6 @@ public class DiskLRUCacherTests extends ActivityInstrumentationTestCase2<MainAct
 		deleteKitten();
 
 		super.finalize();
-	}
-
-	public void testImageDetailsIsOffUIThread() {
-		StrictMode.setThreadPolicy(new ThreadPolicy.Builder().detectAll().penaltyDeath().build());
-		mDiskCacher.retrieveImageDetails(TEST_URI);
-		StrictMode.setThreadPolicy(ThreadPolicy.LAX);
 	}
 
 	public void testImageDetailRetrieval() {
@@ -140,7 +128,7 @@ public class DiskLRUCacherTests extends ActivityInstrumentationTestCase2<MainAct
 			URI uri = new URI(mKittenImageUri);
 			final File imageFile = new File(uri.getPath());
 			final FileOutputStream fos = new FileOutputStream(imageFile);
-			Bitmap bitmap = ((BitmapDrawable) getActivity().getResources().getDrawable(R.drawable.cute_kitten)).getBitmap();
+			Bitmap bitmap = ((BitmapDrawable) getContext().getResources().getDrawable(R.drawable.cute_kitten)).getBitmap();
 			bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
 
 			assertTrue(imageFile.exists());
@@ -152,7 +140,7 @@ public class DiskLRUCacherTests extends ActivityInstrumentationTestCase2<MainAct
 	}
 
 	private void deleteKitten() {
-		final File imageFile = new File(getActivity().getCacheDir() + File.separator + IMAGE_FILE_NAME);
+		final File imageFile = new File(getContext().getCacheDir() + File.separator + IMAGE_FILE_NAME);
 		imageFile.delete();
 	}
 

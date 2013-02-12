@@ -22,7 +22,6 @@ import java.util.HashMap;
 
 import android.util.Log;
 
-import com.xtremelabs.imageutils.AuxiliaryExecutor.Builder;
 import com.xtremelabs.imageutils.NetworkRequestCreator.InputStreamListener;
 
 class ImageDownloader implements ImageNetworkInterface {
@@ -34,34 +33,23 @@ class ImageDownloader implements ImageNetworkInterface {
 	private final HashMap<String, ImageDownloadingRunnable> mUrlToRunnableMap = new HashMap<String, ImageDownloadingRunnable>();
 	private NetworkRequestCreator mNetworkRequestCreator = new DefaultNetworkRequestCreator();
 
-	private final AuxiliaryExecutor mExecutor;
-
 	public ImageDownloader(NetworkToDiskInterface networkToDiskInterface, ImageDownloadObserver imageDownloadObserver) {
-		/*
-		 * TODO: Research into lowering the number of available threads for the network
-		 */
-		Builder builder = new Builder(new PriorityAccessor[] { new StackPriorityAccessor() });
-		builder.setCorePoolSize(3);
-		mExecutor = builder.create();
 		mNetworkToDiskInterface = networkToDiskInterface;
 		mImageDownloadObserver = imageDownloadObserver;
 	}
 
-	@Override
-	public synchronized void bump(String url) {
-		ImageDownloadingRunnable runnable = mUrlToRunnableMap.get(url);
-		if (runnable != null) {
-			mExecutor.bump(runnable);
-		}
-	}
+	// @Override
+	// public synchronized void downloadImageToDisk(final String url) {
+	// ImageDownloadingRunnable runnable = new ImageDownloadingRunnable(url);
+	// if (!mUrlToRunnableMap.containsKey(url)) {
+	// mUrlToRunnableMap.put(url, runnable);
+	// mExecutor.execute(runnable);
+	// }
+	// }
 
 	@Override
-	public synchronized void downloadImageToDisk(final String url) {
-		ImageDownloadingRunnable runnable = new ImageDownloadingRunnable(url);
-		if (!mUrlToRunnableMap.containsKey(url)) {
-			mUrlToRunnableMap.put(url, runnable);
-			mExecutor.execute(runnable);
-		}
+	public Prioritizable getNetworkPrioritizable(ImageRequest imageRequest) {
+		return new ImageDownloadingRunnable(imageRequest.getUri());
 	}
 
 	@Override
@@ -73,36 +61,36 @@ class ImageDownloader implements ImageNetworkInterface {
 		}
 	}
 
-	private synchronized void removeUrlFromMap(String url) {
-		mUrlToRunnableMap.remove(url);
+	private synchronized void removeUriFromMap(String uri) {
+		mUrlToRunnableMap.remove(uri);
 	}
 
 	class ImageDownloadingRunnable extends Prioritizable {
-		private final String mUrl;
+		private final String mUri;
 
-		public ImageDownloadingRunnable(String url) {
-			mUrl = url;
+		public ImageDownloadingRunnable(String uri) {
+			mUri = uri;
 		}
 
 		@Override
 		public void execute() {
 			try {
-				mNetworkRequestCreator.getInputStream(mUrl, new InputStreamListener() {
+				mNetworkRequestCreator.getInputStream(mUri, new InputStreamListener() {
 					@Override
 					public void onInputStreamReady(InputStream inputStream) {
 						String errorMessage = loadInputStreamToDisk(inputStream);
-						removeUrlFromMap(mUrl);
+						removeUriFromMap(mUri);
 						if (errorMessage != null) {
-							mImageDownloadObserver.onImageDownloadFailed(mUrl, errorMessage);
+							mImageDownloadObserver.onImageDownloadFailed(mUri, errorMessage);
 						} else {
-							mImageDownloadObserver.onImageDownloaded(mUrl);
+							mImageDownloadObserver.onImageDownloaded(mUri);
 						}
 					}
 
 					@Override
 					public void onFailure(String errorMessage) {
-						removeUrlFromMap(mUrl);
-						mImageDownloadObserver.onImageDownloadFailed(mUrl, errorMessage);
+						removeUriFromMap(mUri);
+						mImageDownloadObserver.onImageDownloadFailed(mUri, errorMessage);
 					}
 				});
 			} catch (IllegalStateException e) {
@@ -115,19 +103,19 @@ class ImageDownloader implements ImageNetworkInterface {
 			 * NOTE: If a bad URL is passed in (for example, mUrl = "N/A", the client.execute() call will throw an IllegalStateException. We do not want this exception to crash the app. Rather, we want to log the error
 			 * and report a failure.
 			 */
-			Log.w(ImageLoader.TAG, "IMAGE LOAD FAILED - An error occurred while performing the network request for the image. Stack trace below. URL: " + mUrl);
+			Log.w(ImageLoader.TAG, "IMAGE LOAD FAILED - An error occurred while performing the network request for the image. Stack trace below. URL: " + mUri);
 			e.printStackTrace();
 			String errorMessage = "Failed to download image. A stack trace has been output to the logs. Message: " + e.getMessage();
-			mImageDownloadObserver.onImageDownloadFailed(mUrl, errorMessage);
+			mImageDownloadObserver.onImageDownloadFailed(mUri, errorMessage);
 		}
 
 		private String loadInputStreamToDisk(InputStream inputStream) {
 			String errorMessage = null;
 			if (inputStream != null) {
 				try {
-					mNetworkToDiskInterface.downloadImageFromInputStream(mUrl, inputStream);
+					mNetworkToDiskInterface.downloadImageFromInputStream(mUri, inputStream);
 				} catch (IOException e) {
-					errorMessage = "IOException when downloading image: " + mUrl + ", Exception type: " + e.getClass().getName() + ", Exception message: " + e.getMessage();
+					errorMessage = "IOException when downloading image: " + mUri + ", Exception type: " + e.getClass().getName() + ", Exception message: " + e.getMessage();
 				} catch (IllegalArgumentException e) {
 					errorMessage = "Failed to download image with error message: " + e.getMessage();
 				} catch (IllegalStateException e) {
@@ -135,7 +123,7 @@ class ImageDownloader implements ImageNetworkInterface {
 					 * NOTE: If a bad URL is passed in (for example, mUrl = "N/A", the client.execute() call will throw an IllegalStateException. We do not want this exception to crash the app. Rather, we want to log the
 					 * error and report a failure.
 					 */
-					Log.w(ImageLoader.TAG, "IMAGE LOAD FAILED - An error occurred while performing the network request for the image. Stack trace below. URL: " + mUrl);
+					Log.w(ImageLoader.TAG, "IMAGE LOAD FAILED - An error occurred while performing the network request for the image. Stack trace below. URI: " + mUri);
 					e.printStackTrace();
 					errorMessage = "Failed to download image. A stack trace has been output to the logs. Message: " + e.getMessage();
 				} finally {
@@ -159,10 +147,5 @@ class ImageDownloader implements ImageNetworkInterface {
 		public Request<?> getRequest() {
 			return null;
 		}
-	}
-
-	@Override
-	public synchronized boolean isNetworkRequestPendingForUrl(String url) {
-		return mUrlToRunnableMap.containsKey(url);
 	}
 }

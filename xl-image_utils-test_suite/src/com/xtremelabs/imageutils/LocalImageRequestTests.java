@@ -18,25 +18,21 @@ package com.xtremelabs.imageutils;
 
 import java.util.List;
 
+import android.app.Activity;
 import android.graphics.Bitmap;
-import android.test.ActivityInstrumentationTestCase2;
+import android.test.AndroidTestCase;
 import android.test.UiThreadTest;
 import android.widget.ImageView;
 
 import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
 import com.xtremelabs.imageutils.testutils.DelayedLoop;
-import com.xtremelabs.testactivity.MainActivity;
 
-public class LocalImageRequestTests extends ActivityInstrumentationTestCase2<MainActivity> {
+public class LocalImageRequestTests extends AndroidTestCase {
 	private static final String LOCAL_IMAGE_URI = "file:///some/location/of/an/image.jpg";
 	private ImageLoader mImageLoader;
 
-	public LocalImageRequestTests() {
-		super(MainActivity.class);
-	}
-
 	private void initImageLoader() {
-		mImageLoader = ImageLoader.buildImageLoaderForActivity(getActivity());
+		mImageLoader = ImageLoader.buildImageLoaderForActivity(new Activity());
 		mImageLoader.stubReferenceManager(new ReferenceManager() {
 			@Override
 			public void getBitmap(Object key, ImageRequest imageRequest, ImageManagerListener imageManagerListener) {
@@ -60,7 +56,7 @@ public class LocalImageRequestTests extends ActivityInstrumentationTestCase2<Mai
 
 		final DelayedLoop delayedLoop = new DelayedLoop(5000);
 
-		ImageView imageView = new ImageView(getActivity());
+		ImageView imageView = new ImageView(new Activity());
 		mImageLoader.loadImage(imageView, LOCAL_IMAGE_URI, null, new ImageLoaderListener() {
 			@Override
 			public void onImageLoadError(String error) {

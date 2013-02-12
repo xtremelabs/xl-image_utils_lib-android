@@ -54,35 +54,25 @@ public class DiskCacheStub implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public boolean isDecodeRequestPending(DecodeSignature decodeSignature) {
-		return false;
-	}
-
-	@Override
-	public void retrieveImageDetails(String uri) {
-	}
-
-	@Override
-	public void getBitmapAsynchronouslyFromDisk(DecodeSignature decodeSignature, ImageReturnedFrom returnedFrom, boolean noPreviousNetworkRequest) {
-	}
-
-	@Override
-	public void bumpInQueue(DecodeSignature decodeSignature) {
-	}
-
-	@Override
 	public void invalidateFileSystemUri(String uri) {
 	}
 
 	@Override
 	public void calculateAndSaveImageDetails(String arg0) throws URISyntaxException, FileNotFoundException {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public Bitmap getBitmapSynchronouslyFromDisk(DecodeSignature arg0) throws FileNotFoundException, FileFormatException {
-		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Prioritizable getDetailsPrioritizable(ImageRequest imageRequest) {
+		return null;
+	}
+
+	@Override
+	public Prioritizable getDecodePrioritizable(DecodeSignature decodeSignature, ImageReturnedFrom imageReturnedFrom) {
 		return null;
 	}
 }

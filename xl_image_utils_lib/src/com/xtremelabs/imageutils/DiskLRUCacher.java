@@ -25,14 +25,12 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
-import java.util.HashMap;
 import java.util.Map;
 
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
-import com.xtremelabs.imageutils.AuxiliaryExecutor.Builder;
 import com.xtremelabs.imageutils.DiskDatabaseHelper.DiskDatabaseHelperObserver;
 
 public class DiskLRUCacher implements ImageDiskCacherInterface {
@@ -43,9 +41,6 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	private final DiskDatabaseHelper mDatabaseHelper;
 	private ImageDiskObserver mImageDiskObserver;
 	private final Map<String, Dimensions> mPermanentStorageMap = new LRUMap<String, Dimensions>(34, MAX_PERMANENT_STORAGE_IMAGE_DIMENSIONS_CACHED);
-	private final Map<DecodeSignature, DiskRunnable> mRequestToRunnableMap = new HashMap<DecodeSignature, DiskRunnable>();
-
-	private final AuxiliaryExecutor mExecutor;
 
 	public DiskLRUCacher(Context appContext, ImageDiskObserver imageDecodeObserver) {
 		/*
@@ -53,9 +48,6 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		 * 
 		 * It is highly recommended to leave the number of decode threads at one. Increasing this number too high will cause performance problems.
 		 */
-		Builder builder = new Builder(new PriorityAccessor[] { new StackPriorityAccessor() });
-		builder.setCorePoolSize(1);
-		mExecutor = builder.create();
 		mDiskManager = new DiskManager("img", appContext);
 		mDatabaseHelper = new DiskDatabaseHelper(appContext, mDiskDatabaseHelperObserver);
 		mImageDiskObserver = imageDecodeObserver;
@@ -89,20 +81,52 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public void retrieveImageDetails(final String uri) {
-		if (mPermanentStorageMap.get(uri) == null) {
-			mExecutor.execute(new DiskRunnable() {
-				@Override
-				public void execute() {
-					cacheImageDetails(uri);
+	public Prioritizable getDetailsPrioritizable(final ImageRequest imageRequest) {
+		return new DiskRunnable() {
+			@Override
+			public void execute() {
+				cacheImageDetails(imageRequest.getUri());
+			}
+
+			@Override
+			public Request<?> getRequest() {
+				return new Request<String>(imageRequest.getUri());
+			}
+		};
+	}
+
+	@Override
+	public Prioritizable getDecodePrioritizable(final DecodeSignature decodeSignature, final ImageReturnedFrom imageReturnedFrom) {
+		return new DiskRunnable() {
+			@Override
+			public void execute() {
+				boolean failed = false;
+				String errorMessage = null;
+				Bitmap bitmap = null;
+				try {
+					bitmap = getBitmapSynchronouslyFromDisk(decodeSignature);
+				} catch (FileNotFoundException e) {
+					failed = true;
+					errorMessage = "Disk decode failed with error message: " + e.getMessage();
+				} catch (FileFormatException e) {
+					failed = true;
+					errorMessage = "Disk decode failed with error message: " + e.getMessage();
 				}
 
-				@Override
-				public Request<?> getRequest() {
-					return new Request<String>(uri);
+				if (!failed) {
+					mImageDiskObserver.onImageDecoded(decodeSignature, bitmap, imageReturnedFrom);
+				} else {
+					mDiskManager.deleteFile(encode(decodeSignature.mUri));
+					mDatabaseHelper.deleteEntry(decodeSignature.mUri);
+					mImageDiskObserver.onImageDecodeFailed(decodeSignature, errorMessage);
 				}
-			});
-		}
+			}
+
+			@Override
+			public Request<?> getRequest() {
+				return new Request<DecodeSignature>(decodeSignature);
+			}
+		};
 	}
 
 	void cacheImageDetails(String uri) {
@@ -138,9 +162,8 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		}
 	}
 
-	@Override
-	public void getBitmapAsynchronouslyFromDisk(final DecodeSignature decodeSignature, final ImageReturnedFrom returnedFrom, final boolean noPreviousNetworkRequest) {
-		DiskRunnable runnable = new DiskRunnable() {
+	public Prioritizable getDiskDecodingRunnable(final DecodeSignature decodeSignature, final ImageReturnedFrom returnedFrom) {
+		return new DiskRunnable() {
 			@Override
 			public void execute() {
 				boolean failed = false;
@@ -155,7 +178,6 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 					failed = true;
 					errorMessage = "Disk decode failed with error message: " + e.getMessage();
 				}
-				removeRequestFromMap(decodeSignature);
 
 				if (!failed) {
 					mImageDiskObserver.onImageDecoded(decodeSignature, bitmap, returnedFrom);
@@ -171,10 +193,6 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 				return new Request<DecodeSignature>(decodeSignature);
 			}
 		};
-
-		if (mapRunnableToParameters(runnable, decodeSignature)) {
-			mExecutor.execute(runnable);
-		}
 	}
 
 	@Override
@@ -185,14 +203,6 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	@Override
 	public void bumpOnDisk(String uri) {
 		mDatabaseHelper.updateFile(uri);
-	}
-
-	// TODO This method should NOT be taking the sampleSize in directly, but rather the scaling info. The sampleSize should be calculated by the disk system.
-	@Override
-	public void bumpInQueue(DecodeSignature decodeSignature) {
-		synchronized (mRequestToRunnableMap) {
-			mExecutor.bump(mRequestToRunnableMap.get(decodeSignature));
-		}
 	}
 
 	@Override
@@ -223,23 +233,6 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	@Override
 	public void invalidateFileSystemUri(String uri) {
 		mPermanentStorageMap.remove(uri);
-	}
-
-	private boolean mapRunnableToParameters(DiskRunnable runnable, DecodeSignature parameters) {
-		synchronized (mRequestToRunnableMap) {
-			if (!mRequestToRunnableMap.containsKey(parameters)) {
-				mRequestToRunnableMap.put(parameters, runnable);
-				return true;
-			} else {
-				return false;
-			}
-		}
-	}
-
-	private void removeRequestFromMap(DecodeSignature parameters) {
-		synchronized (mRequestToRunnableMap) {
-			mRequestToRunnableMap.remove(parameters);
-		}
 	}
 
 	@Override
@@ -322,11 +315,6 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		 * 
 		 */
 		private static final long serialVersionUID = -2180782787028503586L;
-	}
-
-	@Override
-	public synchronized boolean isDecodeRequestPending(DecodeSignature decodeSignature) {
-		return mRequestToRunnableMap.containsKey(decodeSignature);
 	}
 
 	private final DiskDatabaseHelperObserver mDiskDatabaseHelperObserver = new DiskDatabaseHelperObserver() {

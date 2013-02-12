@@ -4,13 +4,12 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+// TODO Build unit tests
 class AuxiliaryExecutor {
 
 	private final ThreadPoolExecutor mExecutor;
 	private final AuxiliaryBlockingQueue mQueue;
-
-	// private final Map<Request<?>, List<Prioritizable>> mQueuedRequests = new HashMap<Request<?>, List<Prioritizable>>();
-	// private final Set<Request<?>> mRunningRequests = new HashSet<Request<?>>();
+	private final QueuingMaps mQueuingMaps = new QueuingMaps();
 
 	private AuxiliaryExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, AuxiliaryBlockingQueue queue) {
 		mQueue = queue;
@@ -18,48 +17,25 @@ class AuxiliaryExecutor {
 	}
 
 	public synchronized void execute(Prioritizable prioritizable) {
-		// Request<?> request = prioritizable.getRequest();
-		//
-		// if (mRunningRequests.contains(request)) {
-		// prioritizable.cleanUp();
-		// Log.d(ImageLoader.TAG, "Preventing execution.");
-		// } else {
-		// Log.d(ImageLoader.TAG, "Queuing runnable...");
-		// List<Prioritizable> list = mQueuedRequests.get(request);
-		// if (list == null) {
-		// list = new ArrayList<Prioritizable>();
-		// mQueuedRequests.put(request, list);
-		// }
-		// list.add(prioritizable);
-
-		mExecutor.execute(prioritizable);
-		// }
+		if (!prioritizable.isCancelled()) {
+			mQueuingMaps.put(prioritizable);
+			mExecutor.execute(prioritizable);
+		}
 	}
 
-	public void bump(Prioritizable runnable) {
-		mQueue.bump(runnable);
+	// public synchronized void cancel(Prioritizable prioritizable) {
+	// prioritizable.cancel();
+	// mQueuingMaps.remove(prioritizable);
+	// }
+
+	public synchronized void notifyRequestComplete(Request<?> request) {
+		mQueuingMaps.onComplete(request);
 	}
 
-	private synchronized void onPreExecute(Prioritizable prioritizable) {
-		// Request<?> request = prioritizable.getRequest();
-		// if (mRunningRequests.contains(request)) {
-		// Log.d(ImageLoader.TAG, "Forcing cancel.");
-		// prioritizable.cancel();
-		// prioritizable.cleanUp();
-		// } else {
-		// mRunningRequests.add(request);
-		// List<Prioritizable> list = mQueuedRequests.remove(request);
-		// if (list != null) {
-		// mQueue.removeAll(list);
-		// for (Prioritizable p : list) {
-		// p.cleanUp();
-		// }
-		// }
-		// }
-	}
-
-	private synchronized void onPostExecute(Prioritizable prioritizable) {
-		// mRunningRequests.remove(prioritizable.getRequest());
+	private synchronized void notifyBeforeExecuteCalled(Runnable r) {
+		Prioritizable prioritizable = (Prioritizable) r;
+		if (!prioritizable.isCancelled())
+			mQueuingMaps.notifyExecuting(prioritizable);
 	}
 
 	static class Builder {
@@ -103,16 +79,9 @@ class AuxiliaryExecutor {
 
 		@Override
 		protected void beforeExecute(Thread t, Runnable r) {
-			onPreExecute((Prioritizable) r);
+			notifyBeforeExecuteCalled(r);
 
 			super.beforeExecute(t, r);
-		}
-
-		@Override
-		protected void afterExecute(Runnable r, Throwable t) {
-			super.afterExecute(r, t);
-
-			onPostExecute((Prioritizable) r);
 		}
 	}
 }

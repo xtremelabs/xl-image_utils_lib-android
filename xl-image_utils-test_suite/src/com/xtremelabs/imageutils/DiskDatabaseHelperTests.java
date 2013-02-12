@@ -18,24 +18,19 @@ package com.xtremelabs.imageutils;
 
 import java.util.Collection;
 
-import android.test.ActivityInstrumentationTestCase2;
+import android.test.AndroidTestCase;
 
 import com.xtremelabs.imageutils.DiskDatabaseHelper.DiskDatabaseHelperObserver;
 import com.xtremelabs.imageutils.testutils.DelayedLoop;
-import com.xtremelabs.testactivity.MainActivity;
 
-public class DiskDatabaseHelperTests extends ActivityInstrumentationTestCase2<MainActivity> {
+public class DiskDatabaseHelperTests extends AndroidTestCase {
 	private DiskDatabaseHelper mDatabaseHelper;
-
-	public DiskDatabaseHelperTests() {
-		super(MainActivity.class);
-	}
 
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 
-		mDatabaseHelper = new DiskDatabaseHelper(getActivity().getApplicationContext(), new DiskDatabaseHelperObserver() {
+		mDatabaseHelper = new DiskDatabaseHelper(getContext(), new DiskDatabaseHelperObserver() {
 			@Override
 			public void onDatabaseWiped() {
 			}

@@ -31,23 +31,19 @@ interface ImageDiskCacherInterface extends NetworkToDiskInterface {
 
 	int getSampleSize(ImageRequest imageRequest);
 
-	void getBitmapAsynchronouslyFromDisk(DecodeSignature decodeSignature, ImageReturnedFrom returnedFrom, boolean noPreviousNetworkRequest);
-
 	void bumpOnDisk(String uri);
 
 	void setDiskCacheSize(long sizeInBytes);
 
 	Dimensions getImageDimensions(String uri);
 
-	void bumpInQueue(DecodeSignature decodeSignature);
-
-	boolean isDecodeRequestPending(DecodeSignature decodeSignature);
-
-	void retrieveImageDetails(String uri);
-
 	void invalidateFileSystemUri(String uri);
 
 	Bitmap getBitmapSynchronouslyFromDisk(DecodeSignature decodeSignature) throws FileNotFoundException, FileFormatException;
 
 	void calculateAndSaveImageDetails(String uri) throws URISyntaxException, FileNotFoundException;
+
+	Prioritizable getDetailsPrioritizable(ImageRequest imageRequest);
+
+	Prioritizable getDecodePrioritizable(DecodeSignature decodeSignature, ImageReturnedFrom imageReturnedFrom);
 }
