@@ -21,6 +21,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -36,6 +38,10 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 
 import com.xtreme.testactivity.R;
+import com.xtremelabs.imageutils.AdapterImagePrecacher;
+import com.xtremelabs.imageutils.AdapterImagePrecacher.PrecacheInformationProvider;
+import com.xtremelabs.imageutils.AdapterImagePrecacher.PrecacheRequest;
+import com.xtremelabs.imageutils.AdapterImagePrecacher.PrecacheRequest.UnitType;
 import com.xtremelabs.imageutils.Dimensions;
 import com.xtremelabs.imageutils.ImageLoader;
 import com.xtremelabs.imageutils.ImageLoaderListener;
@@ -49,7 +55,7 @@ public class KittenAdapter extends BaseAdapter {
 	private final String KITTEN_URI;
 	private final Activity mActivity;
 	private final ImageLoader mImageLoader;
-	// private AdapterImagePrecacher mImagePrecacheAssistant;
+	private AdapterImagePrecacher mImagePrecacheAssistant;
 	private final Dimensions mBounds;
 
 	public KittenAdapter(final Activity activity, ImageLoader imageLoader) {
@@ -64,39 +70,39 @@ public class KittenAdapter extends BaseAdapter {
 		mActivity.getWindowManager().getDefaultDisplay().getSize(size);
 		mBounds = new Dimensions(size.x / 2, (int) ((size.x / 800f) * 200f));
 
-		// mImagePrecacheAssistant = new AdapterImagePrecacher(mImageLoader, new PrecacheInformationProvider() {
-		// @Override
-		// public int getCount() {
-		// return KittenAdapter.this.getCount();
-		// }
-		//
-		// @Override
-		// public List<String> getRequestsForDiskPrecache(int position) {
-		// List<String> list = new ArrayList<String>();
-		// if (position % 2 == 0) {
-		// list.add((String) getItem(position) + "1");
-		// list.add((String) getItem(position) + "2");
-		// } else {
-		// list.add((String) getItem(position));
-		// }
-		// return list;
-		// }
-		//
-		// @Override
-		// public List<PrecacheRequest> getImageRequestsForMemoryPrecache(int position) {
-		// List<PrecacheRequest> list = new ArrayList<PrecacheRequest>();
-		// if (position % 2 == 0) {
-		// list.add(PrecacheRequest.generatePrecacheRequest(activity, (String) getItem(position) + "1", mBounds, UnitType.PIXELS));
-		// list.add(PrecacheRequest.generatePrecacheRequest(activity, (String) getItem(position) + "2", mBounds, UnitType.PIXELS));
-		// } else {
-		// list.add(PrecacheRequest.generatePrecacheRequest(activity, (String) getItem(position), mBounds, UnitType.PIXELS));
-		// }
-		// return list;
-		// }
-		// });
-		//
-		// mImagePrecacheAssistant.setMemCacheRange(6);
-		// mImagePrecacheAssistant.setDiskCacheRange(5);
+		mImagePrecacheAssistant = new AdapterImagePrecacher(mImageLoader, new PrecacheInformationProvider() {
+			@Override
+			public int getCount() {
+				return KittenAdapter.this.getCount();
+			}
+
+			@Override
+			public List<String> getRequestsForDiskPrecache(int position) {
+				List<String> list = new ArrayList<String>();
+				if (position % 2 == 0) {
+					list.add((String) getItem(position) + "1");
+					list.add((String) getItem(position) + "2");
+				} else {
+					list.add((String) getItem(position));
+				}
+				return list;
+			}
+
+			@Override
+			public List<PrecacheRequest> getImageRequestsForMemoryPrecache(int position) {
+				List<PrecacheRequest> list = new ArrayList<PrecacheRequest>();
+				if (position % 2 == 0) {
+					list.add(PrecacheRequest.generatePrecacheRequest(activity, (String) getItem(position) + "1", mBounds, UnitType.PIXELS));
+					list.add(PrecacheRequest.generatePrecacheRequest(activity, (String) getItem(position) + "2", mBounds, UnitType.PIXELS));
+				} else {
+					list.add(PrecacheRequest.generatePrecacheRequest(activity, (String) getItem(position), mBounds, UnitType.PIXELS));
+				}
+				return list;
+			}
+		});
+
+		mImagePrecacheAssistant.setMemCacheRange(2);
+		mImagePrecacheAssistant.setDiskCacheRange(2);
 	}
 
 	@Override
@@ -121,7 +127,7 @@ public class KittenAdapter extends BaseAdapter {
 	@TargetApi(13)
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
-		// mImagePrecacheAssistant.onPositionVisited(position);
+		mImagePrecacheAssistant.onPositionVisited(position);
 
 		KittenViews kittenViews = null;
 		if (convertView == null) {

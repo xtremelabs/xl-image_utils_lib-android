@@ -95,8 +95,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 
 			@Override
 			public int getTargetPriorityAccessorIndex() {
-				// return QueueIndexTranslator.translateToIndex(cacheRequest.getRequestType());
-				return 0;
+				return QueueIndexTranslator.translateToIndex(cacheRequest.getRequestType());
 			}
 		};
 	}
@@ -135,8 +134,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 
 			@Override
 			public int getTargetPriorityAccessorIndex() {
-				// return QueueIndexTranslator.translateToIndex(cacheRequest.getRequestType());
-				return 0;
+				return QueueIndexTranslator.translateToIndex(cacheRequest.getRequestType());
 			}
 		};
 	}
