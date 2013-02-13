@@ -141,6 +141,46 @@ public class ImageLoader {
 		ImageCacher.getInstance(appContext).setNetworkRequestCreator(networkRequestCreator);
 	}
 
+	public void loadImage(ImageRequest imageRequest) {
+		if (imageRequest == null) {
+			throw new IllegalArgumentException("You may not call \"loadImage\" with a null ImageRequest object.");
+		}
+
+		ImageRequest boxedRequest = generateBoxedImageRequest(imageRequest);
+
+		if (!mDestroyed) {
+			ImageLoaderListener listener = imageRequest.getImageLoaderListener();
+			ImageManagerListener imageManagerListener;
+			Options options = boxedRequest.getOptions();
+			if (listener == null) {
+				imageManagerListener = getDefaultImageManagerListener(options);
+			} else {
+				imageManagerListener = getImageManagerListenerWithCallback(listener, options);
+			}
+
+			performImageRequestOnUiThread(boxedRequest.getImageView(), boxedRequest.getUri(), options, imageManagerListener);
+		} else {
+			Log.w(TAG, "WARNING: loadImage was called after the ImageLoader was destroyed.");
+		}
+	}
+
+	private ImageRequest generateBoxedImageRequest(ImageRequest imageRequest) {
+		ImageRequest boxedRequest = new ImageRequest();
+
+		boxedRequest.setUri(imageRequest.getUri());
+		boxedRequest.setImageView(imageRequest.getImageView());
+		boxedRequest.setImageRequestType(imageRequest.getImageRequestType());
+		boxedRequest.setImageLoaderListener(imageRequest.getImageLoaderListener());
+
+		Options oldOptions = imageRequest.getOptions();
+		if (oldOptions == null)
+			boxedRequest.setOptions(mDefaultOptions);
+		else
+			boxedRequest.setOptions(oldOptions);
+
+		return boxedRequest;
+	}
+
 	/**
 	 * Loads the image located at the provided URI into the provided {@link ImageView}.<br>
 	 * <br>
@@ -482,7 +522,7 @@ public class ImageLoader {
 		scalingInfo.height = bounds.height;
 		scalingInfo.width = bounds.width;
 
-		ImageRequest imageRequest = new ImageRequest(uri, scalingInfo, options == null ? mDefaultOptions : options);
+		CacheRequest imageRequest = new CacheRequest(uri, scalingInfo, options == null ? mDefaultOptions : options);
 		mReferenceManager.getBitmap(mApplicationContext, imageRequest, getBlankImageManagerListener());
 	}
 
@@ -498,7 +538,7 @@ public class ImageLoader {
 		scalingInfo.height = height;
 		scalingInfo.width = width;
 
-		ImageRequest imageRequest = new ImageRequest(uri, scalingInfo);
+		CacheRequest imageRequest = new CacheRequest(uri, scalingInfo);
 		mReferenceManager.getBitmap(applicationContext, imageRequest, getBlankImageManagerListener());
 	}
 
@@ -544,7 +584,7 @@ public class ImageLoader {
 
 		ScalingInfo scalingInfo = getScalingInfo(imageView, options);
 
-		ImageRequest imageRequest = new ImageRequest(uri, scalingInfo, options);
+		CacheRequest imageRequest = new CacheRequest(uri, scalingInfo, options);
 		mReferenceManager.getBitmap(mKey, imageRequest, imageManagerListener);
 	}
 

@@ -29,7 +29,7 @@ import com.xtremelabs.imageutils.DiskLRUCacher.FileFormatException;
 interface ImageDiskCacherInterface extends NetworkToDiskInterface {
 	boolean isCached(String uri);
 
-	int getSampleSize(ImageRequest imageRequest);
+	int getSampleSize(CacheRequest imageRequest);
 
 	void bumpOnDisk(String uri);
 
@@ -43,7 +43,7 @@ interface ImageDiskCacherInterface extends NetworkToDiskInterface {
 
 	void calculateAndSaveImageDetails(String uri) throws URISyntaxException, FileNotFoundException;
 
-	Prioritizable getDetailsPrioritizable(ImageRequest imageRequest);
+	Prioritizable getDetailsPrioritizable(CacheRequest imageRequest);
 
 	Prioritizable getDecodePrioritizable(DecodeSignature decodeSignature, ImageReturnedFrom imageReturnedFrom);
 }

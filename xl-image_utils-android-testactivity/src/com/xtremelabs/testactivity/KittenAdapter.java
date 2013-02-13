@@ -39,6 +39,7 @@ import com.xtreme.testactivity.R;
 import com.xtremelabs.imageutils.Dimensions;
 import com.xtremelabs.imageutils.ImageLoader;
 import com.xtremelabs.imageutils.ImageLoaderListener;
+import com.xtremelabs.imageutils.ImageRequest;
 import com.xtremelabs.imageutils.ImageReturnedFrom;
 
 @TargetApi(13)
@@ -138,8 +139,13 @@ public class KittenAdapter extends BaseAdapter {
 			kittenViews = (KittenViews) convertView.getTag();
 
 		if (position % 2 == 0) {
-			mImageLoader.loadImage(kittenViews.kitten1, (String) getItem(position) + "1", null, mListener);
-			mImageLoader.loadImage(kittenViews.kitten2, (String) getItem(position) + "2", null, mListener);
+			ImageRequest imageRequest1 = new ImageRequest(kittenViews.kitten1, (String) getItem(position) + "1");
+			imageRequest1.setImageLoaderListener(mListener);
+			mImageLoader.loadImage(imageRequest1);
+
+			ImageRequest imageRequest2 = new ImageRequest(kittenViews.kitten2, (String) getItem(position) + "2");
+			imageRequest1.setImageLoaderListener(mListener);
+			mImageLoader.loadImage(imageRequest2);
 		} else {
 			mImageLoader.loadImage(kittenViews.kitten1, (String) getItem(position), null, mListener);
 			mImageLoader.loadImage(kittenViews.kitten2, (String) getItem(position), null, mListener);

@@ -6,7 +6,7 @@ import java.util.List;
 import android.graphics.Bitmap;
 
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
-import com.xtremelabs.imageutils.ImageRequest.RequestType;
+import com.xtremelabs.imageutils.CacheRequest.RequestType;
 import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
 import com.xtremelabs.imageutils.OperationTracker.KeyReferenceProvider;
 import com.xtremelabs.imageutils.OperationTracker.OperationTransferer;
@@ -46,7 +46,7 @@ class AsyncOperationsMaps {
 		}
 	};
 
-	public synchronized AsyncOperationState queueListenerIfRequestPending(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
+	public synchronized AsyncOperationState queueListenerIfRequestPending(CacheRequest imageRequest, ImageCacherListener imageCacherListener) {
 		AsyncOperationState state = AsyncOperationState.NOT_QUEUED;
 		DecodeSignature decodeSignature;
 
@@ -72,11 +72,11 @@ class AsyncOperationsMaps {
 	 * *****************************
 	 */
 
-	boolean isNetworkRequestPending(ImageRequest imageRequest) {
+	boolean isNetworkRequestPending(CacheRequest imageRequest) {
 		return mNetworkOperationTracker.hasPendingOperation(imageRequest.getUri());
 	}
 
-	private boolean isDetailsRequestPending(ImageRequest imageRequest) {
+	private boolean isDetailsRequestPending(CacheRequest imageRequest) {
 		return mDetailsOperationTracker.hasPendingOperation(imageRequest.getUri());
 	}
 
@@ -92,7 +92,7 @@ class AsyncOperationsMaps {
 	 * ********************
 	 */
 
-	synchronized void registerNetworkRequest(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
+	synchronized void registerNetworkRequest(CacheRequest imageRequest, ImageCacherListener imageCacherListener) {
 		Prioritizable prioritizable = mObserver.getNetworkRunnable(imageRequest);
 
 		RequestParameters networkRequestParameters = new RequestParameters(imageCacherListener, imageRequest, prioritizable);
@@ -101,7 +101,7 @@ class AsyncOperationsMaps {
 		mNetworkExecutor.execute(prioritizable);
 	}
 
-	synchronized void registerDetailsRequest(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
+	synchronized void registerDetailsRequest(CacheRequest imageRequest, ImageCacherListener imageCacherListener) {
 		Prioritizable prioritizable = mObserver.getDetailsRunnable(imageRequest);
 
 		RequestParameters networkRequestParameters = new RequestParameters(imageCacherListener, imageRequest, prioritizable);
@@ -166,7 +166,7 @@ class AsyncOperationsMaps {
 						return;
 					case CACHE_TO_DISK_AND_MEMORY:
 					case FULL_REQUEST:
-						int sampleSize = mObserver.getSampleSize(new ImageRequest(uri, networkRequestParameters.imageRequest.getScalingInfo()));
+						int sampleSize = mObserver.getSampleSize(new CacheRequest(uri, networkRequestParameters.imageRequest.getScalingInfo()));
 						DecodeSignature decodeSignature = new DecodeSignature(uri, sampleSize, networkRequestParameters.imageRequest.getOptions().preferedConfig);
 
 						registerDecodeRequest(imageCacherListener, decodeSignature);
@@ -257,27 +257,27 @@ class AsyncOperationsMaps {
 
 	}
 
-	private synchronized DecodeSignature getDecodeSignature(ImageRequest imageRequest) {
+	private synchronized DecodeSignature getDecodeSignature(CacheRequest imageRequest) {
 		int sampleSize = mObserver.getSampleSize(imageRequest);
 		return new DecodeSignature(imageRequest.getUri(), sampleSize, imageRequest.getOptions().preferedConfig);
 	}
 
 	static interface OperationsObserver {
-		public Prioritizable getNetworkRunnable(ImageRequest imageRequest);
+		public Prioritizable getNetworkRunnable(CacheRequest imageRequest);
 
 		public Prioritizable getDecodeRunnable(DecodeSignature decodeSignature);
 
-		public Prioritizable getDetailsRunnable(ImageRequest imageRequest);
+		public Prioritizable getDetailsRunnable(CacheRequest imageRequest);
 
-		public int getSampleSize(ImageRequest imageRequest);
+		public int getSampleSize(CacheRequest imageRequest);
 	}
 
 	private class RequestParameters {
 		ImageCacherListener imageCacherListener;
-		ImageRequest imageRequest;
+		CacheRequest imageRequest;
 		Prioritizable prioritizable;
 
-		RequestParameters(ImageCacherListener imageCacherListener, ImageRequest imageRequest, Prioritizable prioritizable) {
+		RequestParameters(ImageCacherListener imageCacherListener, CacheRequest imageRequest, Prioritizable prioritizable) {
 			this.imageCacherListener = imageCacherListener;
 			this.imageRequest = imageRequest;
 			this.prioritizable = prioritizable;

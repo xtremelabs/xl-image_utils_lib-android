@@ -71,7 +71,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public int getSampleSize(ImageRequest imageRequest) {
+	public int getSampleSize(CacheRequest imageRequest) {
 		Dimensions dimensions = getImageDimensions(imageRequest.getUri());
 		if (dimensions == null) {
 			return -1;
@@ -81,7 +81,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public Prioritizable getDetailsPrioritizable(final ImageRequest imageRequest) {
+	public Prioritizable getDetailsPrioritizable(final CacheRequest imageRequest) {
 		return new DiskRunnable() {
 			@Override
 			public void execute() {

@@ -20,7 +20,7 @@ import java.util.List;
 
 interface ReferenceManager {
 
-	void getBitmap(Object key, ImageRequest imageRequest, ImageManagerListener imageManagerListener);
+	void getBitmap(Object key, CacheRequest imageRequest, ImageManagerListener imageManagerListener);
 
 	List<ImageManagerListener> cancelRequestsForKey(Object key);
 

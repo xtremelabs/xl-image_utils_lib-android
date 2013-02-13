@@ -1,93 +1,69 @@
-/*
- * Copyright 2013 Xtreme Labs
- * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *     http://www.apache.org/licenses/LICENSE-2.0
- *     
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.xtremelabs.imageutils;
+
+import android.widget.ImageView;
 
 import com.xtremelabs.imageutils.ImageLoader.Options;
 
-class ImageRequest {
-	static enum LocationOfImage {
-		WEB, LOCAL_FILE_SYSTEM
+public class ImageRequest {
+	public static enum ImageRequestType {
+		DEFAULT, PRECACHE_TO_DISK, PRECACHE_TO_MEMORY
 	}
 
-	static enum RequestType {
-		CACHE_TO_DISK, CACHE_TO_DISK_AND_MEMORY, FULL_REQUEST
-	}
+	private String mUri;
+	private ImageView mImageView;
+	private Options mOptions;
+	private ImageLoaderListener mImageLoaderListener;
+	private ImageRequestType mImageRequestType = ImageRequestType.DEFAULT;
 
-	private final String mUri;
-	private final ScalingInfo mScalingInfo;
-	private LocationOfImage mImageRequestType;
-	private RequestType mRequestType = RequestType.FULL_REQUEST;
-	private final Options mOptions;
-
-	public ImageRequest(String uri) {
-		this(uri, null);
-	}
-
-	public ImageRequest(String uri, ScalingInfo scalingInfo) {
-		this(uri, scalingInfo, null);
-	}
-
-	public ImageRequest(String uri, ScalingInfo scalingInfo, Options options) {
+	public ImageRequest(ImageView imageView, String uri) {
 		mUri = uri;
-
-		if (scalingInfo == null) {
-			mScalingInfo = new ScalingInfo();
-		} else {
-			mScalingInfo = scalingInfo;
-		}
-
-		if (options == null) {
-			mOptions = new Options();
-		} else {
-			mOptions = options;
-		}
-
-		setLocationOfImage();
+		mImageView = imageView;
 	}
 
-	public String getUri() {
+	public ImageRequest(String uri, BitmapListener bitmapListener) {
+		mImageLoaderListener = bitmapListener.getImageLoaderListener();
+	}
+
+	ImageRequest() {
+	}
+
+	public void setImageView(ImageView imageView) {
+		mImageView = imageView;
+	}
+
+	public void setOptions(Options options) {
+		mOptions = options;
+	}
+
+	public void setImageLoaderListener(ImageLoaderListener imageLoaderListener) {
+		mImageLoaderListener = imageLoaderListener;
+	}
+
+	public void setImageRequestType(ImageRequestType imageRequestType) {
+		mImageRequestType = imageRequestType;
+	}
+
+	void setUri(String uri) {
+		mUri = uri;
+	}
+
+	String getUri() {
 		return mUri;
 	}
 
-	public LocationOfImage getImageRequestType() {
-		return mImageRequestType;
+	ImageView getImageView() {
+		return mImageView;
 	}
 
-	public Options getOptions() {
+	Options getOptions() {
 		return mOptions;
 	}
 
-	public ScalingInfo getScalingInfo() {
-		return mScalingInfo;
+	ImageLoaderListener getImageLoaderListener() {
+		return mImageLoaderListener;
 	}
 
-	void setRequestType(RequestType requestType) {
-		mRequestType = requestType;
-	}
-
-	RequestType getRequestType() {
-		return mRequestType;
-	}
-
-	private void setLocationOfImage() {
-		if (GeneralUtils.isFileSystemUri(mUri)) {
-			mImageRequestType = LocationOfImage.LOCAL_FILE_SYSTEM;
-		} else {
-			mImageRequestType = LocationOfImage.WEB;
-		}
+	ImageRequestType getImageRequestType() {
+		return mImageRequestType;
 	}
 }

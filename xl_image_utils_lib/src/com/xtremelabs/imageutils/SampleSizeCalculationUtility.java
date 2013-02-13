@@ -31,7 +31,7 @@ class SampleSizeCalculationUtility {
 	 *            The dimensions of the image, as decoded from the full image on disk.
 	 * @return The calculated sample size. 1 if both height and width are null.
 	 */
-	public static int calculateSampleSize(ImageRequest imageRequest, Dimensions imageDimensions) {
+	public static int calculateSampleSize(CacheRequest imageRequest, Dimensions imageDimensions) {
 		ScalingInfo scalingInfo = imageRequest.getScalingInfo();
 		Options options = imageRequest.getOptions();
 		ScalingPreference scalingPreference = ScalingPreference.SMALLER_THAN_VIEW;

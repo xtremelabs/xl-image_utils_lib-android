@@ -62,7 +62,7 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Op
 		return mImageCacher;
 	}
 
-	public ImageResponse getBitmap(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
+	public ImageResponse getBitmap(CacheRequest imageRequest, ImageCacherListener imageCacherListener) {
 		String uri = imageRequest.getUri();
 		throwExceptionIfNeeded(imageRequest, imageCacherListener);
 
@@ -100,7 +100,7 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Op
 		return generateQueuedResponse();
 	}
 
-	public ImageResponse getBitmapSynchronouslyFromDiskOrMemory(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
+	public ImageResponse getBitmapSynchronouslyFromDiskOrMemory(CacheRequest imageRequest, ImageCacherListener imageCacherListener) {
 		String uri = imageRequest.getUri();
 
 		synchronized (mAsyncOperationsMap) {
@@ -161,7 +161,7 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Op
 	}
 
 	@Override
-	public int getSampleSize(ImageRequest imageRequest) {
+	public int getSampleSize(CacheRequest imageRequest) {
 		ScalingInfo scalingInfo = imageRequest.getScalingInfo();
 
 		int sampleSize;
@@ -219,11 +219,11 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Op
 		mAsyncOperationsMap.cancelPendingRequest(imageCacherListener);
 	}
 
-	private void downloadImageFromNetwork(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
+	private void downloadImageFromNetwork(CacheRequest imageRequest, ImageCacherListener imageCacherListener) {
 		mAsyncOperationsMap.registerNetworkRequest(imageRequest, imageCacherListener);
 	}
 
-	private void retrieveImageDetails(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
+	private void retrieveImageDetails(CacheRequest imageRequest, ImageCacherListener imageCacherListener) {
 		mAsyncOperationsMap.registerDetailsRequest(imageRequest, imageCacherListener);
 	}
 
@@ -236,7 +236,7 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Op
 			throw new IllegalArgumentException("Null URI passed into the image system.");
 	}
 
-	private void throwExceptionIfNeeded(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
+	private void throwExceptionIfNeeded(CacheRequest imageRequest, ImageCacherListener imageCacherListener) {
 		ThreadChecker.throwErrorIfOffUiThread();
 
 		validateUri(imageRequest.getUri());
@@ -288,12 +288,12 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Op
 	}
 
 	@Override
-	public Prioritizable getNetworkRunnable(ImageRequest imageRequest) {
+	public Prioritizable getNetworkRunnable(CacheRequest imageRequest) {
 		return mNetworkInterface.getNetworkPrioritizable(imageRequest);
 	}
 
 	@Override
-	public Prioritizable getDetailsRunnable(ImageRequest imageRequest) {
+	public Prioritizable getDetailsRunnable(CacheRequest imageRequest) {
 		return mDiskCache.getDetailsPrioritizable(imageRequest);
 	}
 
