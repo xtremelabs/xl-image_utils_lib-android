@@ -212,7 +212,10 @@ public class AuxiliaryBlockingQueue extends AbstractQueue<Runnable> implements B
 			if (prioritizable != null && mCount > 0)
 				mCount--;
 		} while ((prioritizable == null || prioritizable.isCancelled()) && mCount > 0);
-		return prioritizable.isCancelled() ? null : prioritizable;
+		if (prioritizable == null)
+			return null;
+		else
+			return prioritizable.isCancelled() ? null : prioritizable;
 	}
 
 	private void checkNotNull(Object o) {
