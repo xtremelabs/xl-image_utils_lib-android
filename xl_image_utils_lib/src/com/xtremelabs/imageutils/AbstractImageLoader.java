@@ -387,18 +387,18 @@ public abstract class AbstractImageLoader {
 	 */
 	// TODO Test what happens if precache image to disk is called with a file system URI.
 	public void precacheImageToDisk(final String uri) {
-		if (ThreadChecker.isOnUiThread()) {
-			ImageRequest imageRequest = new ImageRequest(uri);
-			imageRequest.setRequestType(RequestType.CACHE_TO_DISK);
-			ImageCacher.getInstance(mApplicationContext).precacheImageToDisk(imageRequest);
-		} else {
-			new Handler(mApplicationContext.getMainLooper()).post(new Runnable() {
-				@Override
-				public void run() {
-					precacheImageToDisk(uri, mApplicationContext);
-				}
-			});
-		}
+		// if (ThreadChecker.isOnUiThread()) {
+		// ImageRequest imageRequest = new ImageRequest(uri);
+		// imageRequest.setRequestType(RequestType.CACHE_TO_DISK);
+		// ImageCacher.getInstance(mApplicationContext).precacheImageToDisk(imageRequest);
+		// } else {
+		// new Handler(mApplicationContext.getMainLooper()).post(new Runnable() {
+		// @Override
+		// public void run() {
+		// precacheImageToDisk(uri, mApplicationContext);
+		// }
+		// });
+		// }
 	}
 
 	/**
@@ -415,23 +415,23 @@ public abstract class AbstractImageLoader {
 	 */
 	// TODO Test what happens if precache image to disk is called with a file system URI.
 	public static void precacheImageToDisk(final String uri, Context applicationContext) {
-		if (!(applicationContext instanceof Application)) {
-			applicationContext = applicationContext.getApplicationContext();
-		}
-
-		if (ThreadChecker.isOnUiThread()) {
-			ImageRequest imageRequest = new ImageRequest(uri);
-			imageRequest.setRequestType(RequestType.CACHE_TO_DISK);
-			ImageCacher.getInstance(applicationContext).precacheImageToDisk(imageRequest);
-		} else {
-			final Context finalContext = applicationContext;
-			new Handler(applicationContext.getMainLooper()).post(new Runnable() {
-				@Override
-				public void run() {
-					precacheImageToDisk(uri, finalContext);
-				}
-			});
-		}
+		// if (!(applicationContext instanceof Application)) {
+		// applicationContext = applicationContext.getApplicationContext();
+		// }
+		//
+		// if (ThreadChecker.isOnUiThread()) {
+		// ImageRequest imageRequest = new ImageRequest(uri);
+		// imageRequest.setRequestType(RequestType.CACHE_TO_DISK);
+		// ImageCacher.getInstance(applicationContext).precacheImageToDisk(imageRequest);
+		// } else {
+		// final Context finalContext = applicationContext;
+		// new Handler(applicationContext.getMainLooper()).post(new Runnable() {
+		// @Override
+		// public void run() {
+		// precacheImageToDisk(uri, finalContext);
+		// }
+		// });
+		// }
 	}
 
 	/**

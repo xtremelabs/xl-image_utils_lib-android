@@ -42,9 +42,18 @@ class QueuingMaps {
 			if (prioritizables != null) {
 				for (Prioritizable p : prioritizables) {
 					// TODO We should be attempting to remove these runnables from their respective blocking queues.
-					p.cancel();
+					if (p != prioritizable)
+						p.cancel();
 				}
 			}
 		}
+	}
+
+	public synchronized void cancel(Prioritizable prioritizable) {
+		List<Prioritizable> list = mRequestListeners.get(prioritizable.getRequest());
+		if (list != null) {
+			list.remove(prioritizable);
+		}
+		prioritizable.cancel();
 	}
 }

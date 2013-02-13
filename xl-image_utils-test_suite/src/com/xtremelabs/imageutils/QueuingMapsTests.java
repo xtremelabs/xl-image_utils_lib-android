@@ -19,6 +19,15 @@ public class QueuingMapsTests extends AndroidTestCase {
 		mTestPrioritizable3 = generatePrioritizable("request2");
 	}
 
+	public void testPrioritizableStuff() {
+		Request<?> r1 = new Request<String>("hello");
+		Request<?> r2 = new Request<String>("hello");
+
+		assertFalse(r1 == r2);
+		assertTrue(r1.equals(r2));
+		assertTrue(r1.hashCode() == r2.hashCode());
+	}
+
 	public void testingNotifySingleRequest() {
 		mMaps.put(mTestPrioritizable1);
 		mMaps.put(mTestPrioritizable2);
@@ -60,6 +69,13 @@ public class QueuingMapsTests extends AndroidTestCase {
 		mMaps.put(mTestPrioritizable2);
 
 		assertFalse(mTestPrioritizable2.isCancelled());
+	}
+
+	public void testingRemovalOfPrioritizables() {
+		mMaps.put(mTestPrioritizable1);
+		mMaps.cancel(mTestPrioritizable1);
+
+		assertTrue(mTestPrioritizable1.isCancelled());
 	}
 
 	private static Prioritizable generatePrioritizable(final String request) {

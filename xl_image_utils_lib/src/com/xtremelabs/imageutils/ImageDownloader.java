@@ -18,7 +18,6 @@ package com.xtremelabs.imageutils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 
 import android.util.Log;
 
@@ -30,22 +29,12 @@ class ImageDownloader implements ImageNetworkInterface {
 
 	private final NetworkToDiskInterface mNetworkToDiskInterface;
 	private final ImageDownloadObserver mImageDownloadObserver;
-	private final HashMap<String, ImageDownloadingRunnable> mUrlToRunnableMap = new HashMap<String, ImageDownloadingRunnable>();
 	private NetworkRequestCreator mNetworkRequestCreator = new DefaultNetworkRequestCreator();
 
 	public ImageDownloader(NetworkToDiskInterface networkToDiskInterface, ImageDownloadObserver imageDownloadObserver) {
 		mNetworkToDiskInterface = networkToDiskInterface;
 		mImageDownloadObserver = imageDownloadObserver;
 	}
-
-	// @Override
-	// public synchronized void downloadImageToDisk(final String url) {
-	// ImageDownloadingRunnable runnable = new ImageDownloadingRunnable(url);
-	// if (!mUrlToRunnableMap.containsKey(url)) {
-	// mUrlToRunnableMap.put(url, runnable);
-	// mExecutor.execute(runnable);
-	// }
-	// }
 
 	@Override
 	public Prioritizable getNetworkPrioritizable(ImageRequest imageRequest) {
@@ -59,10 +48,6 @@ class ImageDownloader implements ImageNetworkInterface {
 		} else {
 			mNetworkRequestCreator = networkRequestCreator;
 		}
-	}
-
-	private synchronized void removeUriFromMap(String uri) {
-		mUrlToRunnableMap.remove(uri);
 	}
 
 	class ImageDownloadingRunnable extends Prioritizable {
@@ -79,7 +64,6 @@ class ImageDownloader implements ImageNetworkInterface {
 					@Override
 					public void onInputStreamReady(InputStream inputStream) {
 						String errorMessage = loadInputStreamToDisk(inputStream);
-						removeUriFromMap(mUri);
 						if (errorMessage != null) {
 							mImageDownloadObserver.onImageDownloadFailed(mUri, errorMessage);
 						} else {
@@ -89,7 +73,6 @@ class ImageDownloader implements ImageNetworkInterface {
 
 					@Override
 					public void onFailure(String errorMessage) {
-						removeUriFromMap(mUri);
 						mImageDownloadObserver.onImageDownloadFailed(mUri, errorMessage);
 					}
 				});
@@ -145,7 +128,7 @@ class ImageDownloader implements ImageNetworkInterface {
 
 		@Override
 		public Request<?> getRequest() {
-			return null;
+			return new Request<String>(mUri);
 		}
 	}
 }
