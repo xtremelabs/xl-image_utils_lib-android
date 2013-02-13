@@ -19,5 +19,5 @@ package com.xtremelabs.imageutils;
 interface ImageNetworkInterface {
 	void setNetworkRequestCreator(NetworkRequestCreator networkRequestImplementer);
 
-	Prioritizable getNetworkPrioritizable(ImageRequest imageRequest);
+	Prioritizable getNetworkPrioritizable(CacheRequest imageRequest);
 }

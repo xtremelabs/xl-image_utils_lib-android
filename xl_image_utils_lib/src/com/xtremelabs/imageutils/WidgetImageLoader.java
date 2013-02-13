@@ -4,7 +4,7 @@ import android.content.Context;
 import android.util.Log;
 
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
-import com.xtremelabs.imageutils.ImageRequest.RequestType;
+import com.xtremelabs.imageutils.CacheRequest.RequestType;
 
 public class WidgetImageLoader extends ImageLoader {
 	WidgetImageLoader(Object imageLoaderClass, Context context) {
@@ -19,7 +19,7 @@ public class WidgetImageLoader extends ImageLoader {
 			}
 
 			ScalingInfo scalingInfo = getScalingInfo(null, options);
-			ImageRequest imageRequest = new ImageRequest(uri, scalingInfo, options);
+			CacheRequest imageRequest = new CacheRequest(uri, scalingInfo, options);
 			imageRequest.setRequestType(RequestType.CACHE_TO_DISK);
 			return ImageCacher.getInstance(getApplicationContext()).getBitmapSynchronouslyFromDiskOrMemory(imageRequest, getImageCacherListener(listener));
 		} else {

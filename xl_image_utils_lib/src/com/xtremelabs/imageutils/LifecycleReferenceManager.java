@@ -69,7 +69,7 @@ class LifecycleReferenceManager implements ReferenceManager {
 	 * @param scalingInfo
 	 */
 	@Override
-	public void getBitmap(Object key, ImageRequest imageRequest, ImageManagerListener imageManagerListener) {
+	public void getBitmap(Object key, CacheRequest imageRequest, ImageManagerListener imageManagerListener) {
 		String uri = imageRequest.getUri();
 
 		if (GeneralUtils.isStringBlank(uri)) {

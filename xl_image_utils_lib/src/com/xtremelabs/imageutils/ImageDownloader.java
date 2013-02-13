@@ -37,7 +37,7 @@ class ImageDownloader implements ImageNetworkInterface {
 	}
 
 	@Override
-	public Prioritizable getNetworkPrioritizable(ImageRequest imageRequest) {
+	public Prioritizable getNetworkPrioritizable(CacheRequest imageRequest) {
 		return new ImageDownloadingRunnable(imageRequest.getUri());
 	}
 
