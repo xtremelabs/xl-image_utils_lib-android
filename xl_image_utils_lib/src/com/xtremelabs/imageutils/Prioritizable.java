@@ -10,7 +10,7 @@ public abstract class Prioritizable implements Runnable {
 	public abstract void execute();
 
 	@Override
-	public final void run() {
+	public synchronized final void run() {
 		if (!isCancelled()) {
 			execute();
 		}

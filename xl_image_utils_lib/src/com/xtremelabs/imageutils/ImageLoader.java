@@ -30,6 +30,7 @@ import android.os.Handler;
 import android.util.Log;
 import android.widget.ImageView;
 
+import com.xtremelabs.imageutils.ImageRequest.ImageRequestType;
 import com.xtremelabs.imageutils.ThreadChecker.CalledFromWrongThreadException;
 
 public class ImageLoader {
@@ -146,39 +147,26 @@ public class ImageLoader {
 			throw new IllegalArgumentException("You may not call \"loadImage\" with a null ImageRequest object.");
 		}
 
-		ImageRequest boxedRequest = generateBoxedImageRequest(imageRequest);
-
 		if (!mDestroyed) {
 			ImageLoaderListener listener = imageRequest.getImageLoaderListener();
+			Options options = imageRequest.getOptions();
+			if (options == null) {
+				options = mDefaultOptions;
+			}
+
 			ImageManagerListener imageManagerListener;
-			Options options = boxedRequest.getOptions();
 			if (listener == null) {
 				imageManagerListener = getDefaultImageManagerListener(options);
 			} else {
 				imageManagerListener = getImageManagerListenerWithCallback(listener, options);
 			}
 
-			performImageRequestOnUiThread(boxedRequest.getImageView(), boxedRequest.getUri(), options, imageManagerListener);
+			CacheRequest cacheRequest = new CacheRequest(imageRequest.getUri(), getScalingInfo(imageRequest.getImageView(), options), options);
+			cacheRequest.setRequestType(imageRequest.getImageRequestType());
+			performImageRequestOnUiThread(imageRequest.getImageView(), cacheRequest, options, imageManagerListener);
 		} else {
 			Log.w(TAG, "WARNING: loadImage was called after the ImageLoader was destroyed.");
 		}
-	}
-
-	private ImageRequest generateBoxedImageRequest(ImageRequest imageRequest) {
-		ImageRequest boxedRequest = new ImageRequest();
-
-		boxedRequest.setUri(imageRequest.getUri());
-		boxedRequest.setImageView(imageRequest.getImageView());
-		boxedRequest.setImageRequestType(imageRequest.getImageRequestType());
-		boxedRequest.setImageLoaderListener(imageRequest.getImageLoaderListener());
-
-		Options oldOptions = imageRequest.getOptions();
-		if (oldOptions == null)
-			boxedRequest.setOptions(mDefaultOptions);
-		else
-			boxedRequest.setOptions(oldOptions);
-
-		return boxedRequest;
 	}
 
 	/**
@@ -321,7 +309,8 @@ public class ImageLoader {
 				imageManagerListener = getImageManagerListenerWithCallback(listener, options);
 			}
 
-			performImageRequestOnUiThread(imageView, uri, options, imageManagerListener);
+			CacheRequest cacheRequest = new CacheRequest(uri, getScalingInfo(imageView, options), options);
+			performImageRequestOnUiThread(imageView, cacheRequest, options, imageManagerListener);
 		} else {
 			Log.w(TAG, "WARNING: loadImage was called after the ImageLoader was destroyed.");
 		}
@@ -444,19 +433,10 @@ public class ImageLoader {
 	 * @param applicationContext
 	 */
 	// TODO Test what happens if precache image to disk is called with a file system URI.
-	public void precacheImageToDisk(final String uri) {
-		// if (ThreadChecker.isOnUiThread()) {
-		// ImageRequest imageRequest = new ImageRequest(uri);
-		// imageRequest.setRequestType(RequestType.CACHE_TO_DISK);
-		// ImageCacher.getInstance(mApplicationContext).precacheImageToDisk(imageRequest);
-		// } else {
-		// new Handler(mApplicationContext.getMainLooper()).post(new Runnable() {
-		// @Override
-		// public void run() {
-		// precacheImageToDisk(uri, mApplicationContext);
-		// }
-		// });
-		// }
+	public void precacheImageToDisk(final String uri, boolean isForAdapter) {
+		ImageRequest imageRequest = new ImageRequest(uri);
+		imageRequest.setImageRequestType(isForAdapter ? ImageRequestType.PRECACHE_TO_DISK_FOR_ADAPTER : ImageRequestType.PRECACHE_TO_DISK);
+		loadImage(imageRequest);
 	}
 
 	/**
@@ -514,33 +494,33 @@ public class ImageLoader {
 	 * @throws CalledFromWrongThreadException
 	 *             This is thrown if the method is called from off the UI thread.
 	 */
-	public void precacheImageToDiskAndMemory(String uri, Dimensions bounds, Options options) {
-		// TODO: Replace the width and height with options?
-		ThreadChecker.throwErrorIfOffUiThread();
+	// public void precacheImageToDiskAndMemory(String uri, Dimensions bounds, Options options) {
+	// TODO: Replace the width and height with options?
+	// ThreadChecker.throwErrorIfOffUiThread();
+	//
+	// ScalingInfo scalingInfo = new ScalingInfo();
+	// scalingInfo.height = bounds.height;
+	// scalingInfo.width = bounds.width;
+	//
+	// CacheRequest imageRequest = new CacheRequest(uri, scalingInfo, options == null ? mDefaultOptions : options);
+	// mReferenceManager.getBitmap(mApplicationContext, imageRequest, getBlankImageManagerListener());
+	// }
 
-		ScalingInfo scalingInfo = new ScalingInfo();
-		scalingInfo.height = bounds.height;
-		scalingInfo.width = bounds.width;
-
-		CacheRequest imageRequest = new CacheRequest(uri, scalingInfo, options == null ? mDefaultOptions : options);
-		mReferenceManager.getBitmap(mApplicationContext, imageRequest, getBlankImageManagerListener());
-	}
-
-	/**
-	 * Please use {@link #precacheImageToDiskAndMemory(String, Integer, Integer)}.
-	 */
-	@Deprecated
-	public void precacheImageToDiskAndMemory(String uri, Context applicationContext, Integer width, Integer height) {
-		// TODO: Replace the width and height with options?
-		ThreadChecker.throwErrorIfOffUiThread();
-
-		ScalingInfo scalingInfo = new ScalingInfo();
-		scalingInfo.height = height;
-		scalingInfo.width = width;
-
-		CacheRequest imageRequest = new CacheRequest(uri, scalingInfo);
-		mReferenceManager.getBitmap(applicationContext, imageRequest, getBlankImageManagerListener());
-	}
+	// /**
+	// * Please use {@link #precacheImageToDiskAndMemory(String, Integer, Integer)}.
+	// */
+	// @Deprecated
+	// public void precacheImageToDiskAndMemory(String uri, Context applicationContext, Integer width, Integer height) {
+	// // TODO: Replace the width and height with options?
+	// ThreadChecker.throwErrorIfOffUiThread();
+	//
+	// ScalingInfo scalingInfo = new ScalingInfo();
+	// scalingInfo.height = height;
+	// scalingInfo.width = width;
+	//
+	// CacheRequest imageRequest = new CacheRequest(uri, scalingInfo);
+	// mReferenceManager.getBitmap(applicationContext, imageRequest, getBlankImageManagerListener());
+	// }
 
 	protected boolean isDestroyed() {
 		return mDestroyed;
@@ -563,29 +543,26 @@ public class ImageLoader {
 		mReferenceManager = referenceManager;
 	}
 
-	private void performImageRequestOnUiThread(final ImageView imageView, final String uri, final Options options, final ImageManagerListener imageManagerListener) {
+	private void performImageRequestOnUiThread(final ImageView imageView, final CacheRequest cacheRequest, final Options options, final ImageManagerListener imageManagerListener) {
 		if (ThreadChecker.isOnUiThread())
-			performImageRequest(imageView, uri, options, imageManagerListener);
+			performImageRequest(imageView, cacheRequest, options, imageManagerListener);
 		else {
 			new Handler(mApplicationContext.getMainLooper()).post(new Runnable() {
 
 				@Override
 				public void run() {
 					if (!mDestroyed)
-						performImageRequest(imageView, uri, options, imageManagerListener);
+						performImageRequest(imageView, cacheRequest, options, imageManagerListener);
 				}
 			});
 		}
 	}
 
-	private void performImageRequest(ImageView imageView, String uri, Options options, ImageManagerListener imageManagerListener) {
+	private void performImageRequest(ImageView imageView, CacheRequest cacheRequest, Options options, ImageManagerListener imageManagerListener) {
 		mapImageView(imageView, imageManagerListener);
 		setPreLoadImage(imageView, options);
 
-		ScalingInfo scalingInfo = getScalingInfo(imageView, options);
-
-		CacheRequest imageRequest = new CacheRequest(uri, scalingInfo, options);
-		mReferenceManager.getBitmap(mKey, imageRequest, imageManagerListener);
+		mReferenceManager.getBitmap(mKey, cacheRequest, imageManagerListener);
 	}
 
 	private void setPreLoadImage(ImageView imageView, Options options) {
@@ -714,17 +691,17 @@ public class ImageLoader {
 	 * 
 	 * @return
 	 */
-	private ImageManagerListener getBlankImageManagerListener() {
-		return new ImageManagerListener() {
-			@Override
-			public void onLoadImageFailed(String error) {
-			}
-
-			@Override
-			public void onImageReceived(ImageResponse imageResponse) {
-			}
-		};
-	}
+	// private ImageManagerListener getBlankImageManagerListener() {
+	// return new ImageManagerListener() {
+	// @Override
+	// public void onLoadImageFailed(String error) {
+	// }
+	//
+	// @Override
+	// public void onImageReceived(ImageResponse imageResponse) {
+	// }
+	// };
+	// }
 
 	/**
 	 * This class provides all the options that can be set when making loadImage calls.

@@ -45,5 +45,5 @@ interface ImageDiskCacherInterface extends NetworkToDiskInterface {
 
 	Prioritizable getDetailsPrioritizable(CacheRequest imageRequest);
 
-	Prioritizable getDecodePrioritizable(DecodeSignature decodeSignature, ImageReturnedFrom imageReturnedFrom);
+	Prioritizable getDecodePrioritizable(CacheRequest cacheRequest, DecodeSignature decodeSignature, ImageReturnedFrom imageReturnedFrom);
 }

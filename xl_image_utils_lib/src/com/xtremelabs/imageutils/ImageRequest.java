@@ -6,7 +6,7 @@ import com.xtremelabs.imageutils.ImageLoader.Options;
 
 public class ImageRequest {
 	public static enum ImageRequestType {
-		DEFAULT, PRECACHE_TO_DISK, PRECACHE_TO_MEMORY
+		DEFAULT, PRECACHE_TO_DISK, PRECACHE_TO_MEMORY, ADAPTER_REQUEST, PRECACHE_TO_DISK_FOR_ADAPTER, PRECACHE_TO_MEMORY_FOR_ADAPTER
 	}
 
 	private String mUri;
@@ -22,6 +22,10 @@ public class ImageRequest {
 
 	public ImageRequest(String uri, BitmapListener bitmapListener) {
 		mImageLoaderListener = bitmapListener.getImageLoaderListener();
+	}
+
+	public ImageRequest(String uri) {
+		mUri = uri;
 	}
 
 	ImageRequest() {
@@ -40,7 +44,10 @@ public class ImageRequest {
 	}
 
 	public void setImageRequestType(ImageRequestType imageRequestType) {
-		mImageRequestType = imageRequestType;
+		if (imageRequestType == null)
+			mImageRequestType = ImageRequestType.DEFAULT;
+		else
+			mImageRequestType = imageRequestType;
 	}
 
 	void setUri(String uri) {

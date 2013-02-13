@@ -36,11 +36,6 @@ public class DiskCacheStub implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public int getSampleSize(ImageRequest imageRequest) {
-		return 0;
-	}
-
-	@Override
 	public void bumpOnDisk(String uri) {
 	}
 
@@ -67,12 +62,17 @@ public class DiskCacheStub implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public Prioritizable getDetailsPrioritizable(ImageRequest imageRequest) {
+	public int getSampleSize(CacheRequest imageRequest) {
+		return 0;
+	}
+
+	@Override
+	public Prioritizable getDetailsPrioritizable(CacheRequest imageRequest) {
 		return null;
 	}
 
 	@Override
-	public Prioritizable getDecodePrioritizable(DecodeSignature decodeSignature, ImageReturnedFrom imageReturnedFrom) {
+	public Prioritizable getDecodePrioritizable(CacheRequest cacheRequest, DecodeSignature decodeSignature, ImageReturnedFrom imageReturnedFrom) {
 		return null;
 	}
 }

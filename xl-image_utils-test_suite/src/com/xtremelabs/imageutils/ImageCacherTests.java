@@ -48,12 +48,12 @@ public class ImageCacherTests extends AndroidTestCase {
 
 		mImageCacher.stubAsynchOperationsMaps(new AsyncOperationsMaps(mImageCacher) {
 			@Override
-			public synchronized AsyncOperationState queueListenerIfRequestPending(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
+			public synchronized AsyncOperationState queueListenerIfRequestPending(CacheRequest imageRequest, ImageCacherListener imageCacherListener) {
 				return AsyncOperationState.NOT_QUEUED;
 			}
 
 			@Override
-			synchronized void registerDetailsRequest(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
+			synchronized void registerDetailsRequest(CacheRequest imageRequest, ImageCacherListener imageCacherListener) {
 				delayedLoop.flagSuccess();
 			}
 		});
@@ -65,7 +65,7 @@ public class ImageCacherTests extends AndroidTestCase {
 			}
 		});
 
-		ImageRequest imageRequest = new ImageRequest(TEST_URI, new ScalingInfo());
+		CacheRequest imageRequest = new CacheRequest(TEST_URI, new ScalingInfo());
 		assertEquals(ImageResponseStatus.REQUEST_QUEUED, mImageCacher.getBitmap(imageRequest, new ImageCacherListener() {
 			@Override
 			public void onImageAvailable(ImageResponse imageResponse) {
@@ -86,12 +86,12 @@ public class ImageCacherTests extends AndroidTestCase {
 
 		mImageCacher.stubAsynchOperationsMaps(new AsyncOperationsMaps(mImageCacher) {
 			@Override
-			public synchronized AsyncOperationState queueListenerIfRequestPending(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
+			public synchronized AsyncOperationState queueListenerIfRequestPending(CacheRequest imageRequest, ImageCacherListener imageCacherListener) {
 				return AsyncOperationState.QUEUED_FOR_DETAILS_REQUEST;
 			}
 		});
 
-		ImageRequest imageRequest = new ImageRequest(TEST_URI, new ScalingInfo());
+		CacheRequest imageRequest = new CacheRequest(TEST_URI, new ScalingInfo());
 		assertEquals(ImageResponseStatus.REQUEST_QUEUED, mImageCacher.getBitmap(imageRequest, new ImageCacherListener() {
 			@Override
 			public void onImageAvailable(ImageResponse imageResponse) {
@@ -108,7 +108,7 @@ public class ImageCacherTests extends AndroidTestCase {
 
 		mImageCacher.stubAsynchOperationsMaps(new AsyncOperationsMaps(mImageCacher) {
 			@Override
-			public synchronized AsyncOperationState queueListenerIfRequestPending(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
+			public synchronized AsyncOperationState queueListenerIfRequestPending(CacheRequest imageRequest, ImageCacherListener imageCacherListener) {
 				return AsyncOperationState.NOT_QUEUED;
 			}
 		});
@@ -120,7 +120,7 @@ public class ImageCacherTests extends AndroidTestCase {
 			}
 
 			@Override
-			public int getSampleSize(ImageRequest imageRequest) {
+			public int getSampleSize(CacheRequest imageRequest) {
 				return 1;
 			}
 		});
@@ -132,7 +132,7 @@ public class ImageCacherTests extends AndroidTestCase {
 			}
 		});
 
-		ImageRequest imageRequest = new ImageRequest(TEST_URI, new ScalingInfo());
+		CacheRequest imageRequest = new CacheRequest(TEST_URI, new ScalingInfo());
 		ImageResponse imageResponse = mImageCacher.getBitmap(imageRequest, new ImageCacherListener() {
 			@Override
 			public void onImageAvailable(ImageResponse imageResponse) {
@@ -189,14 +189,14 @@ public class ImageCacherTests extends AndroidTestCase {
 
 		mImageCacher.stubAsynchOperationsMaps(new AsyncOperationsMaps(mImageCacher) {
 			@Override
-			public synchronized AsyncOperationState queueListenerIfRequestPending(ImageRequest imageRequest, ImageCacherListener imageCacherListener) {
+			public synchronized AsyncOperationState queueListenerIfRequestPending(CacheRequest imageRequest, ImageCacherListener imageCacherListener) {
 				return AsyncOperationState.NOT_QUEUED;
 			}
 		});
 
 		mImageCacher.stubDiskCache(new DiskCacheStub() {
 			@Override
-			public int getSampleSize(ImageRequest imageRequest) {
+			public int getSampleSize(CacheRequest imageRequest) {
 				return 1;
 			}
 
@@ -219,7 +219,7 @@ public class ImageCacherTests extends AndroidTestCase {
 			}
 		});
 
-		ImageResponse imageResponse = mImageCacher.getBitmap(new ImageRequest(TEST_URI, new ScalingInfo()), new ImageCacherListener() {
+		ImageResponse imageResponse = mImageCacher.getBitmap(new CacheRequest(TEST_URI, new ScalingInfo()), new ImageCacherListener() {
 			@Override
 			public void onImageAvailable(ImageResponse imageResponse) {
 				delayedLoop.flagFailure();

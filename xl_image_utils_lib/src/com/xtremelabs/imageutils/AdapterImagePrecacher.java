@@ -24,6 +24,7 @@ import android.util.TypedValue;
 import android.widget.BaseAdapter;
 
 import com.xtremelabs.imageutils.ImageLoader.Options;
+import com.xtremelabs.imageutils.ImageRequest.ImageRequestType;
 
 /**
  * This utility simplifies the process of implementing precaching in adapters for use in widgets such as ListViews and ViewPagers.<br>
@@ -42,7 +43,7 @@ import com.xtremelabs.imageutils.ImageLoader.Options;
  * 
  * TODO Research into extending different kinds of adapters. (Start with ListViews)
  */
-public class ImagePrecacheAssistant {
+public class AdapterImagePrecacher {
 	private enum Direction {
 		DOWN, UP
 	}
@@ -60,7 +61,7 @@ public class ImagePrecacheAssistant {
 	private Direction mCurrentDirection = Direction.UP;
 	private boolean isFirstCalculation = true;
 
-	public ImagePrecacheAssistant(ImageLoader imageLoader, PrecacheInformationProvider precacheInformationProvider) {
+	public AdapterImagePrecacher(ImageLoader imageLoader, PrecacheInformationProvider precacheInformationProvider) {
 		mImageLoader = imageLoader;
 		mPrecacheInformationProvider = precacheInformationProvider;
 	}
@@ -114,7 +115,15 @@ public class ImagePrecacheAssistant {
 	private void precacheListToMemory(List<PrecacheRequest> precacheRequests) {
 		if (precacheRequests != null) {
 			for (PrecacheRequest precacheRequest : precacheRequests) {
-				mImageLoader.precacheImageToDiskAndMemory(precacheRequest.mUri, precacheRequest.mBounds, precacheRequest.mOptions);
+				ImageRequest imageRequest = new ImageRequest(precacheRequest.mUri);
+				imageRequest.setImageRequestType(ImageRequestType.PRECACHE_TO_MEMORY_FOR_ADAPTER);
+				Options options;
+				options = precacheRequest.mOptions;
+				options.heightBounds = precacheRequest.mBounds.height;
+				options.widthBounds = precacheRequest.mBounds.width;
+				imageRequest.setImageRequestType(ImageRequestType.PRECACHE_TO_MEMORY_FOR_ADAPTER);
+				mImageLoader.loadImage(imageRequest);
+				// mImageLoader.precacheImageToDiskAndMemory(precacheRequest.mUri, precacheRequest.mBounds, precacheRequest.mOptions);
 			}
 		}
 	}
@@ -122,7 +131,7 @@ public class ImagePrecacheAssistant {
 	private void precacheListToDisk(List<String> precacheRequestUris) {
 		if (precacheRequestUris != null) {
 			for (String precacheRequestUri : precacheRequestUris) {
-				mImageLoader.precacheImageToDisk(precacheRequestUri);
+				mImageLoader.precacheImageToDisk(precacheRequestUri, true);
 			}
 		}
 	}
@@ -206,7 +215,7 @@ public class ImagePrecacheAssistant {
 	}
 
 	/**
-	 * This interface must be implemented in order for the {@link ImagePrecacheAssistant} to function.
+	 * This interface must be implemented in order for the {@link AdapterImagePrecacher} to function.
 	 */
 	public static interface PrecacheInformationProvider {
 		/**
@@ -242,7 +251,7 @@ public class ImagePrecacheAssistant {
 
 		private String mUri;
 		private Dimensions mBounds;
-		private Options mOptions;
+		private Options mOptions = new Options();
 
 		/**
 		 * @param uri

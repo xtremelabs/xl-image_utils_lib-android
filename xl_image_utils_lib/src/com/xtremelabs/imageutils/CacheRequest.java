@@ -17,20 +17,17 @@
 package com.xtremelabs.imageutils;
 
 import com.xtremelabs.imageutils.ImageLoader.Options;
+import com.xtremelabs.imageutils.ImageRequest.ImageRequestType;
 
 class CacheRequest {
 	static enum LocationOfImage {
 		WEB, LOCAL_FILE_SYSTEM
 	}
 
-	static enum RequestType {
-		CACHE_TO_DISK, CACHE_TO_DISK_AND_MEMORY, FULL_REQUEST
-	}
-
 	private final String mUri;
 	private final ScalingInfo mScalingInfo;
 	private LocationOfImage mImageRequestType;
-	private RequestType mRequestType = RequestType.FULL_REQUEST;
+	private ImageRequestType mRequestType = ImageRequestType.DEFAULT;
 	private final Options mOptions;
 
 	public CacheRequest(String uri) {
@@ -75,11 +72,11 @@ class CacheRequest {
 		return mScalingInfo;
 	}
 
-	void setRequestType(RequestType requestType) {
+	void setRequestType(ImageRequestType requestType) {
 		mRequestType = requestType;
 	}
 
-	RequestType getRequestType() {
+	ImageRequestType getRequestType() {
 		return mRequestType;
 	}
 
