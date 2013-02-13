@@ -16,7 +16,6 @@
 
 package com.xtremelabs.imageutils;
 
-import android.app.Activity;
 import android.test.AndroidTestCase;
 import android.test.UiThreadTest;
 import android.view.ViewGroup.LayoutParams;
@@ -33,13 +32,21 @@ public class ScalingInfoTests extends AndroidTestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
+		ThreadChecker.disableUiThreadCheck();
 		options = new Options();
-		imageView = new ImageView(new Activity());
+		imageView = new ImageView(getContext());
+	}
+
+	@Override
+	protected void tearDown() throws Exception {
+		ThreadChecker.enableUiThreadCheck();
+
+		super.tearDown();
 	}
 
 	@UiThreadTest
 	public void testOptionsOff() {
-		mImageLoader = ImageLoader.buildImageLoaderForActivity(new Activity());
+		mImageLoader = ImageLoader.buildImageLoaderForTesting(this, getContext().getApplicationContext());
 
 		options.autoDetectBounds = false;
 		options.useScreenSizeAsBounds = false;
@@ -51,14 +58,14 @@ public class ScalingInfoTests extends AndroidTestCase {
 
 	@UiThreadTest
 	public void testScreenBounds() {
-		mImageLoader = ImageLoader.buildImageLoaderForActivity(new Activity());
+		mImageLoader = ImageLoader.buildImageLoaderForTesting(this, getContext().getApplicationContext());
 		options.autoDetectBounds = false;
 		options.useScreenSizeAsBounds = true;
 		scalingInfo = mImageLoader.getScalingInfo(imageView, options);
 		assertNotNull(scalingInfo.width);
 		assertNotNull(scalingInfo.height);
 
-		Dimensions screenDimensions = DisplayUtility.getDisplaySize(new Activity().getApplicationContext());
+		Dimensions screenDimensions = DisplayUtility.getDisplaySize(getContext());
 		options.useScreenSizeAsBounds = true;
 		scalingInfo = mImageLoader.getScalingInfo(imageView, options);
 
@@ -72,7 +79,7 @@ public class ScalingInfoTests extends AndroidTestCase {
 
 	@UiThreadTest
 	public void testAutoDetectBounds() {
-		mImageLoader = ImageLoader.buildImageLoaderForActivity(new Activity());
+		mImageLoader = ImageLoader.buildImageLoaderForTesting(this, getContext().getApplicationContext());
 		options.autoDetectBounds = true;
 		options.useScreenSizeAsBounds = false;
 
@@ -97,20 +104,20 @@ public class ScalingInfoTests extends AndroidTestCase {
 
 	@UiThreadTest
 	public void testAutoDetectBoundsWithScreenSize() {
-		mImageLoader = ImageLoader.buildImageLoaderForActivity(new Activity());
+		mImageLoader = ImageLoader.buildImageLoaderForTesting(this, getContext().getApplicationContext());
 		options.autoDetectBounds = true;
 		options.useScreenSizeAsBounds = true;
 
 		setParams(LayoutParams.WRAP_CONTENT, 100);
 		scalingInfo = mImageLoader.getScalingInfo(imageView, options);
-		assertEquals(DisplayUtility.getDisplaySize(new Activity().getApplicationContext()).width.intValue(), scalingInfo.width.intValue());
+		assertEquals(DisplayUtility.getDisplaySize(getContext()).width.intValue(), scalingInfo.width.intValue());
 		assertEquals(100, scalingInfo.height.intValue());
 		assertNull(scalingInfo.sampleSize);
 
 		setParams(100, LayoutParams.WRAP_CONTENT);
 		scalingInfo = mImageLoader.getScalingInfo(imageView, options);
 		assertEquals(100, scalingInfo.width.intValue());
-		assertEquals(DisplayUtility.getDisplaySize(new Activity().getApplicationContext()).height.intValue(), scalingInfo.height.intValue());
+		assertEquals(DisplayUtility.getDisplaySize(getContext()).height.intValue(), scalingInfo.height.intValue());
 		assertNull(scalingInfo.sampleSize);
 
 		setParams(100, 50);
@@ -121,14 +128,14 @@ public class ScalingInfoTests extends AndroidTestCase {
 
 		setParams(50000, 50000);
 		scalingInfo = mImageLoader.getScalingInfo(imageView, options);
-		assertEquals(DisplayUtility.getDisplaySize(new Activity().getApplicationContext()).width.intValue(), scalingInfo.width.intValue());
-		assertEquals(DisplayUtility.getDisplaySize(new Activity().getApplicationContext()).height.intValue(), scalingInfo.height.intValue());
+		assertEquals(DisplayUtility.getDisplaySize(getContext()).width.intValue(), scalingInfo.width.intValue());
+		assertEquals(DisplayUtility.getDisplaySize(getContext()).height.intValue(), scalingInfo.height.intValue());
 		assertNull(scalingInfo.sampleSize);
 	}
 
 	@UiThreadTest
 	public void testOverrideSampleSize() {
-		mImageLoader = ImageLoader.buildImageLoaderForActivity(new Activity());
+		mImageLoader = ImageLoader.buildImageLoaderForTesting(this, getContext().getApplicationContext());
 
 		options.overrideSampleSize = 4;
 		options.autoDetectBounds = true;

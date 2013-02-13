@@ -178,30 +178,30 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Op
 	 * 
 	 * @param uri
 	 */
-	public void precacheImageToDisk(ImageRequest imageRequest) {
-		String uri = imageRequest.getUri();
-		validateUri(uri);
-
-		if (GeneralUtils.isFileSystemUri(uri)) {
-			return;
-		}
-
-		if (!mAsyncOperationsMap.isNetworkRequestPending(imageRequest) && !mDiskCache.isCached(uri)) {
-			mAsyncOperationsMap.registerNetworkRequest(imageRequest, new ImageCacherListener() {
-				@Override
-				public void onImageAvailable(ImageResponse imageResponse) {
-					// Intentionally blank.
-				}
-
-				@Override
-				public void onFailure(String message) {
-					// Intentionally blank.
-				}
-			});
-		} else {
-			mDiskCache.bumpOnDisk(uri);
-		}
-	}
+	// public void precacheImageToDisk(ImageRequest imageRequest) {
+	// String uri = imageRequest.getUri();
+	// validateUri(uri);
+	//
+	// if (GeneralUtils.isFileSystemUri(uri)) {
+	// return;
+	// }
+	//
+	// if (!mAsyncOperationsMap.isNetworkRequestPending(imageRequest) && !mDiskCache.isCached(uri)) {
+	// mAsyncOperationsMap.registerNetworkRequest(imageRequest, new ImageCacherListener() {
+	// @Override
+	// public void onImageAvailable(ImageResponse imageResponse) {
+	// // Intentionally blank.
+	// }
+	//
+	// @Override
+	// public void onFailure(String message) {
+	// // Intentionally blank.
+	// }
+	// });
+	// } else {
+	// mDiskCache.bumpOnDisk(uri);
+	// }
+	// }
 
 	public void clearMemCache() {
 		mMemoryCache.clearCache();

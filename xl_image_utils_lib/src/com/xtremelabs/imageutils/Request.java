@@ -18,6 +18,10 @@ public class Request<T> {
 
 	@Override
 	public boolean equals(Object o) {
-		return mData.equals(o);
+		if (o == null)
+			return false;
+		if (!(o instanceof Request))
+			return false;
+		return mData.equals(((Request<?>) o).mData);
 	}
 }
