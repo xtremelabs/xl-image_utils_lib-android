@@ -48,7 +48,7 @@ public class LocalImageRequestTests extends AndroidTestCase {
 		mImageLoader = ImageLoader.buildImageLoaderForTesting(this, getContext().getApplicationContext());
 		mImageLoader.stubReferenceManager(new ReferenceManager() {
 			@Override
-			public void getBitmap(Object key, ImageRequest imageRequest, ImageManagerListener imageManagerListener) {
+			public void getBitmap(Object key, CacheRequest imageRequest, ImageManagerListener imageManagerListener) {
 				imageManagerListener.onImageReceived(new ImageResponse(null, ImageReturnedFrom.DISK, ImageResponseStatus.SUCCESS));
 			}
 

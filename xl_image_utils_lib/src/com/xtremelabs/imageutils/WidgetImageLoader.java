@@ -4,7 +4,7 @@ import android.content.Context;
 import android.util.Log;
 
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
-import com.xtremelabs.imageutils.CacheRequest.RequestType;
+import com.xtremelabs.imageutils.ImageRequest.ImageRequestType;
 
 public class WidgetImageLoader extends ImageLoader {
 	WidgetImageLoader(Object imageLoaderClass, Context context) {
@@ -20,7 +20,7 @@ public class WidgetImageLoader extends ImageLoader {
 
 			ScalingInfo scalingInfo = getScalingInfo(null, options);
 			CacheRequest imageRequest = new CacheRequest(uri, scalingInfo, options);
-			imageRequest.setRequestType(RequestType.CACHE_TO_DISK);
+			imageRequest.setRequestType(ImageRequestType.PRECACHE_TO_DISK);
 			return ImageCacher.getInstance(getApplicationContext()).getBitmapSynchronouslyFromDiskOrMemory(imageRequest, getImageCacherListener(listener));
 		} else {
 			Log.w(TAG, "WARNING: loadImageSynchronouslyFromDiskOrMemory was called after the ImageLoader was destroyed.");

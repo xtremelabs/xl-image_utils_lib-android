@@ -37,9 +37,4 @@ class StackPriorityAccessor implements PriorityAccessor {
 	public void clear() {
 		mStack.clear();
 	}
-
-	@Override
-	public void bump(Prioritizable prioritizable) {
-		mStack.bump(prioritizable);
-	}
 }

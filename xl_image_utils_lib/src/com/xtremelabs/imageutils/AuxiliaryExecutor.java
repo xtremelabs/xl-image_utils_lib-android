@@ -23,13 +23,12 @@ class AuxiliaryExecutor {
 		}
 	}
 
-	// public synchronized void cancel(Prioritizable prioritizable) {
-	// prioritizable.cancel();
-	// mQueuingMaps.remove(prioritizable);
-	// }
-
 	public synchronized void notifyRequestComplete(Request<?> request) {
 		mQueuingMaps.onComplete(request);
+	}
+
+	public synchronized boolean cancel(Prioritizable prioritizable) {
+		return mQueuingMaps.cancel(prioritizable);
 	}
 
 	private synchronized void notifyBeforeExecuteCalled(Runnable r) {

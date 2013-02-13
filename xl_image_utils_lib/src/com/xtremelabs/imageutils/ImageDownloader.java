@@ -37,8 +37,8 @@ class ImageDownloader implements ImageNetworkInterface {
 	}
 
 	@Override
-	public Prioritizable getNetworkPrioritizable(CacheRequest imageRequest) {
-		return new ImageDownloadingRunnable(imageRequest.getUri());
+	public Prioritizable getNetworkPrioritizable(CacheRequest cacheRequest) {
+		return new ImageDownloadingRunnable(cacheRequest);
 	}
 
 	@Override
@@ -51,29 +51,29 @@ class ImageDownloader implements ImageNetworkInterface {
 	}
 
 	class ImageDownloadingRunnable extends Prioritizable {
-		private final String mUri;
+		private final CacheRequest mCacheRequest;
 
-		public ImageDownloadingRunnable(String uri) {
-			mUri = uri;
+		public ImageDownloadingRunnable(CacheRequest cacheRequest) {
+			mCacheRequest = cacheRequest;
 		}
 
 		@Override
 		public void execute() {
 			try {
-				mNetworkRequestCreator.getInputStream(mUri, new InputStreamListener() {
+				mNetworkRequestCreator.getInputStream(mCacheRequest.getUri(), new InputStreamListener() {
 					@Override
 					public void onInputStreamReady(InputStream inputStream) {
 						String errorMessage = loadInputStreamToDisk(inputStream);
 						if (errorMessage != null) {
-							mImageDownloadObserver.onImageDownloadFailed(mUri, errorMessage);
+							mImageDownloadObserver.onImageDownloadFailed(mCacheRequest.getUri(), errorMessage);
 						} else {
-							mImageDownloadObserver.onImageDownloaded(mUri);
+							mImageDownloadObserver.onImageDownloaded(mCacheRequest.getUri());
 						}
 					}
 
 					@Override
 					public void onFailure(String errorMessage) {
-						mImageDownloadObserver.onImageDownloadFailed(mUri, errorMessage);
+						mImageDownloadObserver.onImageDownloadFailed(mCacheRequest.getUri(), errorMessage);
 					}
 				});
 			} catch (IllegalStateException e) {
@@ -86,19 +86,19 @@ class ImageDownloader implements ImageNetworkInterface {
 			 * NOTE: If a bad URL is passed in (for example, mUrl = "N/A", the client.execute() call will throw an IllegalStateException. We do not want this exception to crash the app. Rather, we want to log the error
 			 * and report a failure.
 			 */
-			Log.w(ImageLoader.TAG, "IMAGE LOAD FAILED - An error occurred while performing the network request for the image. Stack trace below. URL: " + mUri);
+			Log.w(ImageLoader.TAG, "IMAGE LOAD FAILED - An error occurred while performing the network request for the image. Stack trace below. URL: " + mCacheRequest.getUri());
 			e.printStackTrace();
 			String errorMessage = "Failed to download image. A stack trace has been output to the logs. Message: " + e.getMessage();
-			mImageDownloadObserver.onImageDownloadFailed(mUri, errorMessage);
+			mImageDownloadObserver.onImageDownloadFailed(mCacheRequest.getUri(), errorMessage);
 		}
 
 		private String loadInputStreamToDisk(InputStream inputStream) {
 			String errorMessage = null;
 			if (inputStream != null) {
 				try {
-					mNetworkToDiskInterface.downloadImageFromInputStream(mUri, inputStream);
+					mNetworkToDiskInterface.downloadImageFromInputStream(mCacheRequest.getUri(), inputStream);
 				} catch (IOException e) {
-					errorMessage = "IOException when downloading image: " + mUri + ", Exception type: " + e.getClass().getName() + ", Exception message: " + e.getMessage();
+					errorMessage = "IOException when downloading image: " + mCacheRequest.getUri() + ", Exception type: " + e.getClass().getName() + ", Exception message: " + e.getMessage();
 				} catch (IllegalArgumentException e) {
 					errorMessage = "Failed to download image with error message: " + e.getMessage();
 				} catch (IllegalStateException e) {
@@ -106,7 +106,7 @@ class ImageDownloader implements ImageNetworkInterface {
 					 * NOTE: If a bad URL is passed in (for example, mUrl = "N/A", the client.execute() call will throw an IllegalStateException. We do not want this exception to crash the app. Rather, we want to log the
 					 * error and report a failure.
 					 */
-					Log.w(ImageLoader.TAG, "IMAGE LOAD FAILED - An error occurred while performing the network request for the image. Stack trace below. URI: " + mUri);
+					Log.w(ImageLoader.TAG, "IMAGE LOAD FAILED - An error occurred while performing the network request for the image. Stack trace below. URI: " + mCacheRequest.getUri());
 					e.printStackTrace();
 					errorMessage = "Failed to download image. A stack trace has been output to the logs. Message: " + e.getMessage();
 				} finally {
@@ -123,12 +123,13 @@ class ImageDownloader implements ImageNetworkInterface {
 
 		@Override
 		public int getTargetPriorityAccessorIndex() {
+			// return QueueIndexTranslator.translateToIndex(mCacheRequest.getRequestType());
 			return 0;
 		}
 
 		@Override
 		public Request<?> getRequest() {
-			return new Request<String>(mUri);
+			return new Request<String>(mCacheRequest.getUri());
 		}
 	}
 }

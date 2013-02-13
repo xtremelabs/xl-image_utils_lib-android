@@ -23,7 +23,7 @@ public class NetworkInterfaceStub implements ImageNetworkInterface {
 	}
 
 	@Override
-	public Prioritizable getNetworkPrioritizable(ImageRequest imageRequest) {
+	public Prioritizable getNetworkPrioritizable(CacheRequest imageRequest) {
 		return null;
 	}
 }

@@ -49,7 +49,7 @@ public class KittenAdapter extends BaseAdapter {
 	private final String KITTEN_URI;
 	private final Activity mActivity;
 	private final ImageLoader mImageLoader;
-	// private ImagePrecacheAssistant mImagePrecacheAssistant;
+	// private AdapterImagePrecacher mImagePrecacheAssistant;
 	private final Dimensions mBounds;
 
 	public KittenAdapter(final Activity activity, ImageLoader imageLoader) {
@@ -64,7 +64,7 @@ public class KittenAdapter extends BaseAdapter {
 		mActivity.getWindowManager().getDefaultDisplay().getSize(size);
 		mBounds = new Dimensions(size.x / 2, (int) ((size.x / 800f) * 200f));
 
-		// mImagePrecacheAssistant = new ImagePrecacheAssistant(mImageLoader, new PrecacheInformationProvider() {
+		// mImagePrecacheAssistant = new AdapterImagePrecacher(mImageLoader, new PrecacheInformationProvider() {
 		// @Override
 		// public int getCount() {
 		// return KittenAdapter.this.getCount();
@@ -94,7 +94,7 @@ public class KittenAdapter extends BaseAdapter {
 		// return list;
 		// }
 		// });
-
+		//
 		// mImagePrecacheAssistant.setMemCacheRange(6);
 		// mImagePrecacheAssistant.setDiskCacheRange(5);
 	}

@@ -121,17 +121,13 @@ public class AuxiliaryQueue {
 		}
 	}
 
-	public interface OnRemovedListener {
-		public void onRemoved();
-
-		public void onRemovalFailed();
-	}
-
 	public boolean isEmpty() {
 		return size() == 0;
 	}
 
-	public void bump(Prioritizable prioritizable) {
-		mPriorityAccessors[prioritizable.getTargetPriorityAccessorIndex()].bump(prioritizable);
+	public interface OnRemovedListener {
+		public void onRemoved();
+
+		public void onRemovalFailed();
 	}
 }

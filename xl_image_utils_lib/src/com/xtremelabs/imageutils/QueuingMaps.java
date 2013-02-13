@@ -49,11 +49,12 @@ class QueuingMaps {
 		}
 	}
 
-	public synchronized void cancel(Prioritizable prioritizable) {
+	public synchronized boolean cancel(Prioritizable prioritizable) {
 		List<Prioritizable> list = mRequestListeners.get(prioritizable.getRequest());
 		if (list != null) {
 			list.remove(prioritizable);
 		}
 		prioritizable.cancel();
+		return mRunningRequests.contains(prioritizable.getRequest());
 	}
 }

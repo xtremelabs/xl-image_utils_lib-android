@@ -81,23 +81,29 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public Prioritizable getDetailsPrioritizable(final CacheRequest imageRequest) {
-		return new DiskRunnable() {
+	public Prioritizable getDetailsPrioritizable(final CacheRequest cacheRequest) {
+		return new Prioritizable() {
 			@Override
 			public void execute() {
-				cacheImageDetails(imageRequest.getUri());
+				cacheImageDetails(cacheRequest.getUri());
 			}
 
 			@Override
 			public Request<?> getRequest() {
-				return new Request<String>(imageRequest.getUri());
+				return new Request<String>(cacheRequest.getUri());
+			}
+
+			@Override
+			public int getTargetPriorityAccessorIndex() {
+				// return QueueIndexTranslator.translateToIndex(cacheRequest.getRequestType());
+				return 0;
 			}
 		};
 	}
 
 	@Override
-	public Prioritizable getDecodePrioritizable(final DecodeSignature decodeSignature, final ImageReturnedFrom imageReturnedFrom) {
-		return new DiskRunnable() {
+	public Prioritizable getDecodePrioritizable(final CacheRequest cacheRequest, final DecodeSignature decodeSignature, final ImageReturnedFrom imageReturnedFrom) {
+		return new Prioritizable() {
 			@Override
 			public void execute() {
 				boolean failed = false;
@@ -125,6 +131,12 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 			@Override
 			public Request<?> getRequest() {
 				return new Request<DecodeSignature>(decodeSignature);
+			}
+
+			@Override
+			public int getTargetPriorityAccessorIndex() {
+				// return QueueIndexTranslator.translateToIndex(cacheRequest.getRequestType());
+				return 0;
 			}
 		};
 	}
@@ -162,38 +174,43 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		}
 	}
 
-	public Prioritizable getDiskDecodingRunnable(final DecodeSignature decodeSignature, final ImageReturnedFrom returnedFrom) {
-		return new DiskRunnable() {
-			@Override
-			public void execute() {
-				boolean failed = false;
-				String errorMessage = null;
-				Bitmap bitmap = null;
-				try {
-					bitmap = getBitmapSynchronouslyFromDisk(decodeSignature);
-				} catch (FileNotFoundException e) {
-					failed = true;
-					errorMessage = "Disk decode failed with error message: " + e.getMessage();
-				} catch (FileFormatException e) {
-					failed = true;
-					errorMessage = "Disk decode failed with error message: " + e.getMessage();
-				}
-
-				if (!failed) {
-					mImageDiskObserver.onImageDecoded(decodeSignature, bitmap, returnedFrom);
-				} else {
-					mDiskManager.deleteFile(encode(decodeSignature.mUri));
-					mDatabaseHelper.deleteEntry(decodeSignature.mUri);
-					mImageDiskObserver.onImageDecodeFailed(decodeSignature, errorMessage);
-				}
-			}
-
-			@Override
-			public Request<?> getRequest() {
-				return new Request<DecodeSignature>(decodeSignature);
-			}
-		};
-	}
+	// public Prioritizable getDiskDecodingRunnable(final DecodeSignature decodeSignature, final ImageReturnedFrom returnedFrom) {
+	// return new Prioritizable() {
+	// @Override
+	// public void execute() {
+	// boolean failed = false;
+	// String errorMessage = null;
+	// Bitmap bitmap = null;
+	// try {
+	// bitmap = getBitmapSynchronouslyFromDisk(decodeSignature);
+	// } catch (FileNotFoundException e) {
+	// failed = true;
+	// errorMessage = "Disk decode failed with error message: " + e.getMessage();
+	// } catch (FileFormatException e) {
+	// failed = true;
+	// errorMessage = "Disk decode failed with error message: " + e.getMessage();
+	// }
+	//
+	// if (!failed) {
+	// mImageDiskObserver.onImageDecoded(decodeSignature, bitmap, returnedFrom);
+	// } else {
+	// mDiskManager.deleteFile(encode(decodeSignature.mUri));
+	// mDatabaseHelper.deleteEntry(decodeSignature.mUri);
+	// mImageDiskObserver.onImageDecodeFailed(decodeSignature, errorMessage);
+	// }
+	// }
+	//
+	// @Override
+	// public Request<?> getRequest() {
+	// return new Request<DecodeSignature>(decodeSignature);
+	// }
+	//
+	// @Override
+	// public int getTargetPriorityAccessorIndex() {
+	// return 0;
+	// }
+	// };
+	// }
 
 	@Override
 	public void downloadImageFromInputStream(String uri, InputStream inputStream) throws IOException {
@@ -331,12 +348,5 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 
 	void stubImageDiskObserver(ImageDiskObserver imageDecodeObserver) {
 		mImageDiskObserver = imageDecodeObserver;
-	}
-
-	private abstract class DiskRunnable extends Prioritizable {
-		@Override
-		public int getTargetPriorityAccessorIndex() {
-			return 0;
-		}
 	}
 }

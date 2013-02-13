@@ -94,13 +94,13 @@ public class DiskLRUCacherTests extends AndroidTestCase {
 
 		final Dimensions dimensions = mDiskCacher.getImageDimensions(mKittenImageUri);
 
-		int sampleSize = mDiskCacher.getSampleSize(new ImageRequest(mKittenImageUri, new ScalingInfo()));
+		int sampleSize = mDiskCacher.getSampleSize(new CacheRequest(mKittenImageUri, new ScalingInfo()));
 		assertEquals(1, sampleSize);
 
 		ScalingInfo scalingInfo = new ScalingInfo();
 		scalingInfo.width = dimensions.width / 2;
 		scalingInfo.height = dimensions.height / 2;
-		sampleSize = mDiskCacher.getSampleSize(new ImageRequest(mKittenImageUri, scalingInfo));
+		sampleSize = mDiskCacher.getSampleSize(new CacheRequest(mKittenImageUri, scalingInfo));
 		assertEquals(2, sampleSize);
 	}
 
