@@ -123,8 +123,7 @@ class ImageDownloader implements ImageNetworkInterface {
 
 		@Override
 		public int getTargetPriorityAccessorIndex() {
-			// return QueueIndexTranslator.translateToIndex(mCacheRequest.getRequestType());
-			return 0;
+			return QueueIndexTranslator.translateToIndex(mCacheRequest.getRequestType());
 		}
 
 		@Override

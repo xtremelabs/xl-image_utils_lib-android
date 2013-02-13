@@ -34,13 +34,13 @@ class AsyncOperationsMaps {
 	}
 
 	private PriorityAccessor[] generateAccessors() {
-		PriorityAccessor[] accessors = new PriorityAccessor[1];
+		PriorityAccessor[] accessors = new PriorityAccessor[6];
 		accessors[0] = new StackPriorityAccessor();
-		// accessors[1] = new StackPriorityAccessor();
-		// accessors[2] = new QueuePriorityAccessor();
-		// accessors[3] = new QueuePriorityAccessor();
-		// accessors[4] = new QueuePriorityAccessor();
-		// accessors[5] = new QueuePriorityAccessor();
+		accessors[1] = new StackPriorityAccessor();
+		accessors[2] = new StackPriorityAccessor();
+		accessors[3] = new StackPriorityAccessor();
+		accessors[4] = new StackPriorityAccessor();
+		accessors[5] = new StackPriorityAccessor();
 		return accessors;
 	}
 
@@ -188,10 +188,11 @@ class AsyncOperationsMaps {
 					case PRECACHE_TO_MEMORY_FOR_ADAPTER:
 					case ADAPTER_REQUEST:
 					case DEFAULT:
-						int sampleSize = mObserver.getSampleSize(new CacheRequest(uri, networkRequestParameters.cacheRequest.getScalingInfo()));
+						CacheRequest cacheRequest = networkRequestParameters.cacheRequest;
+						int sampleSize = mObserver.getSampleSize(cacheRequest);
 						DecodeSignature decodeSignature = new DecodeSignature(uri, sampleSize, networkRequestParameters.cacheRequest.getOptions().preferedConfig);
 
-						registerDecodeRequest(networkRequestParameters.cacheRequest, decodeSignature, imageCacherListener);
+						registerDecodeRequest(cacheRequest, decodeSignature, imageCacherListener);
 						break;
 					default:
 						throw new IllegalStateException("The request type of the cache request was not present!");
