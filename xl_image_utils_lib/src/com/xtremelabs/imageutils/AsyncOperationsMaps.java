@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.graphics.Bitmap;
+import android.util.Log;
 
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
 import com.xtremelabs.imageutils.ImageRequest.ImageRequestType;
@@ -109,6 +110,7 @@ class AsyncOperationsMaps {
 		RequestParameters networkRequestParameters = new RequestParameters(imageCacherListener, imageRequest, prioritizable);
 		mNetworkOperationTracker.register(imageRequest.getUri(), networkRequestParameters, imageCacherListener);
 
+		Log.d("JAMIE", "JAMIE - Downloading: " + imageRequest.getUri());
 		mNetworkExecutor.execute(prioritizable);
 	}
 
@@ -122,6 +124,7 @@ class AsyncOperationsMaps {
 	}
 
 	synchronized void registerDecodeRequest(CacheRequest cacheRequest, DecodeSignature decodeSignature, ImageCacherListener imageCacherListener) {
+		Log.d("JAMIE", "JAMIE - Decoding: " + cacheRequest.getUri());
 		Prioritizable prioritizable = mObserver.getDecodeRunnable(cacheRequest, decodeSignature);
 
 		RequestParameters requestParameters = new RequestParameters(imageCacherListener, cacheRequest, prioritizable);
@@ -139,6 +142,8 @@ class AsyncOperationsMaps {
 	 */
 
 	public synchronized void onDownloadComplete(String uri) {
+		Log.d("JAMIE", "JAMIE - Download complete: " + uri);
+
 		// FIXME Do we want the decode to happen regardless of whether or not we have runnables to complete the decode?
 		// TODO Create a queue for details requests and force them to happen first on disk?
 		List<RequestParameters> requests = mNetworkOperationTracker.transferOperationToTracker(uri, mDetailsOperationTracker, mNetworkAndDetailsKeyReferenceProvider);
@@ -150,6 +155,7 @@ class AsyncOperationsMaps {
 	}
 
 	public void onDownloadFailed(String uri, String message) {
+		Log.d("JAMIE", "JAMIE - Download failed: " + uri);
 		List<RequestParameters> requestParametersList;
 		synchronized (this) {
 			requestParametersList = mNetworkOperationTracker.removeList(uri, mNetworkAndDetailsKeyReferenceProvider);
@@ -214,6 +220,7 @@ class AsyncOperationsMaps {
 	}
 
 	public void onDecodeSuccess(Bitmap bitmap, ImageReturnedFrom returnedFrom, DecodeSignature decodeSignature) {
+		Log.d("JAMIE", "JAMIE - Decode successful: " + decodeSignature.mUri);
 		List<RequestParameters> requestParametersList = null;
 		synchronized (this) {
 			requestParametersList = mDecodeOperationTracker.removeList(decodeSignature, mDecodeReferenceProvider);
@@ -228,6 +235,7 @@ class AsyncOperationsMaps {
 	}
 
 	public void onDecodeFailed(DecodeSignature decodeSignature, String message) {
+		Log.d("JAMIE", "JAMIE - Decode failed! " + decodeSignature.mUri);
 		List<RequestParameters> requestParametersList = null;
 		synchronized (this) {
 			requestParametersList = mDecodeOperationTracker.removeList(decodeSignature, mDecodeReferenceProvider);
@@ -242,12 +250,12 @@ class AsyncOperationsMaps {
 	}
 
 	public synchronized void cancelPendingRequest(ImageCacherListener imageCacherListener) {
-		if (isNetworkOperationPendingForListener(imageCacherListener))
-			cancelNetworkPrioritizable(imageCacherListener);
-		else if (isDetailsOperationPendingForListener(imageCacherListener))
-			cancelDetailsPrioritizable(imageCacherListener);
-		else if (isDecodeOperationPendingForListener(imageCacherListener))
-			cancelDecodePrioritizable(imageCacherListener);
+		// if (isNetworkOperationPendingForListener(imageCacherListener))
+		// cancelNetworkPrioritizable(imageCacherListener);
+		// else if (isDetailsOperationPendingForListener(imageCacherListener))
+		// cancelDetailsPrioritizable(imageCacherListener);
+		// else if (isDecodeOperationPendingForListener(imageCacherListener))
+		// cancelDecodePrioritizable(imageCacherListener);
 	}
 
 	private boolean isNetworkOperationPendingForListener(ImageCacherListener imageCacherListener) {
@@ -264,6 +272,7 @@ class AsyncOperationsMaps {
 
 	private synchronized void cancelNetworkPrioritizable(ImageCacherListener imageCacherListener) {
 		RequestParameters requestParameters = mNetworkOperationTracker.removeRequest(imageCacherListener, mNetworkAndDetailsKeyReferenceProvider, true);
+		Log.d("JAMIE", "JAMIE - Cancelled: " + requestParameters.cacheRequest.getUri());
 		mNetworkExecutor.cancel(requestParameters.prioritizable);
 	}
 
