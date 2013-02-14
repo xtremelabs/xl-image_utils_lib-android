@@ -83,13 +83,18 @@ public class AdapterImagePrecacher {
 
 		for (int i = ranges.diskCacheLowerIndex; i < ranges.diskCacheUpperIndex; i++) {
 			List<String> precacheRequestUris = mPrecacheInformationProvider.getRequestsForDiskPrecache(i);
-			precacheListToDisk(precacheRequestUris);
+			precacheListToDisk(precacheRequestUris, position);
 		}
 
 		for (int i = ranges.memCacheLowerIndex; i < ranges.memCacheUpperIndex; i++) {
 			List<PrecacheRequest> precacheRequests = mPrecacheInformationProvider.getImageRequestsForMemoryPrecache(i);
-			precacheListToMemory(precacheRequests);
+			precacheListToMemory(precacheRequests, position);
 		}
+	}
+
+	public void loadImage(ImageRequest imageRequest, int position) {
+		imageRequest.setPosition(position);
+		mImageLoader.loadImage(imageRequest);
 	}
 
 	/**
@@ -112,7 +117,7 @@ public class AdapterImagePrecacher {
 		mDiskCacheRange = range;
 	}
 
-	private void precacheListToMemory(List<PrecacheRequest> precacheRequests) {
+	private void precacheListToMemory(List<PrecacheRequest> precacheRequests, int position) {
 		if (precacheRequests != null) {
 			for (PrecacheRequest precacheRequest : precacheRequests) {
 				ImageRequest imageRequest = new ImageRequest(precacheRequest.mUri);
@@ -122,16 +127,20 @@ public class AdapterImagePrecacher {
 				options.heightBounds = precacheRequest.mBounds.height;
 				options.widthBounds = precacheRequest.mBounds.width;
 				imageRequest.setImageRequestType(ImageRequestType.PRECACHE_TO_MEMORY_FOR_ADAPTER);
+				imageRequest.setPosition(position);
 				mImageLoader.loadImage(imageRequest);
 				// mImageLoader.precacheImageToDiskAndMemory(precacheRequest.mUri, precacheRequest.mBounds, precacheRequest.mOptions);
 			}
 		}
 	}
 
-	private void precacheListToDisk(List<String> precacheRequestUris) {
+	private void precacheListToDisk(List<String> precacheRequestUris, int position) {
 		if (precacheRequestUris != null) {
 			for (String precacheRequestUri : precacheRequestUris) {
-				mImageLoader.precacheImageToDisk(precacheRequestUri, true);
+				ImageRequest imageRequest = new ImageRequest(precacheRequestUri);
+				imageRequest.setImageRequestType(ImageRequestType.PRECACHE_TO_DISK_FOR_ADAPTER);
+				imageRequest.setPosition(position);
+				mImageLoader.loadImage(imageRequest);
 			}
 		}
 	}

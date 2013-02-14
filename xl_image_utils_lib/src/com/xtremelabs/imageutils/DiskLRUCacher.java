@@ -82,27 +82,17 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 
 	@Override
 	public Prioritizable getDetailsPrioritizable(final CacheRequest cacheRequest) {
-		return new Prioritizable() {
+		return new DefaultPrioritizable(cacheRequest, new Request<String>(cacheRequest.getUri())) {
 			@Override
 			public void execute() {
 				cacheImageDetails(cacheRequest.getUri());
-			}
-
-			@Override
-			public Request<?> getRequest() {
-				return new Request<String>(cacheRequest.getUri());
-			}
-
-			@Override
-			public int getTargetPriorityAccessorIndex() {
-				return QueueIndexTranslator.translateToIndex(cacheRequest.getRequestType());
 			}
 		};
 	}
 
 	@Override
 	public Prioritizable getDecodePrioritizable(final CacheRequest cacheRequest, final DecodeSignature decodeSignature, final ImageReturnedFrom imageReturnedFrom) {
-		return new Prioritizable() {
+		return new DefaultPrioritizable(cacheRequest, new Request<DecodeSignature>(decodeSignature)) {
 			@Override
 			public void execute() {
 				boolean failed = false;
@@ -125,16 +115,6 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 					mDatabaseHelper.deleteEntry(decodeSignature.mUri);
 					mImageDiskObserver.onImageDecodeFailed(decodeSignature, errorMessage);
 				}
-			}
-
-			@Override
-			public Request<?> getRequest() {
-				return new Request<DecodeSignature>(decodeSignature);
-			}
-
-			@Override
-			public int getTargetPriorityAccessorIndex() {
-				return QueueIndexTranslator.translateToIndex(cacheRequest.getRequestType());
 			}
 		};
 	}

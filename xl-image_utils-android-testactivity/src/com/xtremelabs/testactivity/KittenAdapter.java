@@ -147,11 +147,11 @@ public class KittenAdapter extends BaseAdapter {
 		if (position % 2 == 0) {
 			ImageRequest imageRequest1 = new ImageRequest(kittenViews.kitten1, (String) getItem(position) + "1");
 			imageRequest1.setImageLoaderListener(mListener);
-			mImageLoader.loadImage(imageRequest1);
+			mImagePrecacheAssistant.loadImage(imageRequest1, position);
 
 			ImageRequest imageRequest2 = new ImageRequest(kittenViews.kitten2, (String) getItem(position) + "2");
 			imageRequest1.setImageLoaderListener(mListener);
-			mImageLoader.loadImage(imageRequest2);
+			mImagePrecacheAssistant.loadImage(imageRequest2, position);
 		} else {
 			mImageLoader.loadImage(kittenViews.kitten1, (String) getItem(position), null, mListener);
 			mImageLoader.loadImage(kittenViews.kitten2, (String) getItem(position), null, mListener);

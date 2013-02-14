@@ -29,6 +29,8 @@ class CacheRequest {
 	private LocationOfImage mImageRequestType;
 	private ImageRequestType mRequestType = ImageRequestType.DEFAULT;
 	private final Options mOptions;
+	private int mPosition;
+	private int mPrecacheQueueLimit;
 
 	public CacheRequest(String uri) {
 		this(uri, null);
@@ -86,5 +88,21 @@ class CacheRequest {
 		} else {
 			mImageRequestType = LocationOfImage.WEB;
 		}
+	}
+
+	public int getPosition() {
+		return mPosition;
+	}
+
+	public void setPosition(int position) {
+		mPosition = position;
+	}
+
+	public int getPrecacheQueueLimit() {
+		return mPrecacheQueueLimit;
+	}
+
+	public void setPrecacheQueueLimit(int precacheQueueLimit) {
+		mPrecacheQueueLimit = precacheQueueLimit;
 	}
 }
