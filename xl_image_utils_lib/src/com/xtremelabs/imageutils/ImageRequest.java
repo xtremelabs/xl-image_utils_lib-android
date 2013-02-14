@@ -14,6 +14,8 @@ public class ImageRequest {
 	private Options mOptions;
 	private ImageLoaderListener mImageLoaderListener;
 	private ImageRequestType mImageRequestType = ImageRequestType.DEFAULT;
+	private int mPosition;
+	private int mPrecacheQueueLimit;
 
 	public ImageRequest(ImageView imageView, String uri) {
 		mUri = uri;
@@ -54,6 +56,14 @@ public class ImageRequest {
 		mUri = uri;
 	}
 
+	void setPosition(int position) {
+		mPosition = position;
+	}
+
+	void setPrecacheQueueLimit(int precacheQueueLimit) {
+		mPrecacheQueueLimit = precacheQueueLimit;
+	}
+
 	String getUri() {
 		return mUri;
 	}
@@ -72,5 +82,13 @@ public class ImageRequest {
 
 	ImageRequestType getImageRequestType() {
 		return mImageRequestType;
+	}
+
+	int getPosition() {
+		return mPosition;
+	}
+
+	int getPrecacheQueueLimit() {
+		return mPrecacheQueueLimit;
 	}
 }

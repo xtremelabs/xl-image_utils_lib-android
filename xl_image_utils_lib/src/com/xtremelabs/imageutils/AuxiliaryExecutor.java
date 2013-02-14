@@ -4,6 +4,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import android.util.Log;
+
 // TODO Build unit tests
 class AuxiliaryExecutor {
 
@@ -28,6 +30,7 @@ class AuxiliaryExecutor {
 	}
 
 	public synchronized boolean cancel(Prioritizable prioritizable) {
+		Log.d("JAMIE", "JAMIE - In the Aux Executor.");
 		return mQueuingMaps.cancel(prioritizable);
 	}
 

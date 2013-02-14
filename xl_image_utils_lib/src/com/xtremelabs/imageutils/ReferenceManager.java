@@ -25,5 +25,4 @@ interface ReferenceManager {
 	List<ImageManagerListener> cancelRequestsForKey(Object key);
 
 	void cancelRequest(ImageManagerListener imageManagerListener);
-
 }

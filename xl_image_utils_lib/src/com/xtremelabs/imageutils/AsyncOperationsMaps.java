@@ -251,12 +251,14 @@ class AsyncOperationsMaps {
 	}
 
 	public synchronized void cancelPendingRequest(ImageCacherListener imageCacherListener) {
-		// if (isNetworkOperationPendingForListener(imageCacherListener))
-		// cancelNetworkPrioritizable(imageCacherListener);
-		// else if (isDetailsOperationPendingForListener(imageCacherListener))
-		// cancelDetailsPrioritizable(imageCacherListener);
-		// else if (isDecodeOperationPendingForListener(imageCacherListener))
-		// cancelDecodePrioritizable(imageCacherListener);
+		Log.d("JAMIE", "JAMIE - Cancelling");
+		if (isNetworkOperationPendingForListener(imageCacherListener))
+			cancelNetworkPrioritizable(imageCacherListener);
+		else if (isDetailsOperationPendingForListener(imageCacherListener))
+			cancelDetailsPrioritizable(imageCacherListener);
+		else if (isDecodeOperationPendingForListener(imageCacherListener))
+			cancelDecodePrioritizable(imageCacherListener);
+		Log.d("JAMIE", "JAMIE - Cancel complete!");
 	}
 
 	private boolean isNetworkOperationPendingForListener(ImageCacherListener imageCacherListener) {

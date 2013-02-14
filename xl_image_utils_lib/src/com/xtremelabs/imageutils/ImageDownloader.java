@@ -50,11 +50,9 @@ class ImageDownloader implements ImageNetworkInterface {
 		}
 	}
 
-	class ImageDownloadingRunnable extends Prioritizable {
-		private final CacheRequest mCacheRequest;
-
+	class ImageDownloadingRunnable extends DefaultPrioritizable {
 		public ImageDownloadingRunnable(CacheRequest cacheRequest) {
-			mCacheRequest = cacheRequest;
+			super(cacheRequest, new Request<String>(cacheRequest.getUri()));
 		}
 
 		@Override
@@ -119,16 +117,6 @@ class ImageDownloader implements ImageNetworkInterface {
 				}
 			}
 			return errorMessage;
-		}
-
-		@Override
-		public int getTargetPriorityAccessorIndex() {
-			return QueueIndexTranslator.translateToIndex(mCacheRequest.getRequestType());
-		}
-
-		@Override
-		public Request<?> getRequest() {
-			return new Request<String>(mCacheRequest.getUri());
 		}
 	}
 }
