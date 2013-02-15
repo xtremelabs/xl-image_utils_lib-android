@@ -23,4 +23,12 @@ abstract class DefaultPrioritizable extends Prioritizable {
 	public final CacheRequest getCacheRequest() {
 		return mCacheRequest;
 	}
+
+	public final void forceAdapterCacheToMemory() {
+		mCacheRequest.setRequestType(ImageRequestType.PRECACHE_TO_MEMORY_FOR_ADAPTER);
+	}
+
+	public final void forceAdapterCacheToDisk() {
+		mCacheRequest.setRequestType(ImageRequestType.PRECACHE_TO_DISK_FOR_ADAPTER);
+	}
 }

@@ -107,15 +107,10 @@ public class AdapterAccessor implements PriorityAccessor {
 
 	@Override
 	public synchronized boolean contains(Prioritizable prioritizable) {
-		for (Integer adapterId : mPendingAdapterIds) {
-			List<CacheKey> keys = mAdapterToCacheKeys.get(adapterId);
-			for (CacheKey key : keys) {
-				List<DefaultPrioritizable> prioritizableList = mCacheKeyToPrioritizables.get(key);
-				if (prioritizableList.contains(prioritizable))
-					return true;
-			}
-		}
-		return false;
+		DefaultPrioritizable castedPrioritizable = (DefaultPrioritizable) prioritizable;
+		CacheKey cacheKey = castedPrioritizable.getCacheRequest().getCacheKey();
+
+		return mCacheKeyToPrioritizables.get(cacheKey).contains(prioritizable);
 	}
 
 	private DefaultPrioritizable retrieveHighestPriorityRunnable(boolean removeOnRetrieval) {
