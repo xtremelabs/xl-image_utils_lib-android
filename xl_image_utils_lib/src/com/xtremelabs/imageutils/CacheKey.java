@@ -4,11 +4,15 @@ public class CacheKey {
 	public final int adapterId;
 	public final int position;
 	public final int queuedRequestLimit;
+	public final int memCacheRange;
+	public final int diskCacheRange;
 
-	public CacheKey(int adapterId, int position, int queuedRequestLimit) {
+	public CacheKey(int adapterId, int position, int queuedRequestLimit, int memCacheRange, int diskCacheRange) {
 		this.adapterId = adapterId;
 		this.position = position;
 		this.queuedRequestLimit = queuedRequestLimit;
+		this.memCacheRange = memCacheRange;
+		this.diskCacheRange = diskCacheRange;
 	}
 
 	@Override
