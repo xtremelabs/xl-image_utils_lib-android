@@ -24,7 +24,6 @@ import android.util.TypedValue;
 import android.widget.BaseAdapter;
 
 import com.xtremelabs.imageutils.ImageLoader.Options;
-import com.xtremelabs.imageutils.ImageRequest.ImageRequestType;
 
 /**
  * This utility simplifies the process of implementing precaching in adapters for use in widgets such as ListViews and ViewPagers.<br>
@@ -44,6 +43,8 @@ import com.xtremelabs.imageutils.ImageRequest.ImageRequestType;
  * TODO Research into extending different kinds of adapters. (Start with ListViews)
  */
 public class AdapterImagePrecacher {
+	private volatile static int mNextId = 0;
+
 	private enum Direction {
 		DOWN, UP
 	}
@@ -60,6 +61,7 @@ public class AdapterImagePrecacher {
 	private int mCurrentPosition = 0;
 	private Direction mCurrentDirection = Direction.UP;
 	private boolean isFirstCalculation = true;
+	private final int mId = mNextId++;
 
 	public AdapterImagePrecacher(ImageLoader imageLoader, PrecacheInformationProvider precacheInformationProvider) {
 		mImageLoader = imageLoader;
@@ -93,7 +95,7 @@ public class AdapterImagePrecacher {
 	}
 
 	public void loadImage(ImageRequest imageRequest, int position) {
-		imageRequest.setPosition(position);
+		imageRequest.setCacheKey(new CacheKey(mId, position, 0));
 		mImageLoader.loadImage(imageRequest);
 	}
 
@@ -127,7 +129,7 @@ public class AdapterImagePrecacher {
 				options.heightBounds = precacheRequest.mBounds.height;
 				options.widthBounds = precacheRequest.mBounds.width;
 				imageRequest.setImageRequestType(ImageRequestType.PRECACHE_TO_MEMORY_FOR_ADAPTER);
-				imageRequest.setPosition(position);
+				imageRequest.setCacheKey(new CacheKey(mId, position, mMemCacheRange * 2));
 				mImageLoader.loadImage(imageRequest);
 				// mImageLoader.precacheImageToDiskAndMemory(precacheRequest.mUri, precacheRequest.mBounds, precacheRequest.mOptions);
 			}
@@ -139,7 +141,7 @@ public class AdapterImagePrecacher {
 			for (String precacheRequestUri : precacheRequestUris) {
 				ImageRequest imageRequest = new ImageRequest(precacheRequestUri);
 				imageRequest.setImageRequestType(ImageRequestType.PRECACHE_TO_DISK_FOR_ADAPTER);
-				imageRequest.setPosition(position);
+				imageRequest.setCacheKey(new CacheKey(mId, position, mDiskCacheRange * 2));
 				mImageLoader.loadImage(imageRequest);
 			}
 		}

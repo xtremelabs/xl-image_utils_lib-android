@@ -27,7 +27,6 @@ import android.util.Log;
 import com.xtremelabs.imageutils.AsyncOperationsMaps.AsyncOperationState;
 import com.xtremelabs.imageutils.AsyncOperationsMaps.OperationsObserver;
 import com.xtremelabs.imageutils.DiskLRUCacher.FileFormatException;
-import com.xtremelabs.imageutils.ImageRequest.ImageRequestType;
 import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
 
 /**

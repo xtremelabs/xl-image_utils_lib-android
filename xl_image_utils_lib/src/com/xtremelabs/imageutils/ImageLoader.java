@@ -30,7 +30,6 @@ import android.os.Handler;
 import android.util.Log;
 import android.widget.ImageView;
 
-import com.xtremelabs.imageutils.ImageRequest.ImageRequestType;
 import com.xtremelabs.imageutils.ThreadChecker.CalledFromWrongThreadException;
 
 public class ImageLoader {
@@ -163,6 +162,7 @@ public class ImageLoader {
 
 			CacheRequest cacheRequest = new CacheRequest(imageRequest.getUri(), getScalingInfo(imageRequest.getImageView(), options), options);
 			cacheRequest.setRequestType(imageRequest.getImageRequestType());
+			cacheRequest.setCacheKey(imageRequest.getCacheKey());
 			performImageRequestOnUiThread(imageRequest.getImageView(), cacheRequest, options, imageManagerListener);
 		} else {
 			Log.w(TAG, "WARNING: loadImage was called after the ImageLoader was destroyed.");

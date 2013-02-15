@@ -17,7 +17,6 @@
 package com.xtremelabs.imageutils;
 
 import com.xtremelabs.imageutils.ImageLoader.Options;
-import com.xtremelabs.imageutils.ImageRequest.ImageRequestType;
 
 class CacheRequest {
 	static enum LocationOfImage {
@@ -29,8 +28,7 @@ class CacheRequest {
 	private LocationOfImage mImageRequestType;
 	private ImageRequestType mRequestType = ImageRequestType.DEFAULT;
 	private final Options mOptions;
-	private int mPosition;
-	private int mPrecacheQueueLimit;
+	private CacheKey mCacheKey;
 
 	public CacheRequest(String uri) {
 		this(uri, null);
@@ -90,19 +88,11 @@ class CacheRequest {
 		}
 	}
 
-	public int getPosition() {
-		return mPosition;
+	public CacheKey getCacheKey() {
+		return mCacheKey;
 	}
 
-	public void setPosition(int position) {
-		mPosition = position;
-	}
-
-	public int getPrecacheQueueLimit() {
-		return mPrecacheQueueLimit;
-	}
-
-	public void setPrecacheQueueLimit(int precacheQueueLimit) {
-		mPrecacheQueueLimit = precacheQueueLimit;
+	public void setCacheKey(CacheKey cacheKey) {
+		mCacheKey = cacheKey;
 	}
 }

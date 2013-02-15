@@ -5,17 +5,12 @@ import android.widget.ImageView;
 import com.xtremelabs.imageutils.ImageLoader.Options;
 
 public class ImageRequest {
-	public static enum ImageRequestType {
-		DEFAULT, PRECACHE_TO_DISK, PRECACHE_TO_MEMORY, ADAPTER_REQUEST, PRECACHE_TO_DISK_FOR_ADAPTER, PRECACHE_TO_MEMORY_FOR_ADAPTER
-	}
-
 	private String mUri;
 	private ImageView mImageView;
 	private Options mOptions;
 	private ImageLoaderListener mImageLoaderListener;
 	private ImageRequestType mImageRequestType = ImageRequestType.DEFAULT;
-	private int mPosition;
-	private int mPrecacheQueueLimit;
+	private CacheKey mCacheKey;
 
 	public ImageRequest(ImageView imageView, String uri) {
 		mUri = uri;
@@ -56,14 +51,6 @@ public class ImageRequest {
 		mUri = uri;
 	}
 
-	void setPosition(int position) {
-		mPosition = position;
-	}
-
-	void setPrecacheQueueLimit(int precacheQueueLimit) {
-		mPrecacheQueueLimit = precacheQueueLimit;
-	}
-
 	String getUri() {
 		return mUri;
 	}
@@ -84,11 +71,11 @@ public class ImageRequest {
 		return mImageRequestType;
 	}
 
-	int getPosition() {
-		return mPosition;
+	public CacheKey getCacheKey() {
+		return mCacheKey;
 	}
 
-	int getPrecacheQueueLimit() {
-		return mPrecacheQueueLimit;
+	public void setCacheKey(CacheKey cacheKey) {
+		mCacheKey = cacheKey;
 	}
 }

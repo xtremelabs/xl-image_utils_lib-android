@@ -209,9 +209,14 @@ public class AuxiliaryBlockingQueue extends AbstractQueue<Runnable> implements B
 		Prioritizable prioritizable;
 		do {
 			prioritizable = mQueue.removeHighestPriorityRunnable();
-			if (prioritizable != null && mCount > 0)
-				mCount--;
+			if (mCount > 0) {
+				if (prioritizable != null)
+					mCount--;
+				else
+					mCount = mQueue.size();
+			}
 		} while ((prioritizable == null || prioritizable.isCancelled()) && mCount > 0);
+
 		if (prioritizable == null)
 			return null;
 		else

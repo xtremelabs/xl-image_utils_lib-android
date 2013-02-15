@@ -6,8 +6,8 @@ import java.util.List;
 import android.graphics.Bitmap;
 import android.util.Log;
 
+import com.xtremelabs.imageutils.AdapterAccessor.AdapterAccessorType;
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
-import com.xtremelabs.imageutils.ImageRequest.ImageRequestType;
 import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
 import com.xtremelabs.imageutils.OperationTracker.KeyReferenceProvider;
 import com.xtremelabs.imageutils.OperationTracker.OperationTransferer;
@@ -34,13 +34,14 @@ class AsyncOperationsMaps {
 	}
 
 	private PriorityAccessor[] generateAccessors() {
-		PriorityAccessor[] accessors = new PriorityAccessor[6];
+		PriorityAccessor[] accessors = new PriorityAccessor[7];
 		accessors[0] = new StackPriorityAccessor();
 		accessors[1] = new StackPriorityAccessor();
-		accessors[2] = new StackPriorityAccessor();
-		accessors[3] = new StackPriorityAccessor();
-		accessors[4] = new StackPriorityAccessor();
+		accessors[2] = new AdapterAccessor(AdapterAccessorType.QUEUE);
+		accessors[3] = new AdapterAccessor(AdapterAccessorType.QUEUE);
+		accessors[4] = new AdapterAccessor(AdapterAccessorType.STACK);
 		accessors[5] = new StackPriorityAccessor();
+		accessors[6] = new StackPriorityAccessor();
 		return accessors;
 	}
 
@@ -236,7 +237,6 @@ class AsyncOperationsMaps {
 	}
 
 	public void onDecodeFailed(DecodeSignature decodeSignature, String message) {
-		Log.d("JAMIE", "JAMIE - Decode failed! " + decodeSignature.mUri);
 		List<RequestParameters> requestParametersList = null;
 		synchronized (this) {
 			requestParametersList = mDecodeOperationTracker.removeList(decodeSignature, mDecodeReferenceProvider);
@@ -251,14 +251,12 @@ class AsyncOperationsMaps {
 	}
 
 	public synchronized void cancelPendingRequest(ImageCacherListener imageCacherListener) {
-		Log.d("JAMIE", "JAMIE - Cancelling");
 		if (isNetworkOperationPendingForListener(imageCacherListener))
 			cancelNetworkPrioritizable(imageCacherListener);
 		else if (isDetailsOperationPendingForListener(imageCacherListener))
 			cancelDetailsPrioritizable(imageCacherListener);
 		else if (isDecodeOperationPendingForListener(imageCacherListener))
 			cancelDecodePrioritizable(imageCacherListener);
-		Log.d("JAMIE", "JAMIE - Cancel complete!");
 	}
 
 	private boolean isNetworkOperationPendingForListener(ImageCacherListener imageCacherListener) {
@@ -275,8 +273,8 @@ class AsyncOperationsMaps {
 
 	private synchronized void cancelNetworkPrioritizable(ImageCacherListener imageCacherListener) {
 		RequestParameters requestParameters = mNetworkOperationTracker.removeRequest(imageCacherListener, mNetworkAndDetailsKeyReferenceProvider, true);
-		Log.d("JAMIE", "JAMIE - Cancelled: " + requestParameters.cacheRequest.getUri());
 		mNetworkExecutor.cancel(requestParameters.prioritizable);
+		// CacheRequest cacheRequest = requestParameters.cacheRequest;fgaegiu
 	}
 
 	private void cancelDetailsPrioritizable(ImageCacherListener imageCacherListener) {
