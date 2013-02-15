@@ -4,7 +4,6 @@ import android.content.Context;
 import android.util.Log;
 
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
-import com.xtremelabs.imageutils.ImageRequest.ImageRequestType;
 
 public class WidgetImageLoader extends ImageLoader {
 	WidgetImageLoader(Object imageLoaderClass, Context context) {

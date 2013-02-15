@@ -1,7 +1,5 @@
 package com.xtremelabs.imageutils;
 
-import com.xtremelabs.imageutils.ImageRequest.ImageRequestType;
-
 public class QueueIndexTranslator {
 	/*
 	 * Priorities for request types:
@@ -22,10 +20,12 @@ public class QueueIndexTranslator {
 			return 2;
 		case PRECACHE_TO_DISK_FOR_ADAPTER:
 			return 3;
-		case PRECACHE_TO_MEMORY:
+		case DEPRIORITIZED_FOR_ADAPTER:
 			return 4;
-		case PRECACHE_TO_DISK:
+		case PRECACHE_TO_MEMORY:
 			return 5;
+		case PRECACHE_TO_DISK:
+			return 6;
 		default:
 			throw new IllegalArgumentException("Unrecognized ImageRequestType!");
 		}

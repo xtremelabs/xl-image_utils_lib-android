@@ -4,6 +4,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import android.os.AsyncTask;
 import android.util.Log;
 
 // TODO Build unit tests
@@ -18,10 +19,16 @@ class AuxiliaryExecutor {
 		mExecutor = new AuxiliaryThreadPool(corePoolSize, maximumPoolSize, keepAliveTime, unit, mQueue);
 	}
 
-	public synchronized void execute(Prioritizable prioritizable) {
+	public synchronized void execute(final Prioritizable prioritizable) {
 		if (!prioritizable.isCancelled()) {
 			mQueuingMaps.put(prioritizable);
-			mExecutor.execute(prioritizable);
+			new AsyncTask<Void, Void, Void>() {
+				@Override
+				protected Void doInBackground(Void... params) {
+					mExecutor.execute(prioritizable);
+					return null;
+				}
+			}.execute();
 		}
 	}
 

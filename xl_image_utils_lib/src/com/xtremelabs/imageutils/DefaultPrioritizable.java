@@ -20,7 +20,7 @@ abstract class DefaultPrioritizable extends Prioritizable {
 		return mRequest;
 	}
 
-	public final int getQueueLimit() {
-		return mCacheRequest.getPrecacheQueueLimit();
+	public final CacheRequest getCacheRequest() {
+		return mCacheRequest;
 	}
 }
