@@ -96,6 +96,7 @@ public class AdapterImagePrecacher {
 
 	public void loadImage(ImageRequest imageRequest, int position) {
 		imageRequest.setCacheKey(new CacheKey(mId, position, 0, mMemCacheRange, mDiskCacheRange));
+		imageRequest.setImageRequestType(ImageRequestType.ADAPTER_REQUEST);
 		mImageLoader.loadImage(imageRequest);
 	}
 

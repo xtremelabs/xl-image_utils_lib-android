@@ -24,13 +24,15 @@ public class AdapterDeprioritizedAccessor implements PriorityAccessor {
 		if (!mPendingAdapterIds.contains(adapterId))
 			mPendingAdapterIds.add(adapterId);
 
+		boolean isKeyListEmpty = false;
 		CacheKey[] keyList = mAdapterToCacheKeys.get(adapterId);
 		if (keyList == null) {
 			keyList = new CacheKey[cacheKey.memCacheRange + cacheKey.diskCacheRange];
 			mAdapterToCacheKeys.append(adapterId, keyList);
+			isKeyListEmpty = true;
 		}
 
-		if (keyList.length == 0 || !mCacheKeyToPrioritizables.containsKey(cacheKey)) {
+		if (isKeyListEmpty || !mCacheKeyToPrioritizables.containsKey(cacheKey)) {
 			appendCacheKey(cacheKey, keyList);
 		}
 
@@ -51,17 +53,22 @@ public class AdapterDeprioritizedAccessor implements PriorityAccessor {
 
 		List<DefaultPrioritizable> pList = mCacheKeyToPrioritizables.get(cacheKey);
 		if (pList != null && pList.remove(prioritizable)) {
-			int adapterId = cacheKey.adapterId;
-			CacheKey[] keys = mAdapterToCacheKeys.get(adapterId);
-			int numEmpty = 0;
-			for (int i = 0; i < keys.length; i++) {
-				if (keys[i].equals(cacheKey))
-					keys[i] = null;
-				if (keys[i] == null)
-					numEmpty++;
+			if (pList.isEmpty()) {
+				mCacheKeyToPrioritizables.remove(cacheKey);
+				int adapterId = cacheKey.adapterId;
+				CacheKey[] keys = mAdapterToCacheKeys.get(adapterId);
+				int numEmpty = 0;
+				for (int i = 0; i < keys.length; i++) {
+					if (keys[i].equals(cacheKey))
+						keys[i] = null;
+					if (keys[i] == null)
+						numEmpty++;
+				}
+				if (numEmpty == keys.length) {
+					mAdapterToCacheKeys.remove(Integer.valueOf(adapterId));
+					mPendingAdapterIds.remove(Integer.valueOf(adapterId));
+				}
 			}
-			if (numEmpty == keys.length)
-				mAdapterToCacheKeys.remove(Integer.valueOf(adapterId));
 
 			mSize--;
 			return true;
@@ -98,7 +105,8 @@ public class AdapterDeprioritizedAccessor implements PriorityAccessor {
 		DefaultPrioritizable castedPrioritizable = (DefaultPrioritizable) prioritizable;
 		CacheKey cacheKey = castedPrioritizable.getCacheRequest().getCacheKey();
 
-		return mCacheKeyToPrioritizables.get(cacheKey).contains(prioritizable);
+		List<DefaultPrioritizable> pList = mCacheKeyToPrioritizables.get(cacheKey);
+		return pList == null ? false : pList.contains(prioritizable);
 	}
 
 	private DefaultPrioritizable retrieveHighestPriorityRunnable(boolean removeOnRetrieval) {
@@ -155,6 +163,11 @@ public class AdapterDeprioritizedAccessor implements PriorityAccessor {
 			placeholder = keyList[i];
 			keyList[i] = cacheKey;
 			cacheKey = placeholder;
+		}
+
+		if (cacheKey != null) {
+			List<DefaultPrioritizable> pList = mCacheKeyToPrioritizables.remove(cacheKey);
+			mSize -= pList.size();
 		}
 	}
 }

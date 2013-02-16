@@ -2,14 +2,16 @@ package com.xtremelabs.imageutils;
 
 import android.test.AndroidTestCase;
 
-public class AdapterPrecacheAccessorTests extends AndroidTestCase {
-	private AdapterPrecacheAccessor mAccessor;
+import com.xtremelabs.imageutils.AdapterAccessor.AdapterAccessorType;
+
+public class AdapterAccessorTests extends AndroidTestCase {
+	private AdapterAccessor mAccessor;
 	private DefaultPrioritizable[] mPrioritizables;
 
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		mAccessor = new AdapterPrecacheAccessor();
+		mAccessor = new AdapterAccessor(AdapterAccessorType.QUEUE);
 		mPrioritizables = new DefaultPrioritizable[5];
 	}
 
@@ -74,7 +76,7 @@ public class AdapterPrecacheAccessorTests extends AndroidTestCase {
 
 	private CacheRequest generateCacheRequest(int position) {
 		CacheRequest cacheRequest = new CacheRequest("blah");
-		cacheRequest.setCacheKey(new CacheKey(1, position, 2));
+		cacheRequest.setCacheKey(new CacheKey(1, position, 2, 2, 2));
 		return cacheRequest;
 	}
 }
