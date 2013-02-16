@@ -37,7 +37,6 @@ class AuxiliaryExecutor {
 	}
 
 	public synchronized boolean cancel(Prioritizable prioritizable) {
-		Log.d("JAMIE", "JAMIE - In the Aux Executor.");
 		return mQueuingMaps.cancel(prioritizable);
 	}
 
@@ -89,6 +88,12 @@ class AuxiliaryExecutor {
 		@Override
 		protected void beforeExecute(Thread t, Runnable r) {
 			notifyBeforeExecuteCalled(r);
+
+			DefaultPrioritizable p = (DefaultPrioritizable) r;
+			CacheRequest cacheRequest = p.getCacheRequest();
+			if (cacheRequest.getRequestType() == ImageRequestType.DEPRIORITIZED_FOR_ADAPTER) {
+				Log.d("JAMIE", "Launching deprioritized request!");
+			}
 
 			super.beforeExecute(t, r);
 		}

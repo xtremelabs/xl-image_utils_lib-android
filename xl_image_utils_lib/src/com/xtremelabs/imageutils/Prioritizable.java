@@ -1,6 +1,5 @@
 package com.xtremelabs.imageutils;
 
-import android.util.Log;
 
 public abstract class Prioritizable implements Runnable {
 	private boolean mIsCancelled = false;
@@ -23,7 +22,6 @@ public abstract class Prioritizable implements Runnable {
 	}
 
 	public synchronized void cancel() {
-		Log.d("JAMIE", "JAMIE - Managed to cancel the prioritizable!");
 		mIsCancelled = true;
 	}
 }

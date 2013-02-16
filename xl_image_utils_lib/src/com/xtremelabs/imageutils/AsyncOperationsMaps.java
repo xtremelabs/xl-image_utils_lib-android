@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.graphics.Bitmap;
-import android.util.Log;
 
 import com.xtremelabs.imageutils.AdapterAccessor.AdapterAccessorType;
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
@@ -39,7 +38,7 @@ class AsyncOperationsMaps {
 		accessors[1] = new StackPriorityAccessor();
 		accessors[2] = new AdapterAccessor(AdapterAccessorType.QUEUE);
 		accessors[3] = new AdapterAccessor(AdapterAccessorType.QUEUE);
-		accessors[4] = new AdapterAccessor(AdapterAccessorType.STACK);
+		accessors[4] = new AdapterDeprioritizedAccessor();
 		accessors[5] = new StackPriorityAccessor();
 		accessors[6] = new StackPriorityAccessor();
 		return accessors;
@@ -111,7 +110,6 @@ class AsyncOperationsMaps {
 		RequestParameters networkRequestParameters = new RequestParameters(imageCacherListener, imageRequest, prioritizable);
 		mNetworkOperationTracker.register(imageRequest.getUri(), networkRequestParameters, imageCacherListener);
 
-		Log.d("JAMIE", "JAMIE - Downloading: " + imageRequest.getUri());
 		mNetworkExecutor.execute(prioritizable);
 	}
 
@@ -125,10 +123,10 @@ class AsyncOperationsMaps {
 	}
 
 	synchronized void registerDecodeRequest(CacheRequest cacheRequest, DecodeSignature decodeSignature, ImageCacherListener imageCacherListener) {
-		Log.d("JAMIE", "JAMIE - Decoding: " + cacheRequest.getUri());
 		Prioritizable prioritizable = mObserver.getDecodeRunnable(cacheRequest, decodeSignature);
 
 		RequestParameters requestParameters = new RequestParameters(imageCacherListener, cacheRequest, prioritizable);
+		requestParameters.decodeSignature = decodeSignature;
 		mDecodeOperationTracker.register(decodeSignature, requestParameters, imageCacherListener);
 
 		mDiskExecutor.execute(prioritizable);
@@ -143,8 +141,6 @@ class AsyncOperationsMaps {
 	 */
 
 	public synchronized void onDownloadComplete(String uri) {
-		Log.d("JAMIE", "JAMIE - Download complete: " + uri);
-
 		// FIXME Do we want the decode to happen regardless of whether or not we have runnables to complete the decode?
 		// TODO Create a queue for details requests and force them to happen first on disk?
 		List<RequestParameters> requests = mNetworkOperationTracker.transferOperationToTracker(uri, mDetailsOperationTracker, mNetworkAndDetailsKeyReferenceProvider);
@@ -156,7 +152,6 @@ class AsyncOperationsMaps {
 	}
 
 	public void onDownloadFailed(String uri, String message) {
-		Log.d("JAMIE", "JAMIE - Download failed: " + uri);
 		List<RequestParameters> requestParametersList;
 		synchronized (this) {
 			requestParametersList = mNetworkOperationTracker.removeList(uri, mNetworkAndDetailsKeyReferenceProvider);
@@ -222,7 +217,6 @@ class AsyncOperationsMaps {
 	}
 
 	public void onDecodeSuccess(Bitmap bitmap, ImageReturnedFrom returnedFrom, DecodeSignature decodeSignature) {
-		Log.d("JAMIE", "JAMIE - Decode successful: " + decodeSignature.mUri);
 		List<RequestParameters> requestParametersList = null;
 		synchronized (this) {
 			requestParametersList = mDecodeOperationTracker.removeList(decodeSignature, mDecodeReferenceProvider);
@@ -274,17 +268,37 @@ class AsyncOperationsMaps {
 	private synchronized void cancelNetworkPrioritizable(ImageCacherListener imageCacherListener) {
 		RequestParameters requestParameters = mNetworkOperationTracker.removeRequest(imageCacherListener, mNetworkAndDetailsKeyReferenceProvider, true);
 		mNetworkExecutor.cancel(requestParameters.prioritizable);
-		// CacheRequest cacheRequest = requestParameters.cacheRequest;fgaegiu
+
+		// We want to re-schedule cancelled adapter requests.
+		CacheRequest cacheRequest = requestParameters.cacheRequest;
+		if (cacheRequest.getRequestType() == ImageRequestType.ADAPTER_REQUEST) {
+			cacheRequest.setRequestType(ImageRequestType.DEPRIORITIZED_FOR_ADAPTER);
+			mNetworkExecutor.execute(mObserver.getNetworkRunnable(requestParameters.cacheRequest));
+		}
 	}
 
 	private void cancelDetailsPrioritizable(ImageCacherListener imageCacherListener) {
 		RequestParameters requestParameters = mDetailsOperationTracker.removeRequest(imageCacherListener, mNetworkAndDetailsKeyReferenceProvider, true);
 		mDiskExecutor.cancel(requestParameters.prioritizable);
+
+		// We want to re-schedule cancelled adapter requests.
+		CacheRequest cacheRequest = requestParameters.cacheRequest;
+		if (cacheRequest.getRequestType() == ImageRequestType.ADAPTER_REQUEST) {
+			cacheRequest.setRequestType(ImageRequestType.DEPRIORITIZED_FOR_ADAPTER);
+			mDiskExecutor.execute(mObserver.getDetailsRunnable(requestParameters.cacheRequest));
+		}
 	}
 
 	private void cancelDecodePrioritizable(ImageCacherListener imageCacherListener) {
 		RequestParameters requestParameters = mDecodeOperationTracker.removeRequest(imageCacherListener, mDecodeReferenceProvider, true);
 		mDiskExecutor.cancel(requestParameters.prioritizable);
+
+		// We want to re-schedule cancelled adapter requests.
+		CacheRequest cacheRequest = requestParameters.cacheRequest;
+		if (cacheRequest.getRequestType() == ImageRequestType.ADAPTER_REQUEST) {
+			cacheRequest.setRequestType(ImageRequestType.DEPRIORITIZED_FOR_ADAPTER);
+			mDiskExecutor.execute(mObserver.getDecodeRunnable(requestParameters.cacheRequest, requestParameters.decodeSignature));
+		}
 	}
 
 	private synchronized DecodeSignature getDecodeSignature(CacheRequest cacheRequest) {
@@ -306,6 +320,7 @@ class AsyncOperationsMaps {
 		ImageCacherListener imageCacherListener;
 		CacheRequest cacheRequest;
 		Prioritizable prioritizable;
+		DecodeSignature decodeSignature;
 
 		RequestParameters(ImageCacherListener imageCacherListener, CacheRequest imageRequest, Prioritizable prioritizable) {
 			this.imageCacherListener = imageCacherListener;
