@@ -46,7 +46,7 @@ class SizeEstimatingMemoryLRUCacher implements ImageMemoryCacherInterface {
 	@Override
 	public synchronized void cacheBitmap(Bitmap bitmap, DecodeSignature decodeSignature) {
 		mCache.put(decodeSignature, bitmap);
-		mSize += getBitmapSize(bitmap);
+		mSize += getBitmapSize(bitmap, decodeSignature);
 		onEntryHit(decodeSignature);
 	}
 
@@ -76,7 +76,7 @@ class SizeEstimatingMemoryLRUCacher implements ImageMemoryCacherInterface {
 
 		for (DecodeSignature signature : listToRemove) {
 			Bitmap bitmap = mCache.remove(signature);
-			mSize -= getBitmapSize(bitmap);
+			mSize -= getBitmapSize(bitmap, signature);
 			mEvictionQueue.remove(signature);
 		}
 	}
@@ -96,14 +96,35 @@ class SizeEstimatingMemoryLRUCacher implements ImageMemoryCacherInterface {
 			try {
 				DecodeSignature decodeSignature = mEvictionQueue.removeFirst();
 				Bitmap bitmap = mCache.remove(decodeSignature);
-				mSize -= getBitmapSize(bitmap);
+				mSize -= getBitmapSize(bitmap, decodeSignature);
 			} catch (NoSuchElementException e) {
 				mSize = 0;
 			}
 		}
 	}
 
-	private long getBitmapSize(Bitmap bitmap) {
-		return bitmap.getWidth() * bitmap.getHeight() * 4;
+	private long getBitmapSize(Bitmap bitmap, DecodeSignature decodeSignature) {
+		int bytesPerPixel;
+		Bitmap.Config config = decodeSignature.mBitmapConfig;
+
+		if (config != null) {
+			switch (config) {
+			case ALPHA_8:
+				bytesPerPixel = 1;
+				break;
+			case ARGB_4444:
+			case RGB_565:
+				bytesPerPixel = 2;
+				break;
+			case ARGB_8888:
+			default:
+				bytesPerPixel = 4;
+				break;
+			}
+		} else {
+			bytesPerPixel = 4;
+		}
+
+		return bitmap.getWidth() * bitmap.getHeight() * bytesPerPixel;
 	}
 }

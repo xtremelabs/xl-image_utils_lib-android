@@ -44,8 +44,6 @@ public class ImageLoader {
 	private Options mDefaultOptions = new Options();
 
 	// TODO Cancelled network calls should still save the downloaded image to disk.
-	// TODO Have an API call that can get a bitmap without an ImageView.
-	// TODO Make the disk thread pool a priority pool so that preloaded images take lower priority until directly requested.
 
 	/*
 	 * TODO Add documentation that explains that this call should not be used for loading images into fragments.
@@ -63,9 +61,6 @@ public class ImageLoader {
 		return new ImageLoader(fragment, fragment.getActivity().getApplicationContext());
 	}
 
-	/*
-	 * TODO See if we can have a reusable constructor for the ImageLoader so we can auto-detect the kind of ImageLoader we need to return.
-	 */
 	public static WidgetImageLoader buildWidgetImageLoader(Object key, Context context) {
 		return new WidgetImageLoader(key, context.getApplicationContext());
 	}
@@ -334,17 +329,10 @@ public class ImageLoader {
 
 	// TODO: Make an API call that will load the bitmap into place with an
 	// animation
-
-	// TODO: Return a boolean indicating whether an image load was actually
-	// stopped.
-	// TODO: Think about this call.
-	// TODO: Have an isLoadingImage call.
 	/**
 	 * This call prevents any previous loadImage call from loading a Bitmap into the provided ImageView.
 	 * 
 	 * Please note it will not prevent any future loadImage calls from loading an image into that view.
-	 * 
-	 * This is useful if you have a ListView that occasionally needs images from the ImageLoader, and other times from a resources file. Before loading the resource file's image, you would call this method.
 	 * 
 	 * @param imageView
 	 * @returns True if an image load was stopped. False on failure.
@@ -360,6 +348,7 @@ public class ImageLoader {
 		return false;
 	}
 
+	// TODO: Return a boolean indicating whether an image load was actually stopped.
 	public void stopLoadingImage(ImageManagerListener imageManagerListener) {
 		mViewMapper.removeImageView(imageManagerListener);
 		mReferenceManager.cancelRequest(imageManagerListener);
@@ -683,23 +672,6 @@ public class ImageLoader {
 	}
 
 	/**
-	 * Stub ImageManagerListener used for pre-caching images.
-	 * 
-	 * @return
-	 */
-	// private ImageManagerListener getBlankImageManagerListener() {
-	// return new ImageManagerListener() {
-	// @Override
-	// public void onLoadImageFailed(String error) {
-	// }
-	//
-	// @Override
-	// public void onImageReceived(ImageResponse imageResponse) {
-	// }
-	// };
-	// }
-
-	/**
 	 * This class provides all the options that can be set when making loadImage calls.
 	 * 
 	 * See the Javadocs for the individual fields for more detail.
@@ -803,9 +775,6 @@ public class ImageLoader {
 		 * This options can be used to manually raise or lower the bit depth of images, which may result in memory savings.<br>
 		 * <br>
 		 * Default value: null.
-		 */
-		/*
-		 * FIXME The SizeEstimatingMemCache does not take into account pixel format for size estimations.
 		 */
 		public Bitmap.Config preferedConfig = null;
 	}
