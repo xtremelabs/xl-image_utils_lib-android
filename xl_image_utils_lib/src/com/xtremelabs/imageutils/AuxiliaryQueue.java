@@ -91,7 +91,7 @@ public class AuxiliaryQueue {
 		public void onRemovalFailed();
 	}
 
-	public void notifySwap(CacheKey cacheKey, int targetIndex, int memoryIndex, int diskIndex) {
+	public synchronized void notifySwap(CacheKey cacheKey, int targetIndex, int memoryIndex, int diskIndex) {
 		mPriorityAccessors[targetIndex].swap(cacheKey, mPriorityAccessors[memoryIndex], mPriorityAccessors[diskIndex]);
 	}
 }

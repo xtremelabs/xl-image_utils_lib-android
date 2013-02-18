@@ -5,7 +5,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import android.os.AsyncTask;
-import android.util.Log;
 
 // TODO Build unit tests
 class AuxiliaryExecutor {
@@ -89,17 +88,17 @@ class AuxiliaryExecutor {
 		protected void beforeExecute(Thread t, Runnable r) {
 			notifyBeforeExecuteCalled(r);
 
-			DefaultPrioritizable p = (DefaultPrioritizable) r;
-			CacheRequest cacheRequest = p.getCacheRequest();
-			if (cacheRequest.getRequestType() == ImageRequestType.DEPRIORITIZED_FOR_ADAPTER) {
-				Log.d("JAMIE", "Launching deprioritized request!");
-			}
-
 			super.beforeExecute(t, r);
 		}
 	}
 
-	public void notifySwap(CacheKey cacheKey, int targetIndex, int memoryIndex, int diskIndex) {
-		mQueue.notifySwap(cacheKey, targetIndex, memoryIndex, diskIndex);
+	public synchronized void notifySwap(final CacheKey cacheKey, final int targetIndex, final int memoryIndex, final int diskIndex) {
+		new AsyncTask<Void, Void, Void>() {
+			@Override
+			protected Void doInBackground(Void... params) {
+				mQueue.notifySwap(cacheKey, targetIndex, memoryIndex, diskIndex);
+				return null;
+			}
+		}.execute();
 	}
 }
