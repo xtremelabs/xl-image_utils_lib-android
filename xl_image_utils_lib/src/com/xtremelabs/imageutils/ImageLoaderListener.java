@@ -20,7 +20,9 @@ import android.graphics.Bitmap;
 import android.widget.ImageView;
 
 public interface ImageLoaderListener {
-	// TODO: Consider making the onImageAvailable return a boolean indicating whether or not the loader should place the bitmap into the imageview.
+	/*
+	 * TODO The onImageAvailable should return an ImageResponse containing important data from the request. That object should include the "returnedFrom" parameter.
+	 */
 	/**
 	 * This method provides you with the {@link ImageView} and {@link Bitmap} from your ImageLoader's loadImage request.
 	 * 

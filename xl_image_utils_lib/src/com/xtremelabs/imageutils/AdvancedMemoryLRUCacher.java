@@ -27,6 +27,7 @@ import java.util.Set;
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 
+// TODO This class should be using the Android LruCache.
 @SuppressLint("NewApi")
 public class AdvancedMemoryLRUCacher implements ImageMemoryCacherInterface {
 	private long mMaximumSizeInBytes = 20 * 1024 * 1024; // 20MB default
