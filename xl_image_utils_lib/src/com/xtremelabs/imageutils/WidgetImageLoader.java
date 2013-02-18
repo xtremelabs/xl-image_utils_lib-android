@@ -1,28 +1,36 @@
 package com.xtremelabs.imageutils;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
+import com.xtremelabs.imageutils.ImageLoader.Options;
 
-public class WidgetImageLoader extends ImageLoader {
+public class WidgetImageLoader {
+	private final ImageLoader mImageLoader;
+	private boolean mDestroyed = false;
+	private final Context mContext;
+
 	WidgetImageLoader(Object imageLoaderClass, Context context) {
-		super(imageLoaderClass, context);
+		mImageLoader = new ImageLoader(imageLoaderClass, context);
+		mContext = context;
 	}
 
 	// TODO This does not handle bad URIs. The system just crashes.
 	public ImageResponse loadImageSynchronouslyOrQueueNetworkRequest(String uri, Options options, ImageDownloadedListener listener) {
 		if (!isDestroyed()) {
 			if (options == null) {
-				options = getDefaultOptions();
+				options = mImageLoader.getDefaultOptions();
 			}
 
-			ScalingInfo scalingInfo = getScalingInfo(null, options);
+			ScalingInfo scalingInfo = mImageLoader.getScalingInfo(null, options);
 			CacheRequest imageRequest = new CacheRequest(uri, scalingInfo, options);
 			imageRequest.setRequestType(ImageRequestType.PRECACHE_TO_DISK);
-			return ImageCacher.getInstance(getApplicationContext()).getBitmapSynchronouslyFromDiskOrMemory(imageRequest, getImageCacherListener(listener));
+			return ImageCacher.getInstance(mContext).getBitmapSynchronouslyFromDiskOrMemory(imageRequest, getImageCacherListener(listener));
 		} else {
-			Log.w(TAG, "WARNING: loadImageSynchronouslyFromDiskOrMemory was called after the ImageLoader was destroyed.");
+			Log.w(ImageLoader.TAG, "WARNING: loadImageSynchronouslyFromDiskOrMemory was called after the ImageLoader was destroyed.");
 			return null;
 		}
 	}
@@ -41,9 +49,19 @@ public class WidgetImageLoader extends ImageLoader {
 		};
 	}
 
-	@Override
-	public void destroy() {
-		// FIXME We need to implement the destroy method for widgets, and this needs to work off the UI thread.
+	public synchronized void destroy() {
+		mDestroyed = true;
+
+		new Handler(Looper.getMainLooper()).post(new Runnable() {
+			@Override
+			public void run() {
+				mImageLoader.destroy();
+			}
+		});
+	}
+
+	private synchronized boolean isDestroyed() {
+		return mDestroyed;
 	}
 
 	public static interface ImageDownloadedListener {

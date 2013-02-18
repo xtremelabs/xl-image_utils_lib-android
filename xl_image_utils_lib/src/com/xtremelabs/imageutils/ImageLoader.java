@@ -101,13 +101,12 @@ public class ImageLoader {
 	 * @throws CalledFromWrongThreadException
 	 *             This is thrown if the method is called from off the UI thread.
 	 */
-	/*
-	 * FIXME This call does not work effectively for widgets. This needs to be overridden by the WidgetImageLoader.
-	 */
 	public void destroy() {
 		ThreadChecker.throwErrorIfOffUiThread();
 
-		mDestroyed = true;
+		synchronized (this) {
+			mDestroyed = true;
+		}
 
 		List<ImageManagerListener> listeners = mReferenceManager.cancelRequestsForKey(mKey);
 		if (listeners != null) {
@@ -146,7 +145,7 @@ public class ImageLoader {
 			throw new IllegalArgumentException("You may not call \"loadImage\" with a null ImageRequest object.");
 		}
 
-		if (!mDestroyed) {
+		if (!isDestroyed()) {
 			ImageLoaderListener listener = imageRequest.getImageLoaderListener();
 			Options options = imageRequest.getOptions();
 			if (options == null) {
@@ -186,13 +185,6 @@ public class ImageLoader {
 	 *            The URI scheme for local file system requests is "file".<br>
 	 *            File system URI example: "file:///this/is/the/image/path/image.jpg".<br>
 	 *            If using a file system URI, the image will be cached in the memory cache.<br>
-	 */
-	/*
-	 * FIXME Potential memory leak - This method is not synchronized. If onDestroy is called while this is running, it is possible that references will be retained to the Activity or Fragment. Review this for all
-	 * loadImage calls.
-	 */
-	/*
-	 * TODO This should just be calling the most advanced loadImage call possible.
 	 */
 	public void loadImage(ImageView imageView, String uri) {
 		loadImage(imageView, uri, null, null);
@@ -297,7 +289,7 @@ public class ImageLoader {
 	}
 
 	private void baseLoadImage(ImageView imageView, String uri, Options options, ImageLoaderListener listener) {
-		if (!mDestroyed) {
+		if (!isDestroyed()) {
 			if (options == null) {
 				options = mDefaultOptions;
 			}
@@ -522,7 +514,7 @@ public class ImageLoader {
 	// mReferenceManager.getBitmap(applicationContext, imageRequest, getBlankImageManagerListener());
 	// }
 
-	protected boolean isDestroyed() {
+	protected synchronized boolean isDestroyed() {
 		return mDestroyed;
 	}
 

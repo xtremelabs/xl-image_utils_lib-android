@@ -150,9 +150,11 @@ class AsyncOperationsMaps {
 		// TODO Create a queue for details requests and force them to happen first on disk?
 		List<RequestParameters> requests = mNetworkOperationTracker.transferOperationToTracker(uri, mDetailsOperationTracker, mNetworkAndDetailsKeyReferenceProvider);
 		mNetworkExecutor.notifyRequestComplete(new Request<String>(uri));
-		for (RequestParameters request : requests) {
-			Prioritizable prioritizable = mObserver.getDetailsRunnable(request.cacheRequest);
-			mDiskExecutor.execute(prioritizable);
+		if (requests != null) {
+			for (RequestParameters request : requests) {
+				Prioritizable prioritizable = mObserver.getDetailsRunnable(request.cacheRequest);
+				mDiskExecutor.execute(prioritizable);
+			}
 		}
 	}
 
