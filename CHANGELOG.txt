@@ -1,18 +1,25 @@
 CHANGE LOG
 
-v1.2
+v1.3
 API CHANGES:
 - ImageLoader objects are now created via ImageLoader.build...() methods rather than directly constructed.
 - The ImageLoaderSupport and AbstractImageLoader classes have been removed. All ImageLoader classes now directly inherit from ImageLoader.
 - The import has changed for the Options object. This class now directly belongs to the ImageLoader class.
 
 New Features:
+- Data usage, battery life and processing power savings! The image system now automatically cancels image requests for Activities and Fragments that have been destroyed, without cancelling potentially useful requests for the same URI.
+- The AdapterImagePrecacher is now available for use. This class helps manage what images need to be downloaded and precached, and it comes with a ton of performance saving features. Helps to vastly smooth out adapter view scrolling.
 - You can now request bitmaps without an ImageView. Methods: loadImage(String uri, BitmapListener listener), loadImage(String uri, Options options, BitmapListener listener)
+- Image can now be requested via an ImageRequest object. This API will simplify some of the logic involved when requesting images with complicated options.
 - There is a new loadImage request that takes a listener without an Options object. This method will use the default options for its requests and report back to the listener when the request is complete.
 - Widgets are now supported. A WidgetImageLoader can now be constructed via the method ImageLoader.buildWidgetImageLoader(Object key, Context context).
 
 Bug Fixes:
-- Fixed a rare crash caused by a ConcurrentModificationException.
+- Fixed a crash caused by a ConcurrentModificationException.
+- Resolved a case where references to Activities or Fragments would be retained briefly after destruction.
+
+v1.2
+- XL Studio compatibility.
 
 v1.1.1
 - Critical bug fix: Bad comparator logic was causing a crash if images lingered in the disk cache for several weeks.
