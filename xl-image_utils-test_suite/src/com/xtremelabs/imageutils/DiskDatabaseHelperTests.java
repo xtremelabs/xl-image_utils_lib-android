@@ -96,7 +96,6 @@ public class DiskDatabaseHelperTests extends AndroidTestCase {
 
 		String entry;
 
-		// TODO The getLRU logic should be added back in.
 		entry = mDatabaseHelper.getLRU();
 		assertEquals("url1", entry);
 		mDatabaseHelper.deleteEntry(entry);
