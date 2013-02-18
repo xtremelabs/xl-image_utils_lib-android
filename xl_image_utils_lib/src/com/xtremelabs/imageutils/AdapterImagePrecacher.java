@@ -95,7 +95,7 @@ public class AdapterImagePrecacher {
 	}
 
 	public void loadImage(ImageRequest imageRequest, int position) {
-		imageRequest.setCacheKey(new CacheKey(mId, position, 0, mMemCacheRange, mDiskCacheRange));
+		imageRequest.setCacheKey(new CacheKey(mId, position, mMemCacheRange, mDiskCacheRange));
 		imageRequest.setImageRequestType(ImageRequestType.ADAPTER_REQUEST);
 		mImageLoader.loadImage(imageRequest);
 	}
@@ -130,7 +130,7 @@ public class AdapterImagePrecacher {
 				options.heightBounds = precacheRequest.mBounds.height;
 				options.widthBounds = precacheRequest.mBounds.width;
 				imageRequest.setImageRequestType(ImageRequestType.PRECACHE_TO_MEMORY_FOR_ADAPTER);
-				imageRequest.setCacheKey(new CacheKey(mId, position, mMemCacheRange * 2, mMemCacheRange, mDiskCacheRange));
+				imageRequest.setCacheKey(new CacheKey(mId, position, mMemCacheRange, mDiskCacheRange));
 				mImageLoader.loadImage(imageRequest);
 				// mImageLoader.precacheImageToDiskAndMemory(precacheRequest.mUri, precacheRequest.mBounds, precacheRequest.mOptions);
 			}
@@ -142,7 +142,7 @@ public class AdapterImagePrecacher {
 			for (String precacheRequestUri : precacheRequestUris) {
 				ImageRequest imageRequest = new ImageRequest(precacheRequestUri);
 				imageRequest.setImageRequestType(ImageRequestType.PRECACHE_TO_DISK_FOR_ADAPTER);
-				imageRequest.setCacheKey(new CacheKey(mId, position, mDiskCacheRange * 2, mMemCacheRange, mDiskCacheRange));
+				imageRequest.setCacheKey(new CacheKey(mId, position, mMemCacheRange, mDiskCacheRange));
 				mImageLoader.loadImage(imageRequest);
 			}
 		}
@@ -172,7 +172,7 @@ public class AdapterImagePrecacher {
 		}
 
 		if (previousDirection != mCurrentDirection)
-			mImageLoader.notifyDirectionSwapped(new CacheKey(mId, 0, 0, mMemCacheRange, mDiskCacheRange));
+			mImageLoader.notifyDirectionSwapped(new CacheKey(mId, 0, mMemCacheRange, mDiskCacheRange));
 
 		switch (mCurrentDirection) {
 		case DOWN:
