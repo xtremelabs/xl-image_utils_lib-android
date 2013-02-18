@@ -111,30 +111,32 @@ public class AuxiliaryBlockingQueue extends AbstractQueue<Runnable> implements B
 
 	@Override
 	public boolean remove(Object object) {
-		mLock.lock();
-		try {
-			return mQueue.remove((Prioritizable) object);
-		} finally {
-			mLock.unlock();
-		}
+		// mLock.lock();
+		// try {
+		// return mQueue.remove((Prioritizable) object);
+		// } finally {
+		// mLock.unlock();
+		// }
+		return false;
 	}
 
 	@Override
 	public boolean removeAll(java.util.Collection<?> collection) {
-		checkNotNull(collection);
-
-		mLock.lock();
-		try {
-			boolean modified = false;
-			for (Object o : collection) {
-				if (mQueue.remove((Prioritizable) o)) {
-					modified = true;
-				}
-			}
-			return modified;
-		} finally {
-			mLock.unlock();
-		}
+		// checkNotNull(collection);
+		//
+		// mLock.lock();
+		// try {
+		// boolean modified = false;
+		// for (Object o : collection) {
+		// if (mQueue.remove((Prioritizable) o)) {
+		// modified = true;
+		// }
+		// }
+		// return modified;
+		// } finally {
+		// mLock.unlock();
+		// }
+		return false;
 	}
 
 	@Override
@@ -226,5 +228,14 @@ public class AuxiliaryBlockingQueue extends AbstractQueue<Runnable> implements B
 	private void checkNotNull(Object o) {
 		if (o == null)
 			throw new NullPointerException();
+	}
+
+	public void notifySwap(CacheKey cacheKey, int targetIndex, int memoryIndex, int diskIndex) {
+		mLock.lock();
+		try {
+			mQueue.notifySwap(cacheKey, targetIndex, memoryIndex, diskIndex);
+		} finally {
+			mLock.unlock();
+		}
 	}
 }

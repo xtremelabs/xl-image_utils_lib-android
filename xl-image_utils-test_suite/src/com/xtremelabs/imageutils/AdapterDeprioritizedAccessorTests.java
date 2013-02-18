@@ -2,6 +2,8 @@ package com.xtremelabs.imageutils;
 
 import android.test.AndroidTestCase;
 
+import com.xtremelabs.imageutils.AdapterDeprioritizedAccessor.AdapterAccessorType;
+
 public class AdapterDeprioritizedAccessorTests extends AndroidTestCase {
 	private AdapterDeprioritizedAccessor mAccessor;
 	private DefaultPrioritizable[] mRequests;
@@ -9,7 +11,7 @@ public class AdapterDeprioritizedAccessorTests extends AndroidTestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		mAccessor = new AdapterDeprioritizedAccessor();
+		mAccessor = new AdapterDeprioritizedAccessor(AdapterAccessorType.DEPRIORITIZED);
 		mRequests = new DefaultPrioritizable[5];
 	}
 

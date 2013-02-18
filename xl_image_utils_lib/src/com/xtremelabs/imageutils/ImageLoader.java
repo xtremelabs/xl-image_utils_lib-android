@@ -539,6 +539,10 @@ public class ImageLoader {
 		mKey = key;
 	}
 
+	void notifyDirectionSwapped(CacheKey cacheKey) {
+		ImageCacher.getInstance(mApplicationContext).notifyDirectionSwapped(cacheKey);
+	}
+
 	void stubReferenceManager(ReferenceManager referenceManager) {
 		mReferenceManager = referenceManager;
 	}

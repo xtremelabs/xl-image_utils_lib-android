@@ -58,31 +58,6 @@ public class AdapterAccessor implements PriorityAccessor {
 	}
 
 	@Override
-	public synchronized boolean detach(Prioritizable prioritizable) {
-		DefaultPrioritizable castedPrioritizable = (DefaultPrioritizable) prioritizable;
-		CacheKey cacheKey = castedPrioritizable.getCacheRequest().getCacheKey();
-		int adapterId = cacheKey.adapterId;
-
-		List<DefaultPrioritizable> prioritizableList = mCacheKeyToPrioritizables.get(cacheKey);
-		if (prioritizableList != null && prioritizableList.remove(prioritizable)) {
-			if (prioritizableList.size() == 0) {
-				mCacheKeyToPrioritizables.remove(cacheKey);
-
-				List<CacheKey> cacheKeyList = mAdapterToCacheKeys.get(adapterId);
-				cacheKeyList.remove(cacheKey);
-				if (cacheKeyList.size() == 0) {
-					mAdapterToCacheKeys.remove(adapterId);
-					mPendingAdapterIds.remove(Integer.valueOf(adapterId));
-				}
-			}
-			mSize--;
-			return true;
-		}
-
-		return false;
-	}
-
-	@Override
 	public synchronized Prioritizable detachHighestPriorityItem() {
 		return retrieveHighestPriorityRunnable(true);
 	}
@@ -103,14 +78,6 @@ public class AdapterAccessor implements PriorityAccessor {
 		mCacheKeyToPrioritizables.clear();
 		mPendingAdapterIds.clear();
 		mSize = 0;
-	}
-
-	@Override
-	public synchronized boolean contains(Prioritizable prioritizable) {
-		DefaultPrioritizable castedPrioritizable = (DefaultPrioritizable) prioritizable;
-		CacheKey cacheKey = castedPrioritizable.getCacheRequest().getCacheKey();
-
-		return mCacheKeyToPrioritizables.get(cacheKey).contains(prioritizable);
 	}
 
 	private DefaultPrioritizable retrieveHighestPriorityRunnable(boolean removeOnRetrieval) {
@@ -184,5 +151,11 @@ public class AdapterAccessor implements PriorityAccessor {
 	private void removeCacheKey(CacheKey keyToRemove) {
 		List<DefaultPrioritizable> prioritizables = mCacheKeyToPrioritizables.remove(keyToRemove);
 		mSize -= prioritizables.size();
+	}
+
+	@Override
+	public void swap(CacheKey cacheKey, PriorityAccessor priorityAccessor, PriorityAccessor priorityAccessor2) {
+		// TODO Auto-generated method stub
+
 	}
 }

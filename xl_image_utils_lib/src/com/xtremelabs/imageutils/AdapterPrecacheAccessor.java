@@ -7,23 +7,12 @@ import java.util.Map;
 
 import android.util.SparseArray;
 
-import com.xtremelabs.imageutils.AdapterAccessor.AdapterAccessorType;
-
 public class AdapterPrecacheAccessor implements PriorityAccessor {
-
 	private final List<Integer> mPendingAdapterIds = new ArrayList<Integer>();
-	private final SparseArray<List<CacheKey>> mAdapterToCacheKeys = new SparseArray<List<CacheKey>>();
+	private final SparseArray<CacheKey[]> mAdapterToCacheKeys = new SparseArray<CacheKey[]>();
 	private final Map<CacheKey, List<DefaultPrioritizable>> mCacheKeyToPrioritizables = new HashMap<CacheKey, List<DefaultPrioritizable>>();
 
 	private int mSize = 0;
-
-	private final AdapterAccessorType mType;
-
-	public AdapterPrecacheAccessor(AdapterAccessorType type) {
-		if (type == null)
-			throw new IllegalArgumentException("You may not initialize this class with a null type!");
-		mType = type;
-	}
 
 	@Override
 	public synchronized void attach(Prioritizable prioritizable) {
@@ -34,16 +23,16 @@ public class AdapterPrecacheAccessor implements PriorityAccessor {
 		if (!mPendingAdapterIds.contains(adapterId))
 			mPendingAdapterIds.add(adapterId);
 
-		sizeCheck(cacheKey);
-
-		List<CacheKey> keyList = mAdapterToCacheKeys.get(adapterId);
+		boolean isKeyListEmpty = false;
+		CacheKey[] keyList = mAdapterToCacheKeys.get(adapterId);
 		if (keyList == null) {
-			keyList = new ArrayList<CacheKey>();
+			keyList = new CacheKey[cacheKey.memCacheRange + cacheKey.diskCacheRange];
 			mAdapterToCacheKeys.append(adapterId, keyList);
+			isKeyListEmpty = true;
 		}
 
-		if (keyList.isEmpty() || !mCacheKeyToPrioritizables.containsKey(cacheKey)) {
-			keyList.add(cacheKey);
+		if (isKeyListEmpty || !mCacheKeyToPrioritizables.containsKey(cacheKey)) {
+			appendCacheKey(cacheKey, keyList);
 		}
 
 		List<DefaultPrioritizable> prioritizableList = mCacheKeyToPrioritizables.get(cacheKey);
@@ -54,31 +43,6 @@ public class AdapterPrecacheAccessor implements PriorityAccessor {
 		prioritizableList.add(castedPrioritizable);
 
 		mSize++;
-	}
-
-	@Override
-	public synchronized boolean detach(Prioritizable prioritizable) {
-		DefaultPrioritizable castedPrioritizable = (DefaultPrioritizable) prioritizable;
-		CacheKey cacheKey = castedPrioritizable.getCacheRequest().getCacheKey();
-		int adapterId = cacheKey.adapterId;
-
-		List<DefaultPrioritizable> prioritizableList = mCacheKeyToPrioritizables.get(cacheKey);
-		if (prioritizableList != null && prioritizableList.remove(prioritizable)) {
-			if (prioritizableList.size() == 0) {
-				mCacheKeyToPrioritizables.remove(cacheKey);
-
-				List<CacheKey> cacheKeyList = mAdapterToCacheKeys.get(adapterId);
-				cacheKeyList.remove(cacheKey);
-				if (cacheKeyList.size() == 0) {
-					mAdapterToCacheKeys.remove(adapterId);
-					mPendingAdapterIds.remove(Integer.valueOf(adapterId));
-				}
-			}
-			mSize--;
-			return true;
-		}
-
-		return false;
 	}
 
 	@Override
@@ -104,84 +68,71 @@ public class AdapterPrecacheAccessor implements PriorityAccessor {
 		mSize = 0;
 	}
 
-	@Override
-	public synchronized boolean contains(Prioritizable prioritizable) {
-		DefaultPrioritizable castedPrioritizable = (DefaultPrioritizable) prioritizable;
-		CacheKey cacheKey = castedPrioritizable.getCacheRequest().getCacheKey();
-
-		return mCacheKeyToPrioritizables.get(cacheKey).contains(prioritizable);
-	}
-
 	private DefaultPrioritizable retrieveHighestPriorityRunnable(boolean removeOnRetrieval) {
 		if (mSize == 0)
 			return null;
 
-		int targetAdapterIndex = mPendingAdapterIds.size() - 1;
-		int adapterId = mPendingAdapterIds.get(targetAdapterIndex);
-
-		List<CacheKey> cacheKeyList = mAdapterToCacheKeys.get(adapterId);
-
-		int cacheKeyToRemove = 0;
-		switch (mType) {
-		case QUEUE:
-			cacheKeyToRemove = 0;
-			break;
-		case STACK:
-			cacheKeyToRemove = cacheKeyList.size() - 1;
-			break;
+		int targetAdapter = mPendingAdapterIds.get(mPendingAdapterIds.size() - 1);
+		CacheKey[] keys = mAdapterToCacheKeys.get(targetAdapter);
+		int targetKeyIndex = -1;
+		int numEntries = 0;
+		for (int i = 0; i < keys.length; i++) {
+			if (keys[i] != null) {
+				numEntries++;
+				if (targetKeyIndex == -1)
+					targetKeyIndex = i;
+			}
 		}
-		CacheKey cacheKey = cacheKeyList.get(cacheKeyToRemove);
 
-		List<DefaultPrioritizable> prioritizables = mCacheKeyToPrioritizables.get(cacheKey);
-
-		DefaultPrioritizable prioritizable;
+		DefaultPrioritizable targetRunnable;
 		if (removeOnRetrieval) {
-			prioritizable = prioritizables.remove(0);
+			List<DefaultPrioritizable> pList = mCacheKeyToPrioritizables.get(keys[targetKeyIndex]);
+			targetRunnable = pList.remove(0);
+			forceRunnableToAppropriateCache(targetKeyIndex, targetRunnable);
 
-			if (prioritizables.size() == 0) {
-				mCacheKeyToPrioritizables.remove(cacheKey);
-				cacheKeyList.remove(cacheKey);
-				if (cacheKeyList.size() == 0) {
-					mAdapterToCacheKeys.remove(adapterId);
-					mPendingAdapterIds.remove(targetAdapterIndex);
+			if (pList.isEmpty()) {
+				mCacheKeyToPrioritizables.remove(keys[targetKeyIndex]);
+				keys[targetKeyIndex] = null;
+				numEntries--;
+				if (numEntries == 0) {
+					mAdapterToCacheKeys.remove(Integer.valueOf(targetAdapter));
+					mPendingAdapterIds.remove(Integer.valueOf(targetAdapter));
 				}
 			}
-
-			if (prioritizable != null)
-				mSize--;
+			mSize--;
 		} else {
-			prioritizable = prioritizables.get(0);
+			targetRunnable = mCacheKeyToPrioritizables.get(keys[targetKeyIndex]).get(0);
 		}
 
-		return prioritizable;
+		return targetRunnable;
 	}
 
-	private void sizeCheck(CacheKey cacheKey) {
-		if (mCacheKeyToPrioritizables.containsKey(cacheKey))
-			return;
+	private void forceRunnableToAppropriateCache(int targetKeyIndex, DefaultPrioritizable targetRunnable) {
+		CacheRequest cacheRequest = targetRunnable.getCacheRequest();
+		CacheKey cacheKey = cacheRequest.getCacheKey();
+		if (targetKeyIndex < cacheKey.memCacheRange)
+			cacheRequest.setRequestType(ImageRequestType.PRECACHE_TO_MEMORY_FOR_ADAPTER);
+		else
+			cacheRequest.setRequestType(ImageRequestType.PRECACHE_TO_DISK_FOR_ADAPTER);
+	}
 
-		int limit = cacheKey.queuedRequestLimit;
-		if (limit <= 0)
-			return;
-
-		int adapterId = cacheKey.adapterId;
-		List<CacheKey> cacheKeys = mAdapterToCacheKeys.get(adapterId);
-		if (cacheKeys == null) {
-			return;
+	private void appendCacheKey(CacheKey cacheKey, CacheKey[] keyList) {
+		CacheKey placeholder;
+		for (int i = 0; i < keyList.length && cacheKey != null; i++) {
+			placeholder = keyList[i];
+			keyList[i] = cacheKey;
+			cacheKey = placeholder;
 		}
 
-		while (cacheKeys.size() >= limit) {
-			removeCacheKey(cacheKeys.remove(0));
-		}
-
-		if (cacheKeys.isEmpty()) {
-			mAdapterToCacheKeys.remove(adapterId);
-			mPendingAdapterIds.remove(Integer.valueOf(adapterId));
+		if (cacheKey != null) {
+			List<DefaultPrioritizable> pList = mCacheKeyToPrioritizables.remove(cacheKey);
+			mSize -= pList.size();
 		}
 	}
 
-	private void removeCacheKey(CacheKey keyToRemove) {
-		List<DefaultPrioritizable> prioritizables = mCacheKeyToPrioritizables.remove(keyToRemove);
-		mSize -= prioritizables.size();
+	@Override
+	public void swap(CacheKey cacheKey, PriorityAccessor priorityAccessor, PriorityAccessor priorityAccessor2) {
+		// TODO Auto-generated method stub
+
 	}
 }
