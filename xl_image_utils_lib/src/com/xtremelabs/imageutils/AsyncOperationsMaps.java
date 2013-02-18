@@ -5,7 +5,7 @@ import java.util.List;
 
 import android.graphics.Bitmap;
 
-import com.xtremelabs.imageutils.AdapterAccessor.AdapterAccessorType;
+import com.xtremelabs.imageutils.AdapterDeprioritizedAccessor.AdapterAccessorType;
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
 import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
 import com.xtremelabs.imageutils.OperationTracker.KeyReferenceProvider;
@@ -36,12 +36,17 @@ class AsyncOperationsMaps {
 		PriorityAccessor[] accessors = new PriorityAccessor[7];
 		accessors[0] = new StackPriorityAccessor();
 		accessors[1] = new StackPriorityAccessor();
-		accessors[2] = new AdapterAccessor(AdapterAccessorType.QUEUE);
-		accessors[3] = new AdapterAccessor(AdapterAccessorType.QUEUE);
-		accessors[4] = new AdapterDeprioritizedAccessor();
-		accessors[5] = new StackPriorityAccessor();
-		accessors[6] = new StackPriorityAccessor();
+		accessors[2] = new AdapterDeprioritizedAccessor(AdapterAccessorType.PRECACHE_MEMORY);
+		accessors[3] = new AdapterDeprioritizedAccessor(AdapterAccessorType.PRECACHE_DISK);
+		accessors[4] = new AdapterDeprioritizedAccessor(AdapterAccessorType.DEPRIORITIZED);
+		accessors[5] = new QueuePriorityAccessor();
+		accessors[6] = new QueuePriorityAccessor();
 		return accessors;
+	}
+
+	public void notifyDirectionSwapped(CacheKey cacheKey) {
+		mNetworkExecutor.notifySwap(cacheKey, 4, 2, 3);
+		mDiskExecutor.notifySwap(cacheKey, 4, 2, 3);
 	}
 
 	private final KeyReferenceProvider<String, RequestParameters, ImageCacherListener> mNetworkAndDetailsKeyReferenceProvider = new KeyReferenceProvider<String, RequestParameters, ImageCacherListener>() {

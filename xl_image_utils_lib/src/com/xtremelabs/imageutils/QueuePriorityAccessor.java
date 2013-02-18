@@ -9,11 +9,6 @@ public class QueuePriorityAccessor implements PriorityAccessor {
 	}
 
 	@Override
-	public boolean detach(Prioritizable p) {
-		return mQueue.remove(p);
-	}
-
-	@Override
 	public Prioritizable detachHighestPriorityItem() {
 		return mQueue.poll();
 	}
@@ -34,8 +29,8 @@ public class QueuePriorityAccessor implements PriorityAccessor {
 	}
 
 	@Override
-	public boolean contains(Prioritizable prioritizable) {
-		return mQueue.contains(prioritizable);
-	}
+	public void swap(CacheKey cacheKey, PriorityAccessor priorityAccessor, PriorityAccessor priorityAccessor2) {
+		// TODO Auto-generated method stub
 
+	}
 }

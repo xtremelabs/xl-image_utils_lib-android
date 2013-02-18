@@ -1,6 +1,5 @@
 package com.xtremelabs.imageutils;
 
-import java.util.Collection;
 import java.util.Iterator;
 
 public class AuxiliaryQueue {
@@ -52,26 +51,6 @@ public class AuxiliaryQueue {
 		return null;
 	}
 
-	public synchronized boolean containsAll(Collection<Prioritizable> collection) {
-		for (Prioritizable object : collection) {
-			if (!contains(object)) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-	synchronized boolean contains(Prioritizable prioritizable) {
-		boolean isContained = false;
-		for (int i = 0; i < mNumAccessors; i++) {
-			if (mPriorityAccessors[i].contains(prioritizable)) {
-				isContained = true;
-				break;
-			}
-		}
-		return isContained;
-	}
-
 	// TODO Fill in the iterator.
 	public Iterator<Runnable> buildIterator() {
 		return new Iterator<Runnable>() {
@@ -102,25 +81,6 @@ public class AuxiliaryQueue {
 		}
 	}
 
-	public boolean remove(Prioritizable prioritizable) {
-		PriorityAccessor accessor = mPriorityAccessors[prioritizable.getTargetPriorityAccessorIndex()];
-		return accessor.detach(prioritizable);
-	}
-
-	public boolean remove(Prioritizable prioritizable, OnRemovedListener listener) {
-		if (remove(prioritizable)) {
-			if (listener != null) {
-				listener.onRemoved();
-			}
-			return true;
-		} else {
-			if (listener != null) {
-				listener.onRemovalFailed();
-			}
-			return false;
-		}
-	}
-
 	public boolean isEmpty() {
 		return size() == 0;
 	}
@@ -129,5 +89,9 @@ public class AuxiliaryQueue {
 		public void onRemoved();
 
 		public void onRemovalFailed();
+	}
+
+	public void notifySwap(CacheKey cacheKey, int targetIndex, int memoryIndex, int diskIndex) {
+		mPriorityAccessors[targetIndex].swap(cacheKey, mPriorityAccessors[memoryIndex], mPriorityAccessors[diskIndex]);
 	}
 }

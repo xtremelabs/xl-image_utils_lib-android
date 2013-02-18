@@ -19,22 +19,16 @@ class StackPriorityAccessor implements PriorityAccessor {
 	}
 
 	@Override
-	public boolean detach(Prioritizable p) {
-		return mStack.remove(p);
-	}
-
-	@Override
 	public Prioritizable peek() {
 		return mStack.peek();
 	}
 
 	@Override
-	public boolean contains(Prioritizable prioritizable) {
-		return mStack.contains(prioritizable);
+	public void clear() {
+		mStack.clear();
 	}
 
 	@Override
-	public void clear() {
-		mStack.clear();
+	public void swap(CacheKey cacheKey, PriorityAccessor priorityAccessor, PriorityAccessor priorityAccessor2) {
 	}
 }

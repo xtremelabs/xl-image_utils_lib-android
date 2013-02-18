@@ -27,49 +27,4 @@ public class StackPriorityAccessorTests extends AndroidTestCase {
 		p = mAccessor.detachHighestPriorityItem();
 		assertEquals(p1, p);
 	}
-
-	public void testArbitraryRemoval() {
-		Prioritizable p1 = new ImageSystemPrioritizable();
-		Prioritizable p2 = new ImageSystemPrioritizable();
-		Prioritizable p3 = new ImageSystemPrioritizable();
-
-		mAccessor.attach(p1);
-		mAccessor.attach(p2);
-		mAccessor.attach(p3);
-
-		Prioritizable p;
-		mAccessor.detach(p3);
-
-		p = mAccessor.detachHighestPriorityItem();
-		assertEquals(p2, p);
-
-		p = mAccessor.detachHighestPriorityItem();
-		assertEquals(p1, p);
-
-		mAccessor.attach(p1);
-		mAccessor.attach(p2);
-		mAccessor.attach(p3);
-
-		mAccessor.detach(p2);
-
-		p = mAccessor.detachHighestPriorityItem();
-		assertEquals(p3, p);
-
-		p = mAccessor.detachHighestPriorityItem();
-		assertEquals(p1, p);
-
-		mAccessor.attach(p1);
-		mAccessor.attach(p2);
-		mAccessor.attach(p3);
-
-		mAccessor.detach(p1);
-
-		p = mAccessor.detachHighestPriorityItem();
-		assertEquals(p3, p);
-
-		p = mAccessor.detachHighestPriorityItem();
-		assertEquals(p2, p);
-
-		assertEquals(0, mAccessor.size());
-	}
 }

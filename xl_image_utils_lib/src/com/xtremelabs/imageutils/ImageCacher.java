@@ -333,4 +333,8 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Op
 		mDiskCache.invalidateFileSystemUri(uri);
 		mMemoryCache.removeAllImagesForUri(uri);
 	}
+
+	public void notifyDirectionSwapped(CacheKey cacheKey) {
+		mAsyncOperationsMap.notifyDirectionSwapped(cacheKey);
+	}
 }

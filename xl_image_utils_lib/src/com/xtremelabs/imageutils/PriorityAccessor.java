@@ -4,8 +4,6 @@ public interface PriorityAccessor {
 
 	public void attach(Prioritizable prioritizable);
 
-	public boolean detach(Prioritizable p);
-
 	public Prioritizable detachHighestPriorityItem();
 
 	public int size();
@@ -14,5 +12,5 @@ public interface PriorityAccessor {
 
 	public void clear();
 
-	boolean contains(Prioritizable prioritizable);
+	public void swap(CacheKey cacheKey, PriorityAccessor priorityAccessor, PriorityAccessor priorityAccessor2);
 }

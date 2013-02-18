@@ -164,11 +164,15 @@ public class AdapterImagePrecacher {
 	}
 
 	private void calculateDirection(int position) {
+		Direction previousDirection = mCurrentDirection;
 		if (directionSwitchedToDown(position)) {
 			mCurrentDirection = Direction.DOWN;
 		} else if (directionSwitchedToUp(position)) {
 			mCurrentDirection = Direction.UP;
 		}
+
+		if (previousDirection != mCurrentDirection)
+			mImageLoader.notifyDirectionSwapped(new CacheKey(mId, 0, 0, mMemCacheRange, mDiskCacheRange));
 
 		switch (mCurrentDirection) {
 		case DOWN:

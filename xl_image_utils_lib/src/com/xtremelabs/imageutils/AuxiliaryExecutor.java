@@ -98,4 +98,8 @@ class AuxiliaryExecutor {
 			super.beforeExecute(t, r);
 		}
 	}
+
+	public void notifySwap(CacheKey cacheKey, int targetIndex, int memoryIndex, int diskIndex) {
+		mQueue.notifySwap(cacheKey, targetIndex, memoryIndex, diskIndex);
+	}
 }
