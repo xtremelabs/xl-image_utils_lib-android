@@ -44,7 +44,7 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Op
 	private AsyncOperationsMaps mAsyncOperationsMap;
 
 	private ImageCacher(Context appContext) {
-		if (Build.VERSION.SDK_INT <= 11) {
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB_MR1) {
 			mMemoryCache = new SizeEstimatingMemoryLRUCacher();
 		} else {
 			mMemoryCache = new AdvancedMemoryLRUCacher();
@@ -66,6 +66,7 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Op
 		String uri = cacheRequest.getUri();
 		throwExceptionIfNeeded(cacheRequest, imageCacherListener);
 
+		// Performance note: The "queue" call is very slow.
 		AsyncOperationState state = mAsyncOperationsMap.queueListenerIfRequestPending(cacheRequest, imageCacherListener);
 		switch (state) {
 		case QUEUED_FOR_NETWORK_REQUEST:
@@ -81,7 +82,7 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Op
 
 		// TODO: Look into removing the sampleSize check.
 
-		boolean isCached = mDiskCache.isCached(uri);
+		boolean isCached = mDiskCache.isCached(cacheRequest);
 
 		if (isCached && sampleSize != -1) {
 			if (cacheRequest.getRequestType() == ImageRequestType.PRECACHE_TO_DISK)
@@ -94,7 +95,7 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Op
 			} else {
 				decodeBitmapFromDisk(cacheRequest, decodeSignature, imageCacherListener);
 			}
-		} else if (GeneralUtils.isFileSystemUri(uri)) {
+		} else if (cacheRequest.isFileSystemRequest()) {
 			retrieveImageDetails(cacheRequest, imageCacherListener);
 		} else {
 			downloadImageFromNetwork(cacheRequest, imageCacherListener);
@@ -122,7 +123,7 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Op
 		}
 
 		int sampleSize = getSampleSize(cacheRequest);
-		boolean isCached = mDiskCache.isCached(uri);
+		boolean isCached = mDiskCache.isCached(cacheRequest);
 
 		try {
 			if (isCached && sampleSize != -1) {
@@ -131,14 +132,14 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Op
 				if ((bitmap = mMemoryCache.getBitmap(decodeSignature)) != null) {
 					return new ImageResponse(bitmap, ImageReturnedFrom.MEMORY, ImageResponseStatus.SUCCESS);
 				} else {
-					return getBitmapSynchronouslyFromDisk(decodeSignature);
+					return getBitmapSynchronouslyFromDisk(cacheRequest, decodeSignature);
 				}
-			} else if (GeneralUtils.isFileSystemUri(uri)) {
-				mDiskCache.calculateAndSaveImageDetails(uri);
+			} else if (cacheRequest.isFileSystemRequest()) {
+				mDiskCache.calculateAndSaveImageDetails(cacheRequest);
 				sampleSize = getSampleSize(cacheRequest);
 				if (sampleSize != -1) {
 					DecodeSignature decodeSignature = new DecodeSignature(uri, sampleSize, cacheRequest.getOptions().preferedConfig);
-					return getBitmapSynchronouslyFromDisk(decodeSignature);
+					return getBitmapSynchronouslyFromDisk(cacheRequest, decodeSignature);
 				}
 			}
 		} catch (FileNotFoundException e) {
@@ -149,7 +150,7 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Op
 			Log.w(ImageLoader.TAG, "Unable to load bitmap synchronously. URISyntaxException. URI: " + uri);
 		}
 
-		if (!GeneralUtils.isFileSystemUri(uri)) {
+		if (!cacheRequest.isFileSystemRequest()) {
 			downloadImageFromNetwork(cacheRequest, imageCacherListener);
 		}
 
@@ -157,12 +158,13 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Op
 		return null;
 	}
 
-	private ImageResponse getBitmapSynchronouslyFromDisk(DecodeSignature decodeSignature) throws FileNotFoundException, FileFormatException {
+	private ImageResponse getBitmapSynchronouslyFromDisk(CacheRequest cacheRequest, DecodeSignature decodeSignature) throws FileNotFoundException, FileFormatException {
 		Bitmap bitmap;
-		bitmap = mDiskCache.getBitmapSynchronouslyFromDisk(decodeSignature);
+		bitmap = mDiskCache.getBitmapSynchronouslyFromDisk(cacheRequest, decodeSignature);
 		return new ImageResponse(bitmap, ImageReturnedFrom.DISK, ImageResponseStatus.SUCCESS);
 	}
 
+	// TODO This method is VERY slow. Find ways to improve performance.
 	@Override
 	public int getSampleSize(CacheRequest imageRequest) {
 		ScalingInfo scalingInfo = imageRequest.getScalingInfo();
@@ -307,10 +309,6 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Op
 
 	public void setNetworkRequestCreator(NetworkRequestCreator networkRequestCreator) {
 		mNetworkInterface.setNetworkRequestCreator(networkRequestCreator);
-	}
-
-	void stubMemCache(ImageMemoryCacherInterface imageMemoryCacherInterface) {
-		mMemoryCache = imageMemoryCacherInterface;
 	}
 
 	void stubDiskCache(ImageDiskCacherInterface imageDiskCacherInterface) {

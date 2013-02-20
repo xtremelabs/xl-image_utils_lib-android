@@ -19,23 +19,31 @@ package com.xtremelabs.imageutils;
 import android.graphics.Bitmap;
 
 public class DecodeSignature {
-	String mUri;
-	int mSampleSize;
-	Bitmap.Config mBitmapConfig;
+	final String uri;
+	final int sampleSize;
+	final Bitmap.Config bitmapConfig;
+
+	private final int hashCode;
 
 	DecodeSignature(String uri, int sampleSize, Bitmap.Config bitmapConfig) {
-		mUri = uri;
-		mSampleSize = sampleSize;
-		mBitmapConfig = bitmapConfig;
+		this.uri = uri;
+		this.sampleSize = sampleSize;
+		this.bitmapConfig = bitmapConfig;
+
+		this.hashCode = generateHashCode();
 	}
 
 	@Override
 	public int hashCode() {
+		return hashCode;
+	}
+
+	private int generateHashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((mBitmapConfig == null) ? 0 : mBitmapConfig.hashCode());
-		result = prime * result + mSampleSize;
-		result = prime * result + ((mUri == null) ? 0 : mUri.hashCode());
+		result = prime * result + ((bitmapConfig == null) ? 0 : bitmapConfig.hashCode());
+		result = prime * result + sampleSize;
+		result = prime * result + ((uri == null) ? 0 : uri.hashCode());
 		return result;
 	}
 
@@ -48,14 +56,14 @@ public class DecodeSignature {
 		if (getClass() != obj.getClass())
 			return false;
 		DecodeSignature other = (DecodeSignature) obj;
-		if (mBitmapConfig != other.mBitmapConfig)
+		if (bitmapConfig != other.bitmapConfig)
 			return false;
-		if (mSampleSize != other.mSampleSize)
+		if (sampleSize != other.sampleSize)
 			return false;
-		if (mUri == null) {
-			if (other.mUri != null)
+		if (uri == null) {
+			if (other.uri != null)
 				return false;
-		} else if (!mUri.equals(other.mUri))
+		} else if (!uri.equals(other.uri))
 			return false;
 		return true;
 	}

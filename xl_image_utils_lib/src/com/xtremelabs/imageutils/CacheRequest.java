@@ -16,6 +16,9 @@
 
 package com.xtremelabs.imageutils;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import com.xtremelabs.imageutils.ImageLoader.Options;
 
 class CacheRequest {
@@ -81,7 +84,7 @@ class CacheRequest {
 	}
 
 	private void setLocationOfImage() {
-		if (GeneralUtils.isFileSystemUri(mUri)) {
+		if (isFileSystemUri(mUri)) {
 			mImageRequestType = LocationOfImage.LOCAL_FILE_SYSTEM;
 		} else {
 			mImageRequestType = LocationOfImage.WEB;
@@ -94,5 +97,23 @@ class CacheRequest {
 
 	public void setCacheKey(CacheKey cacheKey) {
 		mCacheKey = cacheKey;
+	}
+
+	public boolean isFileSystemRequest() {
+		return mImageRequestType == LocationOfImage.LOCAL_FILE_SYSTEM;
+	}
+
+	private static boolean isFileSystemUri(String uri) {
+		try {
+			if (uri != null) {
+				URI testUri = new URI(uri.replace(' ', '+'));
+				String scheme = testUri.getScheme();
+				if (scheme != null && scheme.equalsIgnoreCase("file")) {
+					return true;
+				}
+			}
+		} catch (URISyntaxException e) {
+		}
+		return false;
 	}
 }

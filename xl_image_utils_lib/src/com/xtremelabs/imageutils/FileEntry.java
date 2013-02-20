@@ -19,15 +19,13 @@ package com.xtremelabs.imageutils;
 public class FileEntry {
 	private final String url;
 	private long lastAccessTime;
-	private final int width;
-	private final int height;
+	private final Dimensions dimensions;
 	private final long size;
 
 	public FileEntry(String url, long size, int width, int height, long lastAccessTime) {
 		this.url = url;
 		this.size = size;
-		this.width = width;
-		this.height = height;
+		dimensions = new Dimensions(width, height);
 		this.lastAccessTime = lastAccessTime;
 	}
 
@@ -40,7 +38,7 @@ public class FileEntry {
 	}
 
 	public Dimensions getDimensions() {
-		return new Dimensions(width, height);
+		return dimensions;
 	}
 
 	public String getUri() {

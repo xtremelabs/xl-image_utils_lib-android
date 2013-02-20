@@ -7,6 +7,7 @@ API CHANGES:
 - The import has changed for the Options object. This class now directly belongs to the ImageLoader class.
 
 New Features:
+- The image cache now more effectively stays off the UI thread, resulting in a smoother UI.
 - Data usage, battery life and processing power savings! The image system now automatically cancels image requests for Activities and Fragments that have been destroyed, without cancelling potentially useful requests for the same URI.
 - The AdapterImagePrecacher is now available for use. This class helps manage what images need to be downloaded and precached, and it comes with a ton of performance saving features. Helps to vastly smooth out adapter view scrolling.
 - You can now request bitmaps without an ImageView. Methods: loadImage(String uri, BitmapListener listener), loadImage(String uri, Options options, BitmapListener listener)
