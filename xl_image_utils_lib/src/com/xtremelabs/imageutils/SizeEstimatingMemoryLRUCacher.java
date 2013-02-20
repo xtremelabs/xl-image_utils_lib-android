@@ -18,7 +18,7 @@ package com.xtremelabs.imageutils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -30,7 +30,7 @@ class SizeEstimatingMemoryLRUCacher implements ImageMemoryCacherInterface {
 	private long mSize = 0;
 
 	private final HashMap<DecodeSignature, Bitmap> mCache = new HashMap<DecodeSignature, Bitmap>();
-	private final LinkedList<DecodeSignature> mEvictionQueue = new LinkedList<DecodeSignature>();
+	private final Set<DecodeSignature> mEvictionSet = new LinkedHashSet<DecodeSignature>();
 
 	@Override
 	public synchronized Bitmap getBitmap(DecodeSignature decodeSignature) {
@@ -53,7 +53,7 @@ class SizeEstimatingMemoryLRUCacher implements ImageMemoryCacherInterface {
 	public synchronized void clearCache() {
 		mSize = 0;
 		mCache.clear();
-		mEvictionQueue.clear();
+		mEvictionSet.clear();
 	}
 
 	@Override
@@ -68,7 +68,7 @@ class SizeEstimatingMemoryLRUCacher implements ImageMemoryCacherInterface {
 		List<DecodeSignature> listToRemove = new ArrayList<DecodeSignature>();
 
 		for (DecodeSignature signature : set) {
-			if (signature.mUri.equals(uri)) {
+			if (signature.uri.equals(uri)) {
 				listToRemove.add(signature);
 			}
 		}
@@ -76,16 +76,16 @@ class SizeEstimatingMemoryLRUCacher implements ImageMemoryCacherInterface {
 		for (DecodeSignature signature : listToRemove) {
 			Bitmap bitmap = mCache.remove(signature);
 			mSize -= getBitmapSize(bitmap, signature);
-			mEvictionQueue.remove(signature);
+			mEvictionSet.remove(signature);
 		}
 	}
 
 	private synchronized void onEntryHit(DecodeSignature decodeSignature) {
-		if (mEvictionQueue.contains(decodeSignature)) {
-			mEvictionQueue.remove(decodeSignature);
-			mEvictionQueue.add(decodeSignature);
+		if (mEvictionSet.contains(decodeSignature)) {
+			mEvictionSet.remove(decodeSignature);
+			mEvictionSet.add(decodeSignature);
 		} else {
-			mEvictionQueue.add(decodeSignature);
+			mEvictionSet.add(decodeSignature);
 			performEvictions();
 		}
 	}
@@ -93,7 +93,7 @@ class SizeEstimatingMemoryLRUCacher implements ImageMemoryCacherInterface {
 	private synchronized void performEvictions() {
 		while (mSize > mMaximumSizeInBytes) {
 			try {
-				DecodeSignature decodeSignature = mEvictionQueue.removeFirst();
+				DecodeSignature decodeSignature = getLRU();
 				Bitmap bitmap = mCache.remove(decodeSignature);
 				mSize -= getBitmapSize(bitmap, decodeSignature);
 			} catch (NoSuchElementException e) {
@@ -104,7 +104,7 @@ class SizeEstimatingMemoryLRUCacher implements ImageMemoryCacherInterface {
 
 	private long getBitmapSize(Bitmap bitmap, DecodeSignature decodeSignature) {
 		int bytesPerPixel;
-		Bitmap.Config config = decodeSignature.mBitmapConfig;
+		Bitmap.Config config = decodeSignature.bitmapConfig;
 
 		if (config != null) {
 			switch (config) {
@@ -125,5 +125,17 @@ class SizeEstimatingMemoryLRUCacher implements ImageMemoryCacherInterface {
 		}
 
 		return bitmap.getWidth() * bitmap.getHeight() * bytesPerPixel;
+	}
+
+	private DecodeSignature getLRU() {
+		DecodeSignature signatureToRemove = null;
+		for (DecodeSignature signature : mEvictionSet) {
+			signatureToRemove = signature;
+			break;
+		}
+		if (signatureToRemove != null) {
+			mEvictionSet.remove(signatureToRemove);
+		}
+		return signatureToRemove;
 	}
 }

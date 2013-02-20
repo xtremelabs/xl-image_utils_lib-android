@@ -54,7 +54,6 @@ public class AuxiliaryBlockingQueue extends AbstractQueue<Runnable> implements B
 
 	@Override
 	public Iterator<Runnable> iterator() {
-		// TODO Fill this in.
 		return null;
 	}
 

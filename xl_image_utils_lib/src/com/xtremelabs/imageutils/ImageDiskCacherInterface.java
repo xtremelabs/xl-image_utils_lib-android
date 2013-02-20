@@ -27,7 +27,7 @@ import com.xtremelabs.imageutils.DiskLRUCacher.FileFormatException;
  * This interface defines the mechanisms that the ImageCacher uses to interract with the Disk Cache.
  */
 interface ImageDiskCacherInterface extends NetworkToDiskInterface {
-	boolean isCached(String uri);
+	boolean isCached(CacheRequest cacheRequest);
 
 	int getSampleSize(CacheRequest imageRequest);
 
@@ -35,13 +35,13 @@ interface ImageDiskCacherInterface extends NetworkToDiskInterface {
 
 	void setDiskCacheSize(long sizeInBytes);
 
-	Dimensions getImageDimensions(String uri);
+	Dimensions getImageDimensions(CacheRequest cacheRequest);
 
 	void invalidateFileSystemUri(String uri);
 
-	Bitmap getBitmapSynchronouslyFromDisk(DecodeSignature decodeSignature) throws FileNotFoundException, FileFormatException;
+	Bitmap getBitmapSynchronouslyFromDisk(CacheRequest cacheRequest, DecodeSignature decodeSignature) throws FileNotFoundException, FileFormatException;
 
-	void calculateAndSaveImageDetails(String uri) throws URISyntaxException, FileNotFoundException;
+	void calculateAndSaveImageDetails(CacheRequest cacheRequest) throws URISyntaxException, FileNotFoundException;
 
 	Prioritizable getDetailsPrioritizable(CacheRequest imageRequest);
 

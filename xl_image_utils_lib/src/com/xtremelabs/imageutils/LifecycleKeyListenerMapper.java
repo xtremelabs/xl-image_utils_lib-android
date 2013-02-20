@@ -23,6 +23,7 @@ import java.util.List;
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
 import com.xtremelabs.imageutils.LifecycleReferenceManager.ImageManagerCacheListener;
 
+// TODO The locking in this class (and the fact that it uses three hashmaps) makes it very slow. Find a way to improve the performance of this class.
 /**
  * This class maintains three sets of mappings which ensure that any Activity that is being destroyed has all references to it released.
  * 

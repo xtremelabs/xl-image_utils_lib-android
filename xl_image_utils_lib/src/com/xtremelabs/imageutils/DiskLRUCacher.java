@@ -53,12 +53,12 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		mImageDiskObserver = imageDecodeObserver;
 	}
 
+	// TODO This method is very slow. It could be due to synchronized blocks. See if performance can be improved.
 	@Override
-	public boolean isCached(String uri) {
-		boolean isPermanentStorageUri = GeneralUtils.isFileSystemUri(uri);
-		boolean isCached = false;
-
-		if (isPermanentStorageUri) {
+	public boolean isCached(CacheRequest cacheRequest) {
+		boolean isCached;
+		String uri = cacheRequest.getUri();
+		if (cacheRequest.isFileSystemRequest()) {
 			isCached = mPermanentStorageMap.containsKey(uri);
 			if (isCached) {
 				mPermanentStorageMap.get(uri);
@@ -71,12 +71,12 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public int getSampleSize(CacheRequest imageRequest) {
-		Dimensions dimensions = getImageDimensions(imageRequest.getUri());
+	public int getSampleSize(CacheRequest cacheRequest) {
+		Dimensions dimensions = getImageDimensions(cacheRequest);
 		if (dimensions == null) {
 			return -1;
 		}
-		int sampleSize = SampleSizeCalculationUtility.calculateSampleSize(imageRequest, dimensions);
+		int sampleSize = SampleSizeCalculationUtility.calculateSampleSize(cacheRequest, dimensions);
 		return sampleSize;
 	}
 
@@ -85,7 +85,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 		return new DefaultPrioritizable(cacheRequest, new Request<String>(cacheRequest.getUri())) {
 			@Override
 			public void execute() {
-				cacheImageDetails(cacheRequest.getUri());
+				cacheImageDetails(cacheRequest);
 			}
 		};
 	}
@@ -99,7 +99,7 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 				String errorMessage = null;
 				Bitmap bitmap = null;
 				try {
-					bitmap = getBitmapSynchronouslyFromDisk(decodeSignature);
+					bitmap = getBitmapSynchronouslyFromDisk(cacheRequest, decodeSignature);
 				} catch (FileNotFoundException e) {
 					failed = true;
 					errorMessage = "Disk decode failed with error message: " + e.getMessage();
@@ -111,17 +111,18 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 				if (!failed) {
 					mImageDiskObserver.onImageDecoded(decodeSignature, bitmap, imageReturnedFrom);
 				} else {
-					mDiskManager.deleteFile(encode(decodeSignature.mUri));
-					mDatabaseHelper.deleteEntry(decodeSignature.mUri);
+					mDiskManager.deleteFile(encode(decodeSignature.uri));
+					mDatabaseHelper.deleteEntry(decodeSignature.uri);
 					mImageDiskObserver.onImageDecodeFailed(decodeSignature, errorMessage);
 				}
 			}
 		};
 	}
 
-	void cacheImageDetails(String uri) {
+	void cacheImageDetails(CacheRequest cacheRequest) {
+		String uri = cacheRequest.getUri();
 		try {
-			calculateAndSaveImageDetails(uri);
+			calculateAndSaveImageDetails(cacheRequest);
 
 			mImageDiskObserver.onImageDetailsRetrieved(uri);
 		} catch (URISyntaxException e) {
@@ -132,11 +133,11 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public void calculateAndSaveImageDetails(String uri) throws URISyntaxException, FileNotFoundException {
+	public void calculateAndSaveImageDetails(CacheRequest cacheRequest) throws URISyntaxException, FileNotFoundException {
 		File file;
+		String uri = cacheRequest.getUri();
 
-		boolean isFileSystemUri = GeneralUtils.isFileSystemUri(uri);
-		if (isFileSystemUri) {
+		if (cacheRequest.isFileSystemRequest()) {
 			file = new File(new URI(uri.replace(" ", "%20")).getPath());
 		} else {
 			file = getFile(uri);
@@ -144,51 +145,13 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 
 		Dimensions dimensions = getImageDimensionsFromDisk(file);
 
-		if (isFileSystemUri) {
+		if (cacheRequest.isFileSystemRequest()) {
 			mPermanentStorageMap.put(uri, dimensions);
 		} else {
 			mDatabaseHelper.addOrUpdateFile(uri, file.length(), dimensions.width, dimensions.height);
 			clearLeastUsedFilesInCache();
 		}
 	}
-
-	// public Prioritizable getDiskDecodingRunnable(final DecodeSignature decodeSignature, final ImageReturnedFrom returnedFrom) {
-	// return new Prioritizable() {
-	// @Override
-	// public void execute() {
-	// boolean failed = false;
-	// String errorMessage = null;
-	// Bitmap bitmap = null;
-	// try {
-	// bitmap = getBitmapSynchronouslyFromDisk(decodeSignature);
-	// } catch (FileNotFoundException e) {
-	// failed = true;
-	// errorMessage = "Disk decode failed with error message: " + e.getMessage();
-	// } catch (FileFormatException e) {
-	// failed = true;
-	// errorMessage = "Disk decode failed with error message: " + e.getMessage();
-	// }
-	//
-	// if (!failed) {
-	// mImageDiskObserver.onImageDecoded(decodeSignature, bitmap, returnedFrom);
-	// } else {
-	// mDiskManager.deleteFile(encode(decodeSignature.mUri));
-	// mDatabaseHelper.deleteEntry(decodeSignature.mUri);
-	// mImageDiskObserver.onImageDecodeFailed(decodeSignature, errorMessage);
-	// }
-	// }
-	//
-	// @Override
-	// public Request<?> getRequest() {
-	// return new Request<DecodeSignature>(decodeSignature);
-	// }
-	//
-	// @Override
-	// public int getTargetPriorityAccessorIndex() {
-	// return 0;
-	// }
-	// };
-	// }
 
 	@Override
 	public void downloadImageFromInputStream(String uri, InputStream inputStream) throws IOException {
@@ -207,11 +170,10 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public Dimensions getImageDimensions(String uri) {
-		boolean isFromPermanentStorage = GeneralUtils.isFileSystemUri(uri);
-
+	public Dimensions getImageDimensions(CacheRequest cacheRequest) {
+		String uri = cacheRequest.getUri();
 		Dimensions dimensions;
-		if (isFromPermanentStorage) {
+		if (cacheRequest.isFileSystemRequest()) {
 			dimensions = mPermanentStorageMap.get(uri);
 		} else {
 			FileEntry fileEntry = mDatabaseHelper.getFileEntryFromCache(uri);
@@ -231,13 +193,13 @@ public class DiskLRUCacher implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public Bitmap getBitmapSynchronouslyFromDisk(DecodeSignature decodeSignature) throws FileNotFoundException, FileFormatException {
-		String uri = decodeSignature.mUri;
-		int sampleSize = decodeSignature.mSampleSize;
-		Bitmap.Config bitmapConfig = decodeSignature.mBitmapConfig;
+	public Bitmap getBitmapSynchronouslyFromDisk(CacheRequest cacheRequest, DecodeSignature decodeSignature) throws FileNotFoundException, FileFormatException {
+		String uri = decodeSignature.uri;
+		int sampleSize = decodeSignature.sampleSize;
+		Bitmap.Config bitmapConfig = decodeSignature.bitmapConfig;
 
 		File file = null;
-		if (GeneralUtils.isFileSystemUri(uri)) {
+		if (cacheRequest.isFileSystemRequest()) {
 			try {
 				file = new File(new URI(uri).getPath());
 			} catch (URISyntaxException e) {
