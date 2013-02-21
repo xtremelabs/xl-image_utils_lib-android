@@ -18,7 +18,7 @@ package com.xtremelabs.imageutils;
 
 import android.graphics.Bitmap;
 
-class ImageResponse {
+public class ImageResponse {
 	public static enum ImageResponseStatus {
 		REQUEST_QUEUED, SUCCESS, CACHED_ON_DISK
 	}
