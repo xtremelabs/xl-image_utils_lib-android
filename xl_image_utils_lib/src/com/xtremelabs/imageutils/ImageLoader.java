@@ -37,6 +37,7 @@ public class ImageLoader {
 
 	private final ImageViewReferenceMapper mViewMapper = new ImageViewReferenceMapper();
 	private ReferenceManager mReferenceManager;
+	private final DisplayUtility mDisplayUtility = new DisplayUtility();
 	private Context mApplicationContext;
 	private Object mKey;
 	private boolean mDestroyed = false;
@@ -109,6 +110,10 @@ public class ImageLoader {
 				mViewMapper.removeImageView(listener);
 			}
 		}
+	}
+
+	public void notifyConfigurationChanged() {
+		mDisplayUtility.notifyConfigurationChanged();
 	}
 
 	/**
@@ -583,7 +588,7 @@ public class ImageLoader {
 		Integer height = options.heightBounds;
 
 		if (options.useScreenSizeAsBounds) {
-			Dimensions screenSize = DisplayUtility.getDisplaySize(mApplicationContext);
+			Dimensions screenSize = mDisplayUtility.getDisplaySize(mApplicationContext);
 			width = Math.min(screenSize.width, width == null ? screenSize.width : width);
 			height = Math.min(screenSize.height, height == null ? screenSize.height : height);
 		}

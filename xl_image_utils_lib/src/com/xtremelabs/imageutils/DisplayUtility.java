@@ -23,22 +23,29 @@ import android.os.Build;
 import android.view.Display;
 import android.view.WindowManager;
 
-public class DisplayUtility {
+class DisplayUtility {
+	private volatile Dimensions displaySize;
+
+	// TODO Getting the screen dimensions is fairly costly. We should look into caching this value.
 	@SuppressLint("NewApi")
 	@SuppressWarnings("deprecation")
-	public static Dimensions getDisplaySize(Context applicationContext) {
-		Display display = ((WindowManager) applicationContext.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
-		Dimensions displaySize;
+	public Dimensions getDisplaySize(Context applicationContext) {
+		if (displaySize == null) {
+			Display display = ((WindowManager) applicationContext.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
 
-		if (Build.VERSION.SDK_INT < 13) {
-			// These method calls are used before API level 13.
-			displaySize = new Dimensions(display.getWidth(), display.getHeight());
-		} else {
-			Point size = new Point();
-			display.getSize(size);
-			displaySize = new Dimensions(size.x, size.y);
+			if (Build.VERSION.SDK_INT < 13) {
+				// These method calls are used before API level 13.
+				displaySize = new Dimensions(display.getWidth(), display.getHeight());
+			} else {
+				Point size = new Point();
+				display.getSize(size);
+				displaySize = new Dimensions(size.x, size.y);
+			}
 		}
-
 		return displaySize;
+	}
+
+	public void notifyConfigurationChanged() {
+		displaySize = null;
 	}
 }
