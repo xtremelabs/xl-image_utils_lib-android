@@ -34,8 +34,6 @@ import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
  * Finally, this class is responsible for ensuring that all calls back to listeners in the ImageLoader occur on the UI thread. This prevents race conditions in the ImageLoader and simplifies loading the bitmaps back to
  * image views.
  */
-// TODO: It may be worthwhile to use a WeakHashMap rather than actively forcing the user to call onDestroy.
-// Look into using a ReferenceQueue
 class LifecycleReferenceManager implements ReferenceManager {
 	private static LifecycleReferenceManager referenceManager;
 

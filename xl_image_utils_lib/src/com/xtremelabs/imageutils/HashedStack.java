@@ -21,7 +21,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-public class HashedStack<T> implements Iterable<T> {
+class HashedStack<T> implements Iterable<T> {
 	private Node<T> mHead = null;
 	private Node<T> mTail = null;
 	private final Map<T, Node<T>> mNodeMap = new HashMap<T, Node<T>>();

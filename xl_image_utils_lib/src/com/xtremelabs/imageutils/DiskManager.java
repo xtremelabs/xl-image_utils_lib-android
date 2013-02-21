@@ -29,7 +29,7 @@ import android.os.Environment;
  * 
  * This class is not thread safe.
  */
-public class DiskManager {
+class DiskManager {
 	private final String subDirectory;
 	private final Context appContext;
 	private File cacheDir; // Do not access this variable directly. It can disappear at any time. Use "getCacheDir()" instead.

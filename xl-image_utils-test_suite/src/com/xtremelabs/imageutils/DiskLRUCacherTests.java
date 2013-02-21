@@ -39,6 +39,7 @@ public class DiskLRUCacherTests extends AndroidTestCase {
 
 	private DiskLRUCacher mDiskCacher;
 	private String mKittenImageUri = null;
+	private CacheRequest mCacheRequest;
 
 	@Override
 	protected void setUp() throws Exception {
@@ -46,6 +47,7 @@ public class DiskLRUCacherTests extends AndroidTestCase {
 
 		if (mKittenImageUri == null) {
 			mKittenImageUri = "file://" + getContext().getCacheDir() + File.separator + IMAGE_FILE_NAME;
+			mCacheRequest = new CacheRequest(mKittenImageUri);
 			loadKittenToFile();
 		}
 
@@ -81,18 +83,18 @@ public class DiskLRUCacherTests extends AndroidTestCase {
 			public void onImageDecodeFailed(DecodeSignature decodeSignature, String error) {
 			}
 		});
-		mDiskCacher.cacheImageDetails(mKittenImageUri);
+		mDiskCacher.cacheImageDetails(mCacheRequest);
 		delayedLoop.startLoop();
 		delayedLoop.assertPassed();
 
-		assertNotNull(mDiskCacher.getImageDimensions(mKittenImageUri));
+		assertNotNull(mDiskCacher.getImageDimensions(mCacheRequest));
 	}
 
 	public void testGetSampleSizeForPermanentStorage() {
 		mDiskCacher.stubImageDiskObserver(new BlankImageDiskObserver());
-		mDiskCacher.cacheImageDetails(mKittenImageUri);
+		mDiskCacher.cacheImageDetails(mCacheRequest);
 
-		final Dimensions dimensions = mDiskCacher.getImageDimensions(mKittenImageUri);
+		final Dimensions dimensions = mDiskCacher.getImageDimensions(mCacheRequest);
 
 		int sampleSize = mDiskCacher.getSampleSize(new CacheRequest(mKittenImageUri, new ScalingInfo()));
 		assertEquals(1, sampleSize);
@@ -105,14 +107,14 @@ public class DiskLRUCacherTests extends AndroidTestCase {
 	}
 
 	public void testIsCached() {
-		mDiskCacher.cacheImageDetails(mKittenImageUri);
-		assertTrue(mDiskCacher.isCached(mKittenImageUri));
+		mDiskCacher.cacheImageDetails(mCacheRequest);
+		assertTrue(mDiskCacher.isCached(mCacheRequest));
 	}
 
 	public void testGettingPermanentStorageBitmap() {
 		Bitmap bitmap = null;
 		try {
-			bitmap = mDiskCacher.getBitmapSynchronouslyFromDisk(new DecodeSignature(mKittenImageUri, 1, null));
+			bitmap = mDiskCacher.getBitmapSynchronouslyFromDisk(mCacheRequest, new DecodeSignature(mKittenImageUri, 1, null));
 		} catch (FileNotFoundException e) {
 			fail();
 		} catch (FileFormatException e) {

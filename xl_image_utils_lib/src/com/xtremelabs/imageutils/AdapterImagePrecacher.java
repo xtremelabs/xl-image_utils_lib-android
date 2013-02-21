@@ -18,12 +18,7 @@ package com.xtremelabs.imageutils;
 
 import java.util.List;
 
-import android.content.Context;
-import android.content.res.Resources;
-import android.util.TypedValue;
 import android.widget.BaseAdapter;
-
-import com.xtremelabs.imageutils.ImageLoader.Options;
 
 /**
  * This utility simplifies the process of implementing precaching in adapters for use in widgets such as ListViews and ViewPagers.<br>
@@ -123,16 +118,11 @@ public class AdapterImagePrecacher {
 	private void precacheListToMemory(List<PrecacheRequest> precacheRequests, int position) {
 		if (precacheRequests != null) {
 			for (PrecacheRequest precacheRequest : precacheRequests) {
-				ImageRequest imageRequest = new ImageRequest(precacheRequest.mUri);
-				imageRequest.setImageRequestType(ImageRequestType.PRECACHE_TO_MEMORY_FOR_ADAPTER);
-				Options options;
-				options = precacheRequest.mOptions;
-				options.heightBounds = precacheRequest.mBounds.height;
-				options.widthBounds = precacheRequest.mBounds.width;
+				ImageRequest imageRequest = new ImageRequest(precacheRequest.uri);
+				imageRequest.setOptions(precacheRequest.options);
 				imageRequest.setImageRequestType(ImageRequestType.PRECACHE_TO_MEMORY_FOR_ADAPTER);
 				imageRequest.setCacheKey(new CacheKey(mId, position, mMemCacheRange, mDiskCacheRange));
 				mImageLoader.loadImage(imageRequest);
-				// mImageLoader.precacheImageToDiskAndMemory(precacheRequest.mUri, precacheRequest.mBounds, precacheRequest.mOptions);
 			}
 		}
 	}
@@ -258,53 +248,6 @@ public class AdapterImagePrecacher {
 		// TODO Try to map the requests by R.id to ImageViews within the rows.
 		// TODO This will need to be an ImageRequest object rather than a PrecacheRequest object.
 		public List<PrecacheRequest> getImageRequestsForMemoryPrecache(int position);
-	}
-
-	public static class PrecacheRequest {
-		public static enum UnitType {
-			PIXELS, DENSITY_INDEPENDENT_PIXELS
-		}
-
-		private String mUri;
-		private Dimensions mBounds;
-		private Options mOptions = new Options();
-
-		/**
-		 * @param uri
-		 * @param bounds
-		 *            The dimensions of the image view the URI will be loaded into. If one or more dimensions are unknown, simply specify the dimensions as null.
-		 */
-		public static PrecacheRequest generatePrecacheRequest(Context context, String uri, Dimensions bounds, UnitType unitType) {
-			PrecacheRequest request = new PrecacheRequest();
-
-			request.mUri = uri;
-
-			Dimensions dimensions = null;
-			switch (unitType) {
-			case DENSITY_INDEPENDENT_PIXELS:
-				dimensions = new Dimensions(convertToPixels(context, bounds.width), convertToPixels(context, bounds.height));
-				break;
-			case PIXELS:
-				dimensions = new Dimensions(bounds);
-				break;
-			}
-			request.mBounds = dimensions;
-
-			return request;
-		}
-
-		public void setOptions(Options options) {
-			mOptions = options;
-		}
-
-		private static Integer convertToPixels(Context context, Integer sizeInDp) {
-			if (sizeInDp == null) {
-				return null;
-			}
-
-			Resources resources = context.getResources();
-			return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, sizeInDp, resources.getDisplayMetrics());
-		}
 	}
 
 	private static class RangesToCache {

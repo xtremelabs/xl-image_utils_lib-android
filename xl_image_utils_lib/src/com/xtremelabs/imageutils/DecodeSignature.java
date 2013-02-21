@@ -18,7 +18,7 @@ package com.xtremelabs.imageutils;
 
 import android.graphics.Bitmap;
 
-public class DecodeSignature {
+class DecodeSignature {
 	final String uri;
 	final int sampleSize;
 	final Bitmap.Config bitmapConfig;

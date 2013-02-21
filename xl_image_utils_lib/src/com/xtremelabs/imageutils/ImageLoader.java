@@ -23,11 +23,13 @@ import android.app.Activity;
 import android.app.Application;
 import android.app.Fragment;
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
+import android.util.TypedValue;
 import android.widget.ImageView;
 
 import com.xtremelabs.imageutils.ThreadChecker.CalledFromWrongThreadException;
@@ -40,9 +42,9 @@ public class ImageLoader {
 	private final DisplayUtility mDisplayUtility = new DisplayUtility();
 	private Context mApplicationContext;
 	private Object mKey;
-	private boolean mDestroyed = false;
+	private volatile boolean mDestroyed = false;
 
-	private Options mDefaultOptions = new Options();
+	private volatile Options mDefaultOptions = new Options();
 
 	// TODO Cancelled network calls should still save the downloaded image to disk.
 
@@ -316,7 +318,7 @@ public class ImageLoader {
 	 */
 	public void loadImageFromResource(final ImageView imageView, final int resourceId) {
 		if (ThreadChecker.isOnUiThread()) {
-			if (!mDestroyed) {
+			if (!isDestroyed()) {
 				ThreadChecker.throwErrorIfOffUiThread();
 
 				mViewMapper.removeListener(imageView);
@@ -353,7 +355,6 @@ public class ImageLoader {
 		return false;
 	}
 
-	// TODO: Return a boolean indicating whether an image load was actually stopped.
 	public void stopLoadingImage(ImageManagerListener imageManagerListener) {
 		mViewMapper.removeImageView(imageManagerListener);
 		mReferenceManager.cancelRequest(imageManagerListener);
@@ -418,11 +419,8 @@ public class ImageLoader {
 	 * @param uri
 	 * @param applicationContext
 	 */
-	// TODO Test what happens if precache image to disk is called with a file system URI.
-	public void precacheImageToDisk(final String uri, boolean isForAdapter) {
-		ImageRequest imageRequest = new ImageRequest(uri);
-		imageRequest.setImageRequestType(isForAdapter ? ImageRequestType.PRECACHE_TO_DISK_FOR_ADAPTER : ImageRequestType.PRECACHE_TO_DISK);
-		loadImage(imageRequest);
+	public void precacheImageToDisk(String uri) {
+		precacheImageToDisk(uri, mApplicationContext, ImageRequestType.PRECACHE_TO_DISK);
 	}
 
 	/**
@@ -439,23 +437,23 @@ public class ImageLoader {
 	 */
 	// TODO Test what happens if precache image to disk is called with a file system URI.
 	public static void precacheImageToDisk(final String uri, Context applicationContext) {
-		// if (!(applicationContext instanceof Application)) {
-		// applicationContext = applicationContext.getApplicationContext();
-		// }
-		//
-		// if (ThreadChecker.isOnUiThread()) {
-		// ImageRequest imageRequest = new ImageRequest(uri);
-		// imageRequest.setRequestType(RequestType.CACHE_TO_DISK);
-		// ImageCacher.getInstance(applicationContext).precacheImageToDisk(imageRequest);
-		// } else {
-		// final Context finalContext = applicationContext;
-		// new Handler(applicationContext.getMainLooper()).post(new Runnable() {
-		// @Override
-		// public void run() {
-		// precacheImageToDisk(uri, finalContext);
-		// }
-		// });
-		// }
+		precacheImageToDisk(uri, applicationContext, ImageRequestType.PRECACHE_TO_DISK);
+	}
+
+	private static void precacheImageToDisk(String uri, Context applicationContext, ImageRequestType imageRequestType) {
+		if (!(applicationContext instanceof Application))
+			throw new IllegalArgumentException("The context passed in must be an ApplicationContext!");
+
+		CacheRequest cacheRequest = new CacheRequest(uri);
+		cacheRequest.setRequestType(imageRequestType);
+		ImageCacher.getInstance(applicationContext).getBitmap(cacheRequest, new BlankImageCacherListener());
+	}
+
+	public void precacheImageToDiskAndMemory(PrecacheRequest precacheRequest) {
+		Options options = precacheRequest.options;
+		CacheRequest cacheRequest = new CacheRequest(precacheRequest.uri, getScalingInfo(null, options), options);
+		cacheRequest.setRequestType(ImageRequestType.PRECACHE_TO_MEMORY);
+		ImageCacher.getInstance(mApplicationContext).getBitmap(cacheRequest, new BlankImageCacherListener());
 	}
 
 	/**
@@ -479,34 +477,42 @@ public class ImageLoader {
 	 * 
 	 * @throws CalledFromWrongThreadException
 	 *             This is thrown if the method is called from off the UI thread.
+	 * 
+	 * @deprecated This method is now deprecated! Please use {@link ImageLoader#precacheImageToDiskAndMemory(ImageRequest)} instead. The bounds used is now the height and width parameters inside of the options object.
+	 *             Please note that this method will not report back to any provided listeners when complete.
 	 */
-	// public void precacheImageToDiskAndMemory(String uri, Dimensions bounds, Options options) {
-	// TODO: Replace the width and height with options?
-	// ThreadChecker.throwErrorIfOffUiThread();
-	//
-	// ScalingInfo scalingInfo = new ScalingInfo();
-	// scalingInfo.height = bounds.height;
-	// scalingInfo.width = bounds.width;
-	//
-	// CacheRequest imageRequest = new CacheRequest(uri, scalingInfo, options == null ? mDefaultOptions : options);
-	// mReferenceManager.getBitmap(mApplicationContext, imageRequest, getBlankImageManagerListener());
-	// }
+	@Deprecated
+	public void precacheImageToDiskAndMemory(String uri, Dimensions bounds, Options options) {
+		Options o = new Options();
+		o.autoDetectBounds = options.autoDetectBounds;
+		o.overrideSampleSize = options.overrideSampleSize;
+		o.preferedConfig = options.preferedConfig;
+		o.scalingPreference = options.scalingPreference;
+		o.useScreenSizeAsBounds = options.useScreenSizeAsBounds;
+		o.widthBounds = bounds.width;
+		o.heightBounds = bounds.height;
 
-	// /**
-	// * Please use {@link #precacheImageToDiskAndMemory(String, Integer, Integer)}.
-	// */
-	// @Deprecated
-	// public void precacheImageToDiskAndMemory(String uri, Context applicationContext, Integer width, Integer height) {
-	// // TODO: Replace the width and height with options?
-	// ThreadChecker.throwErrorIfOffUiThread();
-	//
-	// ScalingInfo scalingInfo = new ScalingInfo();
-	// scalingInfo.height = height;
-	// scalingInfo.width = width;
-	//
-	// CacheRequest imageRequest = new CacheRequest(uri, scalingInfo);
-	// mReferenceManager.getBitmap(applicationContext, imageRequest, getBlankImageManagerListener());
-	// }
+		PrecacheRequest precacheRequest = new PrecacheRequest(uri, o);
+		precacheImageToDiskAndMemory(precacheRequest);
+	}
+
+	/**
+	 * Please use {@link #precacheImageToDiskAndMemory(String, Integer, Integer)}.
+	 */
+	@Deprecated
+	public void precacheImageToDiskAndMemory(String uri, Context applicationContext, Integer width, Integer height) {
+		Options options = new Options();
+		options.widthBounds = width;
+		options.heightBounds = height;
+
+		PrecacheRequest request = new PrecacheRequest(uri, options);
+		precacheImageToDiskAndMemory(request);
+	}
+
+	public static int convertDpToPixels(Context context, int dp) {
+		Resources r = context.getResources();
+		return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, r.getDisplayMetrics());
+	}
 
 	protected synchronized boolean isDestroyed() {
 		return mDestroyed;

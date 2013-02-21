@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 
-public class HashedQueue<T> implements Queue<T> {
+class HashedQueue<T> implements Queue<T> {
 	private Node<T> mHead = null;
 	private Node<T> mTail = null;
 	private Map<T, Node<T>> mNodeMap = new HashMap<T, Node<T>>();

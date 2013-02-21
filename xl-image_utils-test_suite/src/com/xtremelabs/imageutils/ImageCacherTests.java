@@ -60,7 +60,7 @@ public class ImageCacherTests extends AndroidTestCase {
 
 		mImageCacher.stubDiskCache(new DiskCacheStub() {
 			@Override
-			public boolean isCached(String uri) {
+			public boolean isCached(CacheRequest cacheRequest) {
 				return false;
 			}
 		});
@@ -115,7 +115,7 @@ public class ImageCacherTests extends AndroidTestCase {
 
 		mImageCacher.stubDiskCache(new DiskCacheStub() {
 			@Override
-			public boolean isCached(String uri) {
+			public boolean isCached(CacheRequest cacheRequest) {
 				return true;
 			}
 
@@ -201,7 +201,7 @@ public class ImageCacherTests extends AndroidTestCase {
 			}
 
 			@Override
-			public boolean isCached(String uri) {
+			public boolean isCached(CacheRequest cacheRequest) {
 				return true;
 			}
 		});
@@ -209,7 +209,7 @@ public class ImageCacherTests extends AndroidTestCase {
 		mImageCacher.stubMemCache(new MemCacheStub() {
 			@Override
 			public Bitmap getBitmap(DecodeSignature decodeSignature) {
-				if (decodeSignature == null || decodeSignature.mSampleSize != 1 || decodeSignature.mUri != TEST_URI) {
+				if (decodeSignature == null || decodeSignature.sampleSize != 1 || decodeSignature.uri != TEST_URI) {
 					delayedLoop.flagFailure();
 					return null;
 				}

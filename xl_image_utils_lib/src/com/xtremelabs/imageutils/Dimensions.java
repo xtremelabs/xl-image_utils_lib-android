@@ -16,6 +16,7 @@
 
 package com.xtremelabs.imageutils;
 
+// TODO This class' visibility should idealy be default. Change it once the ImageLoader is no longer using it.
 public class Dimensions {
 	public final Integer width;
 	public final Integer height;

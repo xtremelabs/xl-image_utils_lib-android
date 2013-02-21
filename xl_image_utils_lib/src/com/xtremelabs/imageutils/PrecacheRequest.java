@@ -16,22 +16,14 @@
 
 package com.xtremelabs.imageutils;
 
-import java.util.LinkedHashMap;
+import com.xtremelabs.imageutils.ImageLoader.Options;
 
-class LRUMap<KEY, VALUE> extends LinkedHashMap<KEY, VALUE> {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -3832920826263301600L;
-	private final int mMaxEntriesBeforeEviction;
+public class PrecacheRequest {
+	final String uri;
+	final Options options;
 
-	public LRUMap(int initialCapacity, int maxEntriesBeforeEviction) {
-		super(initialCapacity, 0.75f, true);
-		mMaxEntriesBeforeEviction = maxEntriesBeforeEviction;
-	}
-
-	@Override
-	protected boolean removeEldestEntry(java.util.Map.Entry<KEY, VALUE> eldest) {
-		return size() >= mMaxEntriesBeforeEviction;
+	public PrecacheRequest(String uri, Options options) {
+		this.uri = uri;
+		this.options = options;
 	}
 }

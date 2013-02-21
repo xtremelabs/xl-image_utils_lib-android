@@ -12,8 +12,8 @@ public class StackPriorityAccessorTests extends AndroidTestCase {
 	}
 
 	public void testStack() {
-		Prioritizable p1 = new ImageSystemPrioritizable();
-		Prioritizable p2 = new ImageSystemPrioritizable();
+		Prioritizable p1 = generatePrioritizable();
+		Prioritizable p2 = generatePrioritizable();
 
 		mAccessor.attach(p1);
 		assertEquals(1, mAccessor.size());
@@ -26,5 +26,23 @@ public class StackPriorityAccessorTests extends AndroidTestCase {
 
 		p = mAccessor.detachHighestPriorityItem();
 		assertEquals(p1, p);
+	}
+
+	private Prioritizable generatePrioritizable() {
+		return new Prioritizable() {
+			@Override
+			public int getTargetPriorityAccessorIndex() {
+				return 0;
+			}
+
+			@Override
+			public Request<?> getRequest() {
+				return null;
+			}
+
+			@Override
+			public void execute() {
+			}
+		};
 	}
 }
