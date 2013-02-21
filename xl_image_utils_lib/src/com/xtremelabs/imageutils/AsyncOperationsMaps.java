@@ -251,6 +251,7 @@ class AsyncOperationsMaps {
 		}
 	}
 
+	// FIXME This operation is low performance. Need to see if this can be sped up.
 	public synchronized void cancelPendingRequest(ImageCacherListener imageCacherListener) {
 		if (isNetworkOperationPendingForListener(imageCacherListener))
 			cancelNetworkPrioritizable(imageCacherListener);

@@ -76,6 +76,7 @@ class LifecycleReferenceManager implements ReferenceManager {
 			imageManagerListener.onLoadImageFailed("Blank url");
 			return;
 		}
+
 		ImageManagerCacheListener cacheListener = generateRegisteredListener(key, uri, imageManagerListener);
 		ImageResponse imageResponse = mImageCacher.getBitmap(imageRequest, cacheListener);
 		returnImageIfValid(imageManagerListener, imageResponse);

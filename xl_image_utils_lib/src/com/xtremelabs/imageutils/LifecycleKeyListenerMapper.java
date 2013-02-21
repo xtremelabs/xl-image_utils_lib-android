@@ -18,7 +18,9 @@ package com.xtremelabs.imageutils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
 import com.xtremelabs.imageutils.LifecycleReferenceManager.ImageManagerCacheListener;
@@ -30,14 +32,14 @@ import com.xtremelabs.imageutils.LifecycleReferenceManager.ImageManagerCacheList
  * The {@link Object} "key" in this class refers to either an Activity or a Fragment.
  */
 class LifecycleKeyListenerMapper {
-	private final HashMap<Object, List<ImageManagerListener>> mKeyToListenersMap = new HashMap<Object, List<ImageManagerListener>>();
+	private final HashMap<Object, Set<ImageManagerListener>> mKeyToListenersMap = new HashMap<Object, Set<ImageManagerListener>>();
 	private final HashMap<ImageManagerListener, ListenerInfo> mListenerToInfoMap = new HashMap<ImageManagerListener, ListenerInfo>();
 	private final HashMap<ImageManagerCacheListener, ImageManagerListener> mCacheListenerToImageReceivedListenerMap = new HashMap<ImageManagerCacheListener, ImageManagerListener>();
 
 	public synchronized void registerNewListener(ImageManagerListener imageManagerListener, Object key, ImageManagerCacheListener customImageListener) {
-		List<ImageManagerListener> imageManagerListenersList = mKeyToListenersMap.get(key);
+		Set<ImageManagerListener> imageManagerListenersList = mKeyToListenersMap.get(key);
 		if (imageManagerListenersList == null) {
-			imageManagerListenersList = new ArrayList<ImageManagerListener>();
+			imageManagerListenersList = new HashSet<ImageManagerListener>();
 			mKeyToListenersMap.put(key, imageManagerListenersList);
 		}
 		imageManagerListenersList.add(imageManagerListener);
@@ -51,10 +53,10 @@ class LifecycleKeyListenerMapper {
 	public synchronized ImageManagerCacheListener unregisterListener(ImageManagerListener imageManagerListener) {
 		ListenerInfo info = mListenerToInfoMap.remove(imageManagerListener);
 		if (info != null) {
-			List<ImageManagerListener> listenerList = mKeyToListenersMap.get(info.mKey);
-			if (listenerList != null) {
-				listenerList.remove(imageManagerListener);
-				if (listenerList.size() == 0) {
+			Set<ImageManagerListener> listenerSet = mKeyToListenersMap.get(info.mKey);
+			if (listenerSet != null) {
+				listenerSet.remove(imageManagerListener);
+				if (listenerSet.size() == 0) {
 					mKeyToListenersMap.remove(info.mKey);
 				}
 			}
@@ -74,9 +76,11 @@ class LifecycleKeyListenerMapper {
 	}
 
 	public synchronized List<ImageManagerListener> removeAndCancelAllRequestsByKey(ImageCacher imageCacher, Object key) {
-		List<ImageManagerListener> listeners = mKeyToListenersMap.remove(key);
+		Set<ImageManagerListener> listeners = mKeyToListenersMap.remove(key);
+		List<ImageManagerListener> listOfCancelledListeners = new ArrayList<ImageManagerListener>(listeners.size());
 		if (listeners != null) {
 			for (ImageManagerListener listener : listeners) {
+				listOfCancelledListeners.add(listener);
 				ListenerInfo info = mListenerToInfoMap.remove(listener);
 				if (info != null) {
 					ImageCacherListener imageCacherListener = info.mCacheListener;
@@ -85,7 +89,7 @@ class LifecycleKeyListenerMapper {
 				}
 			}
 		}
-		return listeners;
+		return listOfCancelledListeners;
 	}
 
 	public synchronized boolean isListenerRegistered(ImageManagerListener imageManagerListener) {

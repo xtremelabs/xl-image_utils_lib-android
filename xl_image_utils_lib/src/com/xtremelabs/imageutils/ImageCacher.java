@@ -21,6 +21,7 @@ import java.net.URISyntaxException;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.util.Log;
 
@@ -66,41 +67,17 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Op
 		String uri = cacheRequest.getUri();
 		throwExceptionIfNeeded(cacheRequest, imageCacherListener);
 
-		// Performance note: The "queue" call is very slow.
-		AsyncOperationState state = mAsyncOperationsMap.queueListenerIfRequestPending(cacheRequest, imageCacherListener);
-		switch (state) {
-		case QUEUED_FOR_NETWORK_REQUEST:
-		case QUEUED_FOR_DECODE_REQUEST:
-		case QUEUED_FOR_DETAILS_REQUEST:
-			return generateQueuedResponse();
-		case NOT_QUEUED:
-		default:
-			break;
-		}
-
 		int sampleSize = getSampleSize(cacheRequest);
-
-		// TODO: Look into removing the sampleSize check.
-
 		boolean isCached = mDiskCache.isCached(cacheRequest);
-
 		if (isCached && sampleSize != -1) {
-			if (cacheRequest.getRequestType() == ImageRequestType.PRECACHE_TO_DISK)
-				return new ImageResponse(null, null, ImageResponseStatus.CACHED_ON_DISK);
-
-			DecodeSignature decodeSignature = new DecodeSignature(uri, sampleSize, cacheRequest.getOptions().preferedConfig);
 			Bitmap bitmap;
-			if ((bitmap = mMemoryCache.getBitmap(decodeSignature)) != null) {
+			DecodeSignature decodeSignature = new DecodeSignature(uri, sampleSize, cacheRequest.getOptions().preferedConfig);
+			bitmap = mMemoryCache.getBitmap(decodeSignature);
+			if (bitmap != null)
 				return new ImageResponse(bitmap, ImageReturnedFrom.MEMORY, ImageResponseStatus.SUCCESS);
-			} else {
-				decodeBitmapFromDisk(cacheRequest, decodeSignature, imageCacherListener);
-			}
-		} else if (cacheRequest.isFileSystemRequest()) {
-			retrieveImageDetails(cacheRequest, imageCacherListener);
-		} else {
-			downloadImageFromNetwork(cacheRequest, imageCacherListener);
 		}
 
+		new AsyncImageRequest(cacheRequest, imageCacherListener).execute();
 		return generateQueuedResponse();
 	}
 
@@ -236,21 +213,16 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Op
 		mAsyncOperationsMap.registerDecodeRequest(cacheRequest, decodeSignature, imageCacherListener);
 	}
 
-	private void validateUri(String uri) {
+	private void throwExceptionIfNeeded(CacheRequest cacheRequest, ImageCacherListener imageCacherListener) {
+		String uri = cacheRequest.getUri();
 		if (uri == null || uri.length() == 0)
 			throw new IllegalArgumentException("Null URI passed into the image system.");
-	}
-
-	private void throwExceptionIfNeeded(CacheRequest imageRequest, ImageCacherListener imageCacherListener) {
-		ThreadChecker.throwErrorIfOffUiThread();
-
-		validateUri(imageRequest.getUri());
 
 		if (imageCacherListener == null) {
 			throw new IllegalArgumentException("The ImageCacherListener must not be null.");
 		}
 
-		if (imageRequest.getScalingInfo() == null) {
+		if (cacheRequest.getScalingInfo() == null) {
 			throw new IllegalArgumentException("The ScalingInfo must not be null.");
 		}
 	}
@@ -334,5 +306,55 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Op
 
 	public void notifyDirectionSwapped(CacheKey cacheKey) {
 		mAsyncOperationsMap.notifyDirectionSwapped(cacheKey);
+	}
+
+	private class AsyncImageRequest extends AsyncTask<Void, Void, Void> {
+		private final CacheRequest cacheRequest;
+		private final ImageCacherListener imageCacherListener;
+
+		public AsyncImageRequest(CacheRequest cacheRequest, ImageCacherListener imageCacherListener) {
+			this.cacheRequest = cacheRequest;
+			this.imageCacherListener = imageCacherListener;
+		}
+
+		@Override
+		protected Void doInBackground(Void... params) {
+			// Performance note: The "queue" call is very slow.
+			AsyncOperationState state = mAsyncOperationsMap.queueListenerIfRequestPending(cacheRequest, imageCacherListener);
+			switch (state) {
+			case QUEUED_FOR_NETWORK_REQUEST:
+			case QUEUED_FOR_DECODE_REQUEST:
+			case QUEUED_FOR_DETAILS_REQUEST:
+				return null;
+			case NOT_QUEUED:
+			default:
+				break;
+			}
+
+			// TODO: Look into removing the sampleSize check.
+			int sampleSize = getSampleSize(cacheRequest);
+			boolean isCached = mDiskCache.isCached(cacheRequest);
+
+			if (isCached && sampleSize != -1) {
+				if (cacheRequest.getRequestType() == ImageRequestType.PRECACHE_TO_DISK) {
+					// TODO Should probably report that the image is cached on disk here.
+					return null;
+				}
+
+				DecodeSignature decodeSignature = new DecodeSignature(cacheRequest.getUri(), sampleSize, cacheRequest.getOptions().preferedConfig);
+				Bitmap bitmap;
+				if ((bitmap = mMemoryCache.getBitmap(decodeSignature)) != null) {
+					imageCacherListener.onImageAvailable(new ImageResponse(bitmap, ImageReturnedFrom.DISK, ImageResponseStatus.SUCCESS));
+				} else {
+					decodeBitmapFromDisk(cacheRequest, decodeSignature, imageCacherListener);
+				}
+			} else if (cacheRequest.isFileSystemRequest()) {
+				retrieveImageDetails(cacheRequest, imageCacherListener);
+			} else {
+				downloadImageFromNetwork(cacheRequest, imageCacherListener);
+			}
+
+			return null;
+		}
 	}
 }

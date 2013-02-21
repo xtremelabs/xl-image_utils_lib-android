@@ -16,12 +16,11 @@
 
 package com.xtremelabs.imageutils;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-
 import com.xtremelabs.imageutils.ImageLoader.Options;
 
 class CacheRequest {
+	private static final String FILE_SCHEME = "file:";
+
 	static enum LocationOfImage {
 		WEB, LOCAL_FILE_SYSTEM
 	}
@@ -104,16 +103,18 @@ class CacheRequest {
 	}
 
 	private static boolean isFileSystemUri(String uri) {
-		try {
-			if (uri != null) {
-				URI testUri = new URI(uri.replace(' ', '+'));
-				String scheme = testUri.getScheme();
-				if (scheme != null && scheme.equalsIgnoreCase("file")) {
-					return true;
-				}
+		if (uri != null) {
+			int fileSchemeLength = FILE_SCHEME.length();
+			if (uri.length() < fileSchemeLength)
+				return false;
+
+			for (int i = 0; i < fileSchemeLength; i++) {
+				if (uri.charAt(i) != FILE_SCHEME.charAt(i))
+					return false;
 			}
-		} catch (URISyntaxException e) {
+			return true;
+		} else {
+			return false;
 		}
-		return false;
 	}
 }
