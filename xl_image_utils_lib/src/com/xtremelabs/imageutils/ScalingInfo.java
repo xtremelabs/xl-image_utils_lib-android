@@ -16,7 +16,7 @@
 
 package com.xtremelabs.imageutils;
 
-public class ScalingInfo {
+class ScalingInfo {
 	public Integer sampleSize = null;
 	public Integer width;
 	public Integer height;

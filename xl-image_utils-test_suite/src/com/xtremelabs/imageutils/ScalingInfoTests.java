@@ -24,6 +24,7 @@ import android.widget.ImageView;
 import com.xtremelabs.imageutils.ImageLoader.Options;
 
 public class ScalingInfoTests extends AndroidTestCase {
+	private DisplayUtility mDisplayUtility;
 	private ImageLoader mImageLoader;
 	private Options options;
 	private ScalingInfo scalingInfo;
@@ -35,6 +36,7 @@ public class ScalingInfoTests extends AndroidTestCase {
 		ThreadChecker.disableUiThreadCheck();
 		options = new Options();
 		imageView = new ImageView(getContext());
+		mDisplayUtility = new DisplayUtility();
 	}
 
 	@Override
@@ -65,7 +67,7 @@ public class ScalingInfoTests extends AndroidTestCase {
 		assertNotNull(scalingInfo.width);
 		assertNotNull(scalingInfo.height);
 
-		Dimensions screenDimensions = DisplayUtility.getDisplaySize(getContext());
+		Dimensions screenDimensions = mDisplayUtility.getDisplaySize(getContext());
 		options.useScreenSizeAsBounds = true;
 		scalingInfo = mImageLoader.getScalingInfo(imageView, options);
 
@@ -110,14 +112,14 @@ public class ScalingInfoTests extends AndroidTestCase {
 
 		setParams(LayoutParams.WRAP_CONTENT, 100);
 		scalingInfo = mImageLoader.getScalingInfo(imageView, options);
-		assertEquals(DisplayUtility.getDisplaySize(getContext()).width.intValue(), scalingInfo.width.intValue());
+		assertEquals(mDisplayUtility.getDisplaySize(getContext()).width.intValue(), scalingInfo.width.intValue());
 		assertEquals(100, scalingInfo.height.intValue());
 		assertNull(scalingInfo.sampleSize);
 
 		setParams(100, LayoutParams.WRAP_CONTENT);
 		scalingInfo = mImageLoader.getScalingInfo(imageView, options);
 		assertEquals(100, scalingInfo.width.intValue());
-		assertEquals(DisplayUtility.getDisplaySize(getContext()).height.intValue(), scalingInfo.height.intValue());
+		assertEquals(mDisplayUtility.getDisplaySize(getContext()).height.intValue(), scalingInfo.height.intValue());
 		assertNull(scalingInfo.sampleSize);
 
 		setParams(100, 50);
@@ -128,8 +130,8 @@ public class ScalingInfoTests extends AndroidTestCase {
 
 		setParams(50000, 50000);
 		scalingInfo = mImageLoader.getScalingInfo(imageView, options);
-		assertEquals(DisplayUtility.getDisplaySize(getContext()).width.intValue(), scalingInfo.width.intValue());
-		assertEquals(DisplayUtility.getDisplaySize(getContext()).height.intValue(), scalingInfo.height.intValue());
+		assertEquals(mDisplayUtility.getDisplaySize(getContext()).width.intValue(), scalingInfo.width.intValue());
+		assertEquals(mDisplayUtility.getDisplaySize(getContext()).height.intValue(), scalingInfo.height.intValue());
 		assertNull(scalingInfo.sampleSize);
 	}
 

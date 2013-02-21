@@ -33,7 +33,7 @@ import android.graphics.BitmapFactory;
 
 import com.xtremelabs.imageutils.DiskDatabaseHelper.DiskDatabaseHelperObserver;
 
-public class DiskLRUCacher implements ImageDiskCacherInterface {
+class DiskLRUCacher implements ImageDiskCacherInterface {
 	private static final int MAX_PERMANENT_STORAGE_IMAGE_DIMENSIONS_CACHED = 25; // TODO Optimize this value, or allow for API access to modify it.
 
 	private long mMaximumCacheSizeInBytes = 50 * 1024 * 1024; // 50MB

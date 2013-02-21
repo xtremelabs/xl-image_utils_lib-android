@@ -29,9 +29,9 @@ import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 
 @SuppressLint("NewApi")
-public class AdvancedMemoryLRUCacher implements ImageMemoryCacherInterface {
+class AdvancedMemoryLRUCacher implements ImageMemoryCacherInterface {
 	private long mMaximumSizeInBytes = 20 * 1024 * 1024; // 20MB default
-	private long mSize = 0;
+	private volatile long mSize = 0;
 
 	private final Map<DecodeSignature, Bitmap> mCache = new HashMap<DecodeSignature, Bitmap>();
 	private final Set<DecodeSignature> mEvictionSet = new LinkedHashSet<DecodeSignature>();

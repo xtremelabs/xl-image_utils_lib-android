@@ -16,22 +16,15 @@
 
 package com.xtremelabs.imageutils;
 
-import java.util.LinkedHashMap;
+import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
 
-class LRUMap<KEY, VALUE> extends LinkedHashMap<KEY, VALUE> {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -3832920826263301600L;
-	private final int mMaxEntriesBeforeEviction;
+class BlankImageCacherListener extends ImageCacherListener {
 
-	public LRUMap(int initialCapacity, int maxEntriesBeforeEviction) {
-		super(initialCapacity, 0.75f, true);
-		mMaxEntriesBeforeEviction = maxEntriesBeforeEviction;
+	@Override
+	public void onImageAvailable(ImageResponse imageResponse) {
 	}
 
 	@Override
-	protected boolean removeEldestEntry(java.util.Map.Entry<KEY, VALUE> eldest) {
-		return size() >= mMaxEntriesBeforeEviction;
+	public void onFailure(String message) {
 	}
 }

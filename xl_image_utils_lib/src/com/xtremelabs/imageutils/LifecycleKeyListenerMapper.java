@@ -77,8 +77,9 @@ class LifecycleKeyListenerMapper {
 
 	public synchronized List<ImageManagerListener> removeAndCancelAllRequestsByKey(ImageCacher imageCacher, Object key) {
 		Set<ImageManagerListener> listeners = mKeyToListenersMap.remove(key);
-		List<ImageManagerListener> listOfCancelledListeners = new ArrayList<ImageManagerListener>(listeners.size());
+		List<ImageManagerListener> listOfCancelledListeners = null;
 		if (listeners != null) {
+			listOfCancelledListeners = new ArrayList<ImageManagerListener>(listeners.size());
 			for (ImageManagerListener listener : listeners) {
 				listOfCancelledListeners.add(listener);
 				ListenerInfo info = mListenerToInfoMap.remove(listener);

@@ -40,13 +40,13 @@ import android.widget.ImageView;
 import com.xtreme.testactivity.R;
 import com.xtremelabs.imageutils.AdapterImagePrecacher;
 import com.xtremelabs.imageutils.AdapterImagePrecacher.PrecacheInformationProvider;
-import com.xtremelabs.imageutils.AdapterImagePrecacher.PrecacheRequest;
-import com.xtremelabs.imageutils.AdapterImagePrecacher.PrecacheRequest.UnitType;
 import com.xtremelabs.imageutils.Dimensions;
 import com.xtremelabs.imageutils.ImageLoader;
+import com.xtremelabs.imageutils.ImageLoader.Options;
 import com.xtremelabs.imageutils.ImageLoaderListener;
 import com.xtremelabs.imageutils.ImageRequest;
 import com.xtremelabs.imageutils.ImageReturnedFrom;
+import com.xtremelabs.imageutils.PrecacheRequest;
 
 @TargetApi(13)
 public class KittenAdapter extends BaseAdapter {
@@ -57,6 +57,7 @@ public class KittenAdapter extends BaseAdapter {
 	private final ImageLoader mImageLoader;
 	private AdapterImagePrecacher mImagePrecacheAssistant;
 	private final Dimensions mBounds;
+	private final Options mOptions;
 
 	public KittenAdapter(final Activity activity, ImageLoader imageLoader) {
 		KITTEN_URI = "file://" + activity.getCacheDir() + File.separator + IMAGE_FILE_NAME;
@@ -69,6 +70,9 @@ public class KittenAdapter extends BaseAdapter {
 		Point size = new Point();
 		mActivity.getWindowManager().getDefaultDisplay().getSize(size);
 		mBounds = new Dimensions(size.x / 2, (int) ((size.x / 800f) * 200f));
+		mOptions = new Options();
+		mOptions.widthBounds = mBounds.width;
+		mOptions.heightBounds = mBounds.height;
 
 		mImagePrecacheAssistant = new AdapterImagePrecacher(mImageLoader, new PrecacheInformationProvider() {
 			@Override
@@ -92,22 +96,22 @@ public class KittenAdapter extends BaseAdapter {
 			public List<PrecacheRequest> getImageRequestsForMemoryPrecache(int position) {
 				List<PrecacheRequest> list = new ArrayList<PrecacheRequest>();
 				if (position % 2 == 0) {
-					list.add(PrecacheRequest.generatePrecacheRequest(activity, (String) getItem(position) + "1", mBounds, UnitType.PIXELS));
-					list.add(PrecacheRequest.generatePrecacheRequest(activity, (String) getItem(position) + "2", mBounds, UnitType.PIXELS));
+					list.add(new PrecacheRequest((String) getItem(position) + "1", mOptions));
+					list.add(new PrecacheRequest((String) getItem(position) + "2", mOptions));
 				} else {
-					list.add(PrecacheRequest.generatePrecacheRequest(activity, (String) getItem(position), mBounds, UnitType.PIXELS));
+					list.add(new PrecacheRequest((String) getItem(position), mOptions));
 				}
 				return list;
 			}
 		});
 
-		mImagePrecacheAssistant.setMemCacheRange(4);
-		mImagePrecacheAssistant.setDiskCacheRange(8);
+		mImagePrecacheAssistant.setMemCacheRange(5);
+		mImagePrecacheAssistant.setDiskCacheRange(10);
 	}
 
 	@Override
 	public int getCount() {
-		return 10000;
+		return 20000;
 	}
 
 	@Override

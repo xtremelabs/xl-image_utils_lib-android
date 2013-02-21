@@ -31,11 +31,6 @@ public class DiskCacheStub implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public boolean isCached(String uri) {
-		return false;
-	}
-
-	@Override
 	public void bumpOnDisk(String uri) {
 	}
 
@@ -44,21 +39,7 @@ public class DiskCacheStub implements ImageDiskCacherInterface {
 	}
 
 	@Override
-	public Dimensions getImageDimensions(String uri) {
-		return null;
-	}
-
-	@Override
 	public void invalidateFileSystemUri(String uri) {
-	}
-
-	@Override
-	public void calculateAndSaveImageDetails(String arg0) throws URISyntaxException, FileNotFoundException {
-	}
-
-	@Override
-	public Bitmap getBitmapSynchronouslyFromDisk(DecodeSignature arg0) throws FileNotFoundException, FileFormatException {
-		return null;
 	}
 
 	@Override
@@ -74,5 +55,24 @@ public class DiskCacheStub implements ImageDiskCacherInterface {
 	@Override
 	public Prioritizable getDecodePrioritizable(CacheRequest cacheRequest, DecodeSignature decodeSignature, ImageReturnedFrom imageReturnedFrom) {
 		return null;
+	}
+
+	@Override
+	public boolean isCached(CacheRequest cacheRequest) {
+		return false;
+	}
+
+	@Override
+	public Dimensions getImageDimensions(CacheRequest cacheRequest) {
+		return null;
+	}
+
+	@Override
+	public Bitmap getBitmapSynchronouslyFromDisk(CacheRequest cacheRequest, DecodeSignature decodeSignature) throws FileNotFoundException, FileFormatException {
+		return null;
+	}
+
+	@Override
+	public void calculateAndSaveImageDetails(CacheRequest cacheRequest) throws URISyntaxException, FileNotFoundException {
 	}
 }

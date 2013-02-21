@@ -35,7 +35,7 @@ import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
  * 
  * The job of this class is to "route" messages appropriately in order to ensure synchronized handling of image downloading and caching operations.
  */
-public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, OperationsObserver {
+class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, OperationsObserver {
 	private static ImageCacher mImageCacher;
 
 	private ImageDiskCacherInterface mDiskCache;
@@ -281,6 +281,10 @@ public class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Op
 
 	public void setNetworkRequestCreator(NetworkRequestCreator networkRequestCreator) {
 		mNetworkInterface.setNetworkRequestCreator(networkRequestCreator);
+	}
+
+	void stubMemCache(ImageMemoryCacherInterface memoryCache) {
+		mMemoryCache = memoryCache;
 	}
 
 	void stubDiskCache(ImageDiskCacherInterface imageDiskCacherInterface) {

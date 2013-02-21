@@ -29,7 +29,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
-public class DiskDatabaseHelper extends SQLiteOpenHelper {
+class DiskDatabaseHelper extends SQLiteOpenHelper {
 	// TODO: Map columns to indices (Bug Josh).
 	private final String[] columns = { "url", "sizeondisk", "width", "height", "lastaccess" };
 
