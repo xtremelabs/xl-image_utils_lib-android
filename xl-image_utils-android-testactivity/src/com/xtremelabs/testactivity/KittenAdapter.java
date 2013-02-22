@@ -83,24 +83,24 @@ public class KittenAdapter extends BaseAdapter {
 			@Override
 			public List<String> getRequestsForDiskPrecache(int position) {
 				List<String> list = new ArrayList<String>();
-				if (position % 2 == 0) {
-					list.add((String) getItem(position) + "1");
-					list.add((String) getItem(position) + "2");
-				} else {
-					list.add((String) getItem(position));
-				}
+				// if (position % 2 == 0) {
+				list.add((String) getItem(position) + "1");
+				list.add((String) getItem(position) + "2");
+				// } else {
+				// list.add((String) getItem(position));
+				// }
 				return list;
 			}
 
 			@Override
 			public List<PrecacheRequest> getImageRequestsForMemoryPrecache(int position) {
 				List<PrecacheRequest> list = new ArrayList<PrecacheRequest>();
-				if (position % 2 == 0) {
-					list.add(new PrecacheRequest((String) getItem(position) + "1", mOptions));
-					list.add(new PrecacheRequest((String) getItem(position) + "2", mOptions));
-				} else {
-					list.add(new PrecacheRequest((String) getItem(position), mOptions));
-				}
+				// if (position % 2 == 0) {
+				list.add(new PrecacheRequest((String) getItem(position) + "1", mOptions));
+				list.add(new PrecacheRequest((String) getItem(position) + "2", mOptions));
+				// } else {
+				// list.add(new PrecacheRequest((String) getItem(position), mOptions));
+				// }
 				return list;
 			}
 		});
@@ -116,11 +116,11 @@ public class KittenAdapter extends BaseAdapter {
 
 	@Override
 	public Object getItem(int position) {
-		if (position % 2 == 0) {
-			return URL + position;
-		} else {
-			return KITTEN_URI;
-		}
+		// if (position % 2 == 0) {
+		return URL + position;
+		// } else {
+		// return KITTEN_URI;
+		// }
 	}
 
 	@Override
@@ -148,23 +148,23 @@ public class KittenAdapter extends BaseAdapter {
 		if (kittenViews == null)
 			kittenViews = (KittenViews) convertView.getTag();
 
-		if (position % 2 == 0) {
-			ImageRequest imageRequest1 = new ImageRequest(kittenViews.kitten1, (String) getItem(position) + "1");
-			imageRequest1.setImageLoaderListener(mListener);
-			mImagePrecacheAssistant.loadImage(imageRequest1, position);
+		// if (position % 2 == 0) {
+		ImageRequest imageRequest1 = new ImageRequest(kittenViews.kitten1, (String) getItem(position) + "1");
+		imageRequest1.setImageLoaderListener(mListener);
+		mImagePrecacheAssistant.loadImage(imageRequest1, position);
 
-			ImageRequest imageRequest2 = new ImageRequest(kittenViews.kitten2, (String) getItem(position) + "2");
-			imageRequest1.setImageLoaderListener(mListener);
-			mImagePrecacheAssistant.loadImage(imageRequest2, position);
-		} else {
-			ImageRequest imageRequest1 = new ImageRequest(kittenViews.kitten1, (String) getItem(position));
-			imageRequest1.setImageLoaderListener(mListener);
-			mImagePrecacheAssistant.loadImage(imageRequest1, position);
-
-			ImageRequest imageRequest2 = new ImageRequest(kittenViews.kitten2, (String) getItem(position));
-			imageRequest1.setImageLoaderListener(mListener);
-			mImagePrecacheAssistant.loadImage(imageRequest2, position);
-		}
+		ImageRequest imageRequest2 = new ImageRequest(kittenViews.kitten2, (String) getItem(position) + "2");
+		imageRequest1.setImageLoaderListener(mListener);
+		mImagePrecacheAssistant.loadImage(imageRequest2, position);
+		// } else {
+		// ImageRequest imageRequest1 = new ImageRequest(kittenViews.kitten1, (String) getItem(position));
+		// imageRequest1.setImageLoaderListener(mListener);
+		// mImagePrecacheAssistant.loadImage(imageRequest1, position);
+		//
+		// ImageRequest imageRequest2 = new ImageRequest(kittenViews.kitten2, (String) getItem(position));
+		// imageRequest1.setImageLoaderListener(mListener);
+		// mImagePrecacheAssistant.loadImage(imageRequest2, position);
+		// }
 
 		return convertView;
 	}
