@@ -8,13 +8,13 @@ class Benchmark {
 	private static volatile long numRuns = 0;
 	private static volatile long totalTimeElapsed = 0;
 
-	private final long myStartTime = System.currentTimeMillis();
+	private final long myStartTime = System.nanoTime();
 
 	public Benchmark() {
 	}
 
 	public synchronized void complete() {
-		long totalTime = System.currentTimeMillis() - myStartTime;
+		long totalTime = System.nanoTime() - myStartTime;
 		totalTimeElapsed += totalTime;
 
 		if (minTime > totalTime)
