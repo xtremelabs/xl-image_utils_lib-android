@@ -43,19 +43,19 @@ public class AdapterAccessorTests extends AndroidTestCase {
 
 		p = (DefaultPrioritizable) mAccessor.detachHighestPriorityItem();
 		assertEquals(mRequests[4], p);
-		assertEquals(ImageRequestType.PRECACHE_TO_MEMORY_FOR_ADAPTER, p.getCacheRequest().getRequestType());
+		assertEquals(ImageRequestType.PRECACHE_TO_MEMORY_FOR_ADAPTER, p.getCacheRequest().getImageRequestType());
 
 		p = (DefaultPrioritizable) mAccessor.detachHighestPriorityItem();
 		assertEquals(mRequests[3], p);
-		assertEquals(ImageRequestType.PRECACHE_TO_MEMORY_FOR_ADAPTER, p.getCacheRequest().getRequestType());
+		assertEquals(ImageRequestType.PRECACHE_TO_MEMORY_FOR_ADAPTER, p.getCacheRequest().getImageRequestType());
 
 		p = (DefaultPrioritizable) mAccessor.detachHighestPriorityItem();
 		assertEquals(mRequests[2], p);
-		assertEquals(ImageRequestType.PRECACHE_TO_DISK_FOR_ADAPTER, p.getCacheRequest().getRequestType());
+		assertEquals(ImageRequestType.PRECACHE_TO_DISK_FOR_ADAPTER, p.getCacheRequest().getImageRequestType());
 
 		p = (DefaultPrioritizable) mAccessor.detachHighestPriorityItem();
 		assertEquals(mRequests[1], p);
-		assertEquals(ImageRequestType.PRECACHE_TO_DISK_FOR_ADAPTER, p.getCacheRequest().getRequestType());
+		assertEquals(ImageRequestType.PRECACHE_TO_DISK_FOR_ADAPTER, p.getCacheRequest().getImageRequestType());
 
 		p = (DefaultPrioritizable) mAccessor.detachHighestPriorityItem();
 		assertNull(p);

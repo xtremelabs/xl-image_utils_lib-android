@@ -197,8 +197,14 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 		mDiskCache.setDiskCacheSize(maxSizeInBytes);
 	}
 
-	public void cancelRequestForBitmap(ImageCacherListener imageCacherListener) {
-		mAsyncOperationsMap.cancelPendingRequest(imageCacherListener);
+	public void cancelRequestForBitmap(final ImageCacherListener imageCacherListener) {
+		new AsyncTask<Void, Void, Void>() {
+			@Override
+			protected Void doInBackground(Void... params) {
+				mAsyncOperationsMap.cancelPendingRequest(imageCacherListener);
+				return null;
+			}
+		}.execute();
 	}
 
 	private void downloadImageFromNetwork(CacheRequest imageRequest, ImageCacherListener imageCacherListener) {
@@ -340,7 +346,7 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 			boolean isCached = mDiskCache.isCached(cacheRequest);
 
 			if (isCached && sampleSize != -1) {
-				if (cacheRequest.getRequestType() == ImageRequestType.PRECACHE_TO_DISK) {
+				if (cacheRequest.getImageRequestType() == ImageRequestType.PRECACHE_TO_DISK) {
 					// TODO Should probably report that the image is cached on disk here.
 					return null;
 				}

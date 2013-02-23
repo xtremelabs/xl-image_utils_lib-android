@@ -162,7 +162,7 @@ public class ImageLoader {
 			}
 
 			CacheRequest cacheRequest = new CacheRequest(imageRequest.getUri(), getScalingInfo(imageRequest.getImageView(), options), options);
-			cacheRequest.setRequestType(imageRequest.getImageRequestType());
+			cacheRequest.setImageRequestType(imageRequest.getImageRequestType());
 			cacheRequest.setCacheKey(imageRequest.getCacheKey());
 			performImageRequestOnUiThread(imageRequest.getImageView(), cacheRequest, options, imageManagerListener);
 		} else {
@@ -445,14 +445,14 @@ public class ImageLoader {
 			throw new IllegalArgumentException("The context passed in must be an ApplicationContext!");
 
 		CacheRequest cacheRequest = new CacheRequest(uri);
-		cacheRequest.setRequestType(imageRequestType);
+		cacheRequest.setImageRequestType(imageRequestType);
 		ImageCacher.getInstance(applicationContext).getBitmap(cacheRequest, new BlankImageCacherListener());
 	}
 
 	public void precacheImageToDiskAndMemory(PrecacheRequest precacheRequest) {
 		Options options = precacheRequest.options;
 		CacheRequest cacheRequest = new CacheRequest(precacheRequest.uri, getScalingInfo(null, options), options);
-		cacheRequest.setRequestType(ImageRequestType.PRECACHE_TO_MEMORY);
+		cacheRequest.setImageRequestType(ImageRequestType.PRECACHE_TO_MEMORY);
 		ImageCacher.getInstance(mApplicationContext).getBitmap(cacheRequest, new BlankImageCacherListener());
 	}
 

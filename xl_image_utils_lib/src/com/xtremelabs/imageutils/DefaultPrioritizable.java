@@ -28,7 +28,7 @@ abstract class DefaultPrioritizable extends Prioritizable {
 
 	@Override
 	public final int getTargetPriorityAccessorIndex() {
-		return QueueIndexTranslator.translateToIndex(mCacheRequest.getRequestType());
+		return QueueIndexTranslator.translateToIndex(mCacheRequest.getImageRequestType());
 	}
 
 	@Override
@@ -41,10 +41,10 @@ abstract class DefaultPrioritizable extends Prioritizable {
 	}
 
 	public final void forceAdapterCacheToMemory() {
-		mCacheRequest.setRequestType(ImageRequestType.PRECACHE_TO_MEMORY_FOR_ADAPTER);
+		mCacheRequest.setImageRequestType(ImageRequestType.PRECACHE_TO_MEMORY_FOR_ADAPTER);
 	}
 
 	public final void forceAdapterCacheToDisk() {
-		mCacheRequest.setRequestType(ImageRequestType.PRECACHE_TO_DISK_FOR_ADAPTER);
+		mCacheRequest.setImageRequestType(ImageRequestType.PRECACHE_TO_DISK_FOR_ADAPTER);
 	}
 }
