@@ -67,17 +67,39 @@ class LifecycleReferenceManager implements ReferenceManager {
 	 * @param scalingInfo
 	 */
 	@Override
-	public void getBitmap(Object key, CacheRequest imageRequest, ImageManagerListener imageManagerListener) {
-		String uri = imageRequest.getUri();
+	public void getBitmap(Object key, CacheRequest cacheRequest, ImageManagerListener imageManagerListener) {
+		String uri = cacheRequest.getUri();
 
 		if (GeneralUtils.isStringBlank(uri)) {
 			imageManagerListener.onLoadImageFailed("Blank url");
 			return;
 		}
 
-		ImageManagerCacheListener cacheListener = generateRegisteredListener(key, uri, imageManagerListener);
-		ImageResponse imageResponse = mImageCacher.getBitmap(imageRequest, cacheListener);
-		returnImageIfValid(imageManagerListener, imageResponse);
+		boolean isPrecacheRequest;
+		switch (cacheRequest.getImageRequestType()) {
+		case PRECACHE_TO_DISK:
+		case PRECACHE_TO_DISK_FOR_ADAPTER:
+		case PRECACHE_TO_MEMORY:
+		case PRECACHE_TO_MEMORY_FOR_ADAPTER:
+		case DEPRIORITIZED_FOR_ADAPTER:
+			isPrecacheRequest = true;
+			break;
+		case DEFAULT:
+		case ADAPTER_REQUEST:
+		default:
+			isPrecacheRequest = false;
+			break;
+		}
+
+		ImageCacherListener cacheListener;
+		if (isPrecacheRequest) {
+			cacheListener = generateBlankImageCacherListener();
+		} else {
+			cacheListener = generateRegisteredListener(key, uri, imageManagerListener);
+		}
+		ImageResponse imageResponse = mImageCacher.getBitmap(cacheRequest, cacheListener);
+		if (!isPrecacheRequest)
+			returnImageIfValid(imageManagerListener, imageResponse);
 	}
 
 	@Override
@@ -90,11 +112,23 @@ class LifecycleReferenceManager implements ReferenceManager {
 		mListenerHelper.unregisterListener(imageManagerListener).cancelRequest();
 	}
 
-	private ImageManagerCacheListener generateRegisteredListener(Object key, String url, ImageManagerListener listener) {
+	private ImageCacherListener generateRegisteredListener(Object key, String url, ImageManagerListener listener) {
 		ImageManagerCacheListener cacheListener = new ImageManagerCacheListener();
 
 		mListenerHelper.registerNewListener(listener, key, cacheListener);
 		return cacheListener;
+	}
+
+	private ImageCacherListener generateBlankImageCacherListener() {
+		return new ImageCacherListener() {
+			@Override
+			public void onImageAvailable(ImageResponse imageResponse) {
+			}
+
+			@Override
+			public void onFailure(String message) {
+			}
+		};
 	}
 
 	private void returnImageIfValid(ImageManagerListener listener, ImageResponse imageResponse) {

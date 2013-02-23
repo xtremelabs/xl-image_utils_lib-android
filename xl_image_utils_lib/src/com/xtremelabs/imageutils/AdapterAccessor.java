@@ -21,7 +21,7 @@ import java.util.List;
 
 import android.util.SparseArray;
 
-public class AdapterAccessor implements PriorityAccessor {
+class AdapterAccessor implements PriorityAccessor {
 
 	public static enum AdapterAccessorType {
 		DEPRIORITIZED, PRECACHE_MEMORY, PRECACHE_DISK
@@ -32,12 +32,14 @@ public class AdapterAccessor implements PriorityAccessor {
 
 	private int mSize = 0;
 	private final AdapterAccessorType mAdapterAccessorType;
+	private final RequestObserver mObserver;
 
-	public AdapterAccessor(AdapterAccessorType adapterAccessorType) {
+	public AdapterAccessor(AdapterAccessorType adapterAccessorType, RequestObserver observer) {
 		if (adapterAccessorType == null)
 			throw new IllegalArgumentException("The adapter accessor type cannot be null.");
 
 		mAdapterAccessorType = adapterAccessorType;
+		mObserver = observer;
 	}
 
 	@Override
@@ -256,6 +258,7 @@ public class AdapterAccessor implements PriorityAccessor {
 		}
 
 		if (temp != null) {
+			mObserver.onRequestsCancelled(temp.prioritizables);
 			mSize -= temp.prioritizables.size();
 		}
 
@@ -298,5 +301,9 @@ public class AdapterAccessor implements PriorityAccessor {
 	private static class Position {
 		CacheKey key;
 		List<DefaultPrioritizable> prioritizables;
+	}
+
+	static interface RequestObserver {
+		public void onRequestsCancelled(List<DefaultPrioritizable> cancelledPrioritizables);
 	}
 }

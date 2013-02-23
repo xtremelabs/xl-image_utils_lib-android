@@ -36,6 +36,23 @@ class OperationTracker<OPERATION_KEY, OPERATION_LIST_VALUE, KEY_REFERENCE> {
 		mReferenceToOperation.put(keyReference, operationKey);
 	}
 
+	public synchronized void removeRequest(OPERATION_KEY key, ValueMatcher<OPERATION_LIST_VALUE> valueMatcher, KeyReferenceProvider<OPERATION_KEY, OPERATION_LIST_VALUE, KEY_REFERENCE> keyReferenceProvider) {
+		List<OPERATION_LIST_VALUE> valueList = mOperationKeyToValueList.get(key);
+		if (valueList != null) {
+			int valueListSize = valueList.size();
+			for (int i = 0; i < valueListSize; i++) {
+				OPERATION_LIST_VALUE value = valueList.get(i);
+				if (valueMatcher.shouldRemoveValue(value)) {
+					valueList.remove(i);
+					mReferenceToOperation.remove(keyReferenceProvider.getKeyReference(key, value));
+					if (valueList.size() == 0)
+						mOperationKeyToValueList.remove(key);
+					break;
+				}
+			}
+		}
+	}
+
 	public synchronized boolean hasPendingOperation(OPERATION_KEY operationKey) {
 		return mOperationKeyToValueList.containsKey(operationKey);
 	}
@@ -162,5 +179,9 @@ class OperationTracker<OPERATION_KEY, OPERATION_LIST_VALUE, KEY_REFERENCE> {
 
 	public interface OperationTransferer<OPERATION_KEY, OPERATION_LIST_VALUE, KEY_REFERENCE> {
 		public void transferOperation(OPERATION_KEY operationKey, OPERATION_LIST_VALUE operationListValue, KEY_REFERENCE keyReference);
+	}
+
+	public interface ValueMatcher<OPERATION_LIST_VALUE> {
+		public boolean shouldRemoveValue(OPERATION_LIST_VALUE value);
 	}
 }
