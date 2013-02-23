@@ -20,8 +20,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import android.os.AsyncTask;
-
 // TODO Build unit tests
 class AuxiliaryExecutor {
 
@@ -37,25 +35,23 @@ class AuxiliaryExecutor {
 	public synchronized void execute(final Prioritizable prioritizable) {
 		if (!prioritizable.isCancelled()) {
 			mQueuingMaps.put(prioritizable);
-			new AsyncTask<Void, Void, Void>() {
-				@Override
-				protected Void doInBackground(Void... params) {
-					mExecutor.execute(prioritizable);
-					return null;
-				}
-			}.execute();
+			mExecutor.execute(prioritizable);
 		}
 	}
 
-	public synchronized void notifyRequestComplete(Request<?> request) {
+	public synchronized void notifyRequestComplete(final Request<?> request) {
 		mQueuingMaps.onComplete(request);
 	}
 
-	public synchronized boolean cancel(Prioritizable prioritizable) {
-		return mQueuingMaps.cancel(prioritizable);
+	public synchronized void notifySwap(final CacheKey cacheKey, final int targetIndex, final int memoryIndex, final int diskIndex) {
+		mQueue.notifySwap(cacheKey, targetIndex, memoryIndex, diskIndex);
 	}
 
-	private synchronized void notifyBeforeExecuteCalled(Runnable r) {
+	public synchronized void cancel(final Prioritizable prioritizable) {
+		mQueuingMaps.cancel(prioritizable);
+	}
+
+	private synchronized void notifyBeforeExecuteCalled(final Runnable r) {
 		Prioritizable prioritizable = (Prioritizable) r;
 		if (!prioritizable.isCancelled())
 			mQueuingMaps.notifyExecuting(prioritizable);
@@ -106,15 +102,5 @@ class AuxiliaryExecutor {
 
 			super.beforeExecute(t, r);
 		}
-	}
-
-	public synchronized void notifySwap(final CacheKey cacheKey, final int targetIndex, final int memoryIndex, final int diskIndex) {
-		new AsyncTask<Void, Void, Void>() {
-			@Override
-			protected Void doInBackground(Void... params) {
-				mQueue.notifySwap(cacheKey, targetIndex, memoryIndex, diskIndex);
-				return null;
-			}
-		}.execute();
 	}
 }

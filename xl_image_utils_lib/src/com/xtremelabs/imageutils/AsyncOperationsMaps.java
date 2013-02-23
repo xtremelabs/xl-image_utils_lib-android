@@ -60,7 +60,7 @@ class AsyncOperationsMaps {
 		return accessors;
 	}
 
-	public void notifyDirectionSwapped(CacheKey cacheKey) {
+	public void notifyDirectionSwapped(final CacheKey cacheKey) {
 		mNetworkExecutor.notifySwap(cacheKey, 4, 2, 3);
 		mDiskExecutor.notifySwap(cacheKey, 4, 2, 3);
 	}
@@ -89,7 +89,7 @@ class AsyncOperationsMaps {
 		} else if (isDetailsRequestPending(cacheRequest)) {
 			registerDetailsRequest(cacheRequest, imageCacherListener);
 			state = AsyncOperationState.QUEUED_FOR_DETAILS_REQUEST;
-		} else if (cacheRequest.getRequestType() != ImageRequestType.PRECACHE_TO_DISK && isDecodeRequestPending((decodeSignature = getDecodeSignature(cacheRequest)))) {
+		} else if (cacheRequest.getImageRequestType() != ImageRequestType.PRECACHE_TO_DISK && isDecodeRequestPending((decodeSignature = getDecodeSignature(cacheRequest)))) {
 			registerDecodeRequest(cacheRequest, decodeSignature, imageCacherListener);
 			state = AsyncOperationState.QUEUED_FOR_DECODE_REQUEST;
 		}
@@ -196,7 +196,7 @@ class AsyncOperationsMaps {
 			mDetailsOperationTracker.transferOperation(uri, new OperationTransferer<String, RequestParameters, ImageCacherListener>() {
 				@Override
 				public void transferOperation(String uri, RequestParameters networkRequestParameters, ImageCacherListener imageCacherListener) {
-					ImageRequestType requestType = networkRequestParameters.cacheRequest.getRequestType();
+					ImageRequestType requestType = networkRequestParameters.cacheRequest.getImageRequestType();
 
 					switch (requestType) {
 					case PRECACHE_TO_DISK:
@@ -291,37 +291,43 @@ class AsyncOperationsMaps {
 
 	private synchronized void cancelNetworkPrioritizable(ImageCacherListener imageCacherListener) {
 		RequestParameters requestParameters = mNetworkOperationTracker.removeRequest(imageCacherListener, mNetworkAndDetailsKeyReferenceProvider, true);
-		mNetworkExecutor.cancel(requestParameters.prioritizable);
+		if (requestParameters != null) {
+			mNetworkExecutor.cancel(requestParameters.prioritizable);
 
-		// We want to re-schedule cancelled adapter requests.
-		CacheRequest cacheRequest = requestParameters.cacheRequest;
-		if (cacheRequest.getRequestType() == ImageRequestType.ADAPTER_REQUEST) {
-			cacheRequest.setRequestType(ImageRequestType.DEPRIORITIZED_FOR_ADAPTER);
-			mNetworkExecutor.execute(mObserver.getNetworkRunnable(requestParameters.cacheRequest));
+			// We want to re-schedule cancelled adapter requests.
+			CacheRequest cacheRequest = requestParameters.cacheRequest;
+			if (cacheRequest.getImageRequestType() == ImageRequestType.ADAPTER_REQUEST) {
+				cacheRequest.setImageRequestType(ImageRequestType.DEPRIORITIZED_FOR_ADAPTER);
+				mNetworkExecutor.execute(mObserver.getNetworkRunnable(requestParameters.cacheRequest));
+			}
 		}
 	}
 
 	private void cancelDetailsPrioritizable(ImageCacherListener imageCacherListener) {
 		RequestParameters requestParameters = mDetailsOperationTracker.removeRequest(imageCacherListener, mNetworkAndDetailsKeyReferenceProvider, true);
-		mDiskExecutor.cancel(requestParameters.prioritizable);
+		if (requestParameters != null) {
+			mDiskExecutor.cancel(requestParameters.prioritizable);
 
-		// We want to re-schedule cancelled adapter requests.
-		CacheRequest cacheRequest = requestParameters.cacheRequest;
-		if (cacheRequest.getRequestType() == ImageRequestType.ADAPTER_REQUEST) {
-			cacheRequest.setRequestType(ImageRequestType.DEPRIORITIZED_FOR_ADAPTER);
-			mDiskExecutor.execute(mObserver.getDetailsRunnable(requestParameters.cacheRequest));
+			// We want to re-schedule cancelled adapter requests.
+			CacheRequest cacheRequest = requestParameters.cacheRequest;
+			if (cacheRequest.getImageRequestType() == ImageRequestType.ADAPTER_REQUEST) {
+				cacheRequest.setImageRequestType(ImageRequestType.DEPRIORITIZED_FOR_ADAPTER);
+				mDiskExecutor.execute(mObserver.getDetailsRunnable(requestParameters.cacheRequest));
+			}
 		}
 	}
 
 	private void cancelDecodePrioritizable(ImageCacherListener imageCacherListener) {
 		RequestParameters requestParameters = mDecodeOperationTracker.removeRequest(imageCacherListener, mDecodeReferenceProvider, true);
-		mDiskExecutor.cancel(requestParameters.prioritizable);
+		if (requestParameters != null) {
+			mDiskExecutor.cancel(requestParameters.prioritizable);
 
-		// We want to re-schedule cancelled adapter requests.
-		CacheRequest cacheRequest = requestParameters.cacheRequest;
-		if (cacheRequest.getRequestType() == ImageRequestType.ADAPTER_REQUEST) {
-			cacheRequest.setRequestType(ImageRequestType.DEPRIORITIZED_FOR_ADAPTER);
-			mDiskExecutor.execute(mObserver.getDecodeRunnable(requestParameters.cacheRequest, requestParameters.decodeSignature));
+			// We want to re-schedule cancelled adapter requests.
+			CacheRequest cacheRequest = requestParameters.cacheRequest;
+			if (cacheRequest.getImageRequestType() == ImageRequestType.ADAPTER_REQUEST) {
+				cacheRequest.setImageRequestType(ImageRequestType.DEPRIORITIZED_FOR_ADAPTER);
+				mDiskExecutor.execute(mObserver.getDecodeRunnable(requestParameters.cacheRequest, requestParameters.decodeSignature));
+			}
 		}
 	}
 

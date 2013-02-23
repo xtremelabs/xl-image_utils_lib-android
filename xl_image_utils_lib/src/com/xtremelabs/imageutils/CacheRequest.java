@@ -27,8 +27,8 @@ class CacheRequest {
 
 	private final String mUri;
 	private final ScalingInfo mScalingInfo;
-	private LocationOfImage mImageRequestType;
-	private ImageRequestType mRequestType = ImageRequestType.DEFAULT;
+	private LocationOfImage mLocationOfImage;
+	private ImageRequestType mImageRequestType = ImageRequestType.DEFAULT;
 	private final Options mOptions;
 	private CacheKey mCacheKey;
 
@@ -62,8 +62,8 @@ class CacheRequest {
 		return mUri;
 	}
 
-	public LocationOfImage getImageRequestType() {
-		return mImageRequestType;
+	public LocationOfImage getLocationOfImage() {
+		return mLocationOfImage;
 	}
 
 	public Options getOptions() {
@@ -74,19 +74,19 @@ class CacheRequest {
 		return mScalingInfo;
 	}
 
-	void setRequestType(ImageRequestType requestType) {
-		mRequestType = requestType;
+	void setImageRequestType(ImageRequestType requestType) {
+		mImageRequestType = requestType;
 	}
 
-	ImageRequestType getRequestType() {
-		return mRequestType;
+	ImageRequestType getImageRequestType() {
+		return mImageRequestType;
 	}
 
 	private void setLocationOfImage() {
 		if (isFileSystemUri(mUri)) {
-			mImageRequestType = LocationOfImage.LOCAL_FILE_SYSTEM;
+			mLocationOfImage = LocationOfImage.LOCAL_FILE_SYSTEM;
 		} else {
-			mImageRequestType = LocationOfImage.WEB;
+			mLocationOfImage = LocationOfImage.WEB;
 		}
 	}
 
@@ -99,7 +99,7 @@ class CacheRequest {
 	}
 
 	public boolean isFileSystemRequest() {
-		return mImageRequestType == LocationOfImage.LOCAL_FILE_SYSTEM;
+		return mLocationOfImage == LocationOfImage.LOCAL_FILE_SYSTEM;
 	}
 
 	private static boolean isFileSystemUri(String uri) {

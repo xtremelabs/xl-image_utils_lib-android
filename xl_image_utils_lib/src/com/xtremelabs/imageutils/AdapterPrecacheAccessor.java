@@ -127,9 +127,9 @@ class AdapterPrecacheAccessor implements PriorityAccessor {
 		CacheRequest cacheRequest = targetRunnable.getCacheRequest();
 		CacheKey cacheKey = cacheRequest.getCacheKey();
 		if (targetKeyIndex < cacheKey.memCacheRange)
-			cacheRequest.setRequestType(ImageRequestType.PRECACHE_TO_MEMORY_FOR_ADAPTER);
+			cacheRequest.setImageRequestType(ImageRequestType.PRECACHE_TO_MEMORY_FOR_ADAPTER);
 		else
-			cacheRequest.setRequestType(ImageRequestType.PRECACHE_TO_DISK_FOR_ADAPTER);
+			cacheRequest.setImageRequestType(ImageRequestType.PRECACHE_TO_DISK_FOR_ADAPTER);
 	}
 
 	private void appendCacheKey(CacheKey cacheKey, CacheKey[] keyList) {

@@ -38,8 +38,8 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 
 import com.xtreme.testactivity.R;
-import com.xtremelabs.imageutils.AdapterImagePrecacher;
-import com.xtremelabs.imageutils.AdapterImagePrecacher.PrecacheInformationProvider;
+import com.xtremelabs.imageutils.AdapterImagesAssistant;
+import com.xtremelabs.imageutils.AdapterImagesAssistant.PrecacheInformationProvider;
 import com.xtremelabs.imageutils.Dimensions;
 import com.xtremelabs.imageutils.ImageLoader;
 import com.xtremelabs.imageutils.ImageLoader.Options;
@@ -55,7 +55,7 @@ public class KittenAdapter extends BaseAdapter {
 	private final String KITTEN_URI;
 	private final Activity mActivity;
 	private final ImageLoader mImageLoader;
-	private AdapterImagePrecacher mImagePrecacheAssistant;
+	private AdapterImagesAssistant mImagePrecacheAssistant;
 	private final Dimensions mBounds;
 	private final Options mOptions;
 
@@ -74,7 +74,7 @@ public class KittenAdapter extends BaseAdapter {
 		mOptions.widthBounds = mBounds.width;
 		mOptions.heightBounds = mBounds.height;
 
-		mImagePrecacheAssistant = new AdapterImagePrecacher(mImageLoader, new PrecacheInformationProvider() {
+		mImagePrecacheAssistant = new AdapterImagesAssistant(mImageLoader, new PrecacheInformationProvider() {
 			@Override
 			public int getCount() {
 				return KittenAdapter.this.getCount();
@@ -93,7 +93,7 @@ public class KittenAdapter extends BaseAdapter {
 			}
 
 			@Override
-			public List<PrecacheRequest> getImageRequestsForMemoryPrecache(int position) {
+			public List<PrecacheRequest> getRequestsForMemoryPrecache(int position) {
 				List<PrecacheRequest> list = new ArrayList<PrecacheRequest>();
 				// if (position % 2 == 0) {
 				list.add(new PrecacheRequest((String) getItem(position) + "1", mOptions));
@@ -105,8 +105,8 @@ public class KittenAdapter extends BaseAdapter {
 			}
 		});
 
-		mImagePrecacheAssistant.setMemCacheRange(5);
-		mImagePrecacheAssistant.setDiskCacheRange(10);
+		mImagePrecacheAssistant.setMemCacheRange(3);
+		mImagePrecacheAssistant.setDiskCacheRange(7);
 	}
 
 	@Override
@@ -152,10 +152,12 @@ public class KittenAdapter extends BaseAdapter {
 		ImageRequest imageRequest1 = new ImageRequest(kittenViews.kitten1, (String) getItem(position) + "1");
 		imageRequest1.setImageLoaderListener(mListener);
 		mImagePrecacheAssistant.loadImage(imageRequest1, position);
+		// mImageLoader.loadImage(imageRequest1);
 
 		ImageRequest imageRequest2 = new ImageRequest(kittenViews.kitten2, (String) getItem(position) + "2");
 		imageRequest1.setImageLoaderListener(mListener);
 		mImagePrecacheAssistant.loadImage(imageRequest2, position);
+		// mImageLoader.loadImage(imageRequest2);
 		// } else {
 		// ImageRequest imageRequest1 = new ImageRequest(kittenViews.kitten1, (String) getItem(position));
 		// imageRequest1.setImageLoaderListener(mListener);

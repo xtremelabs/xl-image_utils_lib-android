@@ -37,7 +37,7 @@ import android.widget.BaseAdapter;
  * 
  * TODO Research into extending different kinds of adapters. (Start with ListViews)
  */
-public class AdapterImagePrecacher {
+public class AdapterImagesAssistant {
 	private volatile static int mNextId = 0;
 
 	private enum Direction {
@@ -58,7 +58,7 @@ public class AdapterImagePrecacher {
 	private boolean isFirstCalculation = true;
 	private final int mId = mNextId++;
 
-	public AdapterImagePrecacher(ImageLoader imageLoader, PrecacheInformationProvider precacheInformationProvider) {
+	public AdapterImagesAssistant(ImageLoader imageLoader, PrecacheInformationProvider precacheInformationProvider) {
 		mImageLoader = imageLoader;
 		mPrecacheInformationProvider = precacheInformationProvider;
 	}
@@ -84,7 +84,7 @@ public class AdapterImagePrecacher {
 		}
 
 		for (int i = ranges.memCacheLowerIndex; i < ranges.memCacheUpperIndex; i++) {
-			List<PrecacheRequest> precacheRequests = mPrecacheInformationProvider.getImageRequestsForMemoryPrecache(i);
+			List<PrecacheRequest> precacheRequests = mPrecacheInformationProvider.getRequestsForMemoryPrecache(i);
 			precacheListToMemory(precacheRequests, position);
 		}
 	}
@@ -221,7 +221,7 @@ public class AdapterImagePrecacher {
 	}
 
 	/**
-	 * This interface must be implemented in order for the {@link AdapterImagePrecacher} to function.
+	 * This interface must be implemented in order for the {@link AdapterImagesAssistant} to function.
 	 */
 	public static interface PrecacheInformationProvider {
 		/**
@@ -247,7 +247,7 @@ public class AdapterImagePrecacher {
 
 		// TODO Try to map the requests by R.id to ImageViews within the rows.
 		// TODO This will need to be an ImageRequest object rather than a PrecacheRequest object.
-		public List<PrecacheRequest> getImageRequestsForMemoryPrecache(int position);
+		public List<PrecacheRequest> getRequestsForMemoryPrecache(int position);
 	}
 
 	private static class RangesToCache {

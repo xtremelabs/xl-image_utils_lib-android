@@ -42,8 +42,10 @@ class AuxiliaryQueue {
 	public synchronized Prioritizable removeHighestPriorityRunnable() {
 		Prioritizable prioritizable;
 		for (int i = 0; i < mNumAccessors; i++) {
-			if ((prioritizable = mPriorityAccessors[i].detachHighestPriorityItem()) != null) {
-				return prioritizable;
+			while ((prioritizable = mPriorityAccessors[i].detachHighestPriorityItem()) != null) {
+				if (!prioritizable.isCancelled()) {
+					return prioritizable;
+				}
 			}
 		}
 		return null;

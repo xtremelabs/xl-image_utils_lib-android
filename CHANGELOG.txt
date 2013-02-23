@@ -2,18 +2,22 @@ CHANGE LOG
 
 v1.3
 API CHANGES:
-- ImageLoader objects are now created via ImageLoader.build...() methods rather than directly constructed.
-- The ImageLoaderSupport and AbstractImageLoader classes have been removed. All ImageLoader classes now directly inherit from ImageLoader.
+- ImageLoader objects are now created via ImageLoader.build...() methods rather than being directly constructed.
+- The ImageLoaderSupport and AbstractImageLoader classes have been removed. There are now only the ImageLoader and WidgetImageLoader classes, and both are created via the ImageLoader.build…() methods.
 - The import has changed for the Options object. This class now directly belongs to the ImageLoader class.
+- Some APIs have been deprecated. Please view the Javadoc associated with the deprecated calls and update to the newer APIs.
+- The ImagePrecacheAssistant is now more appropriately called the AdapterImagesAssistant. The pre cache interface has had its methods and requests changed slightly.
 
 New Features:
-- The image cache now more effectively stays off the UI thread, resulting in a smoother UI.
-- Data usage, battery life and processing power savings! The image system now automatically cancels image requests for Activities and Fragments that have been destroyed, without cancelling potentially useful requests for the same URI.
-- The AdapterImagePrecacher is now available for use. This class helps manage what images need to be downloaded and precached, and it comes with a ton of performance saving features. Helps to vastly smooth out adapter view scrolling.
-- You can now request bitmaps without an ImageView. Methods: loadImage(String uri, BitmapListener listener), loadImage(String uri, Options options, BitmapListener listener)
-- Image can now be requested via an ImageRequest object. This API will simplify some of the logic involved when requesting images with complicated options.
-- There is a new loadImage request that takes a listener without an Options object. This method will use the default options for its requests and report back to the listener when the request is complete.
+- The image cache now spends ~86% less time on the UI thread when making requests (versus version 1.2), resulting in a smoother UI experience.
 - Widgets are now supported. A WidgetImageLoader can now be constructed via the method ImageLoader.buildWidgetImageLoader(Object key, Context context).
+- The AdapterImagePrecacher is now available for use. This class helps manage what images need to be downloaded and precached, and it comes performance, battery life and data usage saving features. Helps to vastly smooth out adapter view scrolling.
+- Data usage, battery life and processing power savings! The image system now automatically cancels image requests for Activities and Fragments that have been destroyed without cancelling valid pending requests for the same URIs.
+- The image system automatically cancels requests on an image view if a new image is requested for that view.
+- Vastly improved prioritization logic. The image system actively distinguishes between on-screen image requests, pre cache requests, adapter requests, recently visited requests, and more. This is especially effective when used with the AdapterImagePrecacher. This ensures that images load on-screen in an optimal, logical order.
+- You can now fetch a bitmap from the image library without providing an ImageView.
+- Images can now be requested with an ImageRequest object. This API simplifies some of the logic involved when requesting images with complicated options, and may make API changes smoother in the future.
+- There is a new loadImage request that takes a listener without an Options object. This method will use the default options for its requests and report back to the listener when the request is complete.
 
 Bug Fixes:
 - Fixed a crash caused by a ConcurrentModificationException.

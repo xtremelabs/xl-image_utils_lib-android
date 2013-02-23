@@ -43,7 +43,7 @@ public class WidgetImageLoader {
 
 			ScalingInfo scalingInfo = mImageLoader.getScalingInfo(null, options);
 			CacheRequest imageRequest = new CacheRequest(uri, scalingInfo, options);
-			imageRequest.setRequestType(ImageRequestType.PRECACHE_TO_DISK);
+			imageRequest.setImageRequestType(ImageRequestType.PRECACHE_TO_DISK);
 			return ImageCacher.getInstance(mContext).getBitmapSynchronouslyFromDiskOrMemory(imageRequest, getImageCacherListener(listener));
 		} else {
 			Log.w(ImageLoader.TAG, "WARNING: loadImageSynchronouslyFromDiskOrMemory was called after the ImageLoader was destroyed.");
