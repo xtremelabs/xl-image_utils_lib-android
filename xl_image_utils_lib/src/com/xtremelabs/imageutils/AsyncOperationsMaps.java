@@ -22,10 +22,12 @@ import java.util.List;
 import android.graphics.Bitmap;
 
 import com.xtremelabs.imageutils.AdapterAccessor.AdapterAccessorType;
+import com.xtremelabs.imageutils.AdapterAccessor.RequestObserver;
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
 import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
 import com.xtremelabs.imageutils.OperationTracker.KeyReferenceProvider;
 import com.xtremelabs.imageutils.OperationTracker.OperationTransferer;
+import com.xtremelabs.imageutils.OperationTracker.ValueMatcher;
 
 class AsyncOperationsMaps {
 
@@ -44,17 +46,17 @@ class AsyncOperationsMaps {
 
 	public AsyncOperationsMaps(OperationsObserver observer) {
 		mObserver = observer;
-		mNetworkExecutor = new AuxiliaryExecutor.Builder(generateAccessors()).setCorePoolSize(3).create();
-		mDiskExecutor = new AuxiliaryExecutor.Builder(generateAccessors()).setCorePoolSize(1).create();
+		mNetworkExecutor = new AuxiliaryExecutor.Builder(generateAccessors(mNetworkRequestObserver)).setCorePoolSize(3).create();
+		mDiskExecutor = new AuxiliaryExecutor.Builder(generateAccessors(mDiskRequestObserver)).setCorePoolSize(1).create();
 	}
 
-	private PriorityAccessor[] generateAccessors() {
+	private PriorityAccessor[] generateAccessors(RequestObserver requestObserver) {
 		PriorityAccessor[] accessors = new PriorityAccessor[7];
 		accessors[0] = new StackPriorityAccessor();
 		accessors[1] = new StackPriorityAccessor();
-		accessors[2] = new AdapterAccessor(AdapterAccessorType.PRECACHE_MEMORY);
-		accessors[3] = new AdapterAccessor(AdapterAccessorType.PRECACHE_DISK);
-		accessors[4] = new AdapterAccessor(AdapterAccessorType.DEPRIORITIZED);
+		accessors[2] = new AdapterAccessor(AdapterAccessorType.PRECACHE_MEMORY, requestObserver);
+		accessors[3] = new AdapterAccessor(AdapterAccessorType.PRECACHE_DISK, requestObserver);
+		accessors[4] = new AdapterAccessor(AdapterAccessorType.DEPRIORITIZED, requestObserver);
 		accessors[5] = new QueuePriorityAccessor();
 		accessors[6] = new QueuePriorityAccessor();
 		return accessors;
@@ -264,6 +266,64 @@ class AsyncOperationsMaps {
 			for (RequestParameters params : requestParametersList) {
 				params.imageCacherListener.onFailure(message);
 			}
+		}
+	}
+
+	private final RequestObserver mNetworkRequestObserver = new RequestObserver() {
+		@Override
+		public void onRequestsCancelled(List<DefaultPrioritizable> cancelledPrioritizables) {
+			cancelNetworkRequestsFromTracker(cancelledPrioritizables);
+		}
+	};
+
+	private final RequestObserver mDiskRequestObserver = new RequestObserver() {
+		@Override
+		public void onRequestsCancelled(List<DefaultPrioritizable> cancelledPrioritizables) {
+			cancelDiskRequestsFromTracker(cancelledPrioritizables);
+		}
+	};
+
+	private void cancelNetworkRequestsFromTracker(List<DefaultPrioritizable> cancelledPrioritizables) {
+		for (final DefaultPrioritizable cancelledPrioritizable : cancelledPrioritizables) {
+			mNetworkExecutor.cancel(cancelledPrioritizable);
+			String cancelledRequest = (String) cancelledPrioritizable.getRequest().getData();
+			mNetworkOperationTracker.removeRequest(cancelledRequest, new ValueMatcher<AsyncOperationsMaps.RequestParameters>() {
+				@Override
+				public boolean shouldRemoveValue(RequestParameters value) {
+					Prioritizable p = value.prioritizable;
+					if (p == cancelledPrioritizable)
+						return true;
+					else
+						return false;
+				}
+			}, mNetworkAndDetailsKeyReferenceProvider);
+		}
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private void cancelDiskRequestsFromTracker(List<DefaultPrioritizable> cancelledPrioritizables) {
+		for (final DefaultPrioritizable cancelledPrioritizable : cancelledPrioritizables) {
+			mDiskExecutor.cancel(cancelledPrioritizable);
+			Object cancelledRequest = cancelledPrioritizable.getRequest();
+			OperationTracker tracker;
+			KeyReferenceProvider keyReferenceProvider;
+			if (cancelledRequest instanceof DecodeSignature) {
+				tracker = mDecodeOperationTracker;
+				keyReferenceProvider = mDecodeReferenceProvider;
+			} else {
+				tracker = mDetailsOperationTracker;
+				keyReferenceProvider = mNetworkAndDetailsKeyReferenceProvider;
+			}
+			tracker.removeRequest(cancelledRequest, new ValueMatcher<AsyncOperationsMaps.RequestParameters>() {
+				@Override
+				public boolean shouldRemoveValue(RequestParameters value) {
+					Prioritizable p = value.prioritizable;
+					if (p == cancelledPrioritizable)
+						return true;
+					else
+						return false;
+				}
+			}, keyReferenceProvider);
 		}
 	}
 
