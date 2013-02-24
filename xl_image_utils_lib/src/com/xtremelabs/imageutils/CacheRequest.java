@@ -102,6 +102,26 @@ class CacheRequest {
 		return mLocationOfImage == LocationOfImage.LOCAL_FILE_SYSTEM;
 	}
 
+	public boolean isPrecacheRequest() {
+		boolean isPrecacheRequest;
+		switch (mImageRequestType) {
+		case PRECACHE_TO_DISK:
+		case PRECACHE_TO_DISK_FOR_ADAPTER:
+		case PRECACHE_TO_MEMORY:
+		case PRECACHE_TO_MEMORY_FOR_ADAPTER:
+		case DEPRIORITIZED_FOR_ADAPTER:
+			isPrecacheRequest = true;
+			break;
+		case DEFAULT:
+		case ADAPTER_REQUEST:
+		default:
+			isPrecacheRequest = false;
+			break;
+		}
+
+		return isPrecacheRequest;
+	}
+
 	private static boolean isFileSystemUri(String uri) {
 		if (uri != null) {
 			int fileSchemeLength = FILE_SCHEME.length();

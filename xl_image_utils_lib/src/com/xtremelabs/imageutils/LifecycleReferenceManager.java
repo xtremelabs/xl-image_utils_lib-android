@@ -75,21 +75,7 @@ class LifecycleReferenceManager implements ReferenceManager {
 			return;
 		}
 
-		boolean isPrecacheRequest;
-		switch (cacheRequest.getImageRequestType()) {
-		case PRECACHE_TO_DISK:
-		case PRECACHE_TO_DISK_FOR_ADAPTER:
-		case PRECACHE_TO_MEMORY:
-		case PRECACHE_TO_MEMORY_FOR_ADAPTER:
-		case DEPRIORITIZED_FOR_ADAPTER:
-			isPrecacheRequest = true;
-			break;
-		case DEFAULT:
-		case ADAPTER_REQUEST:
-		default:
-			isPrecacheRequest = false;
-			break;
-		}
+		boolean isPrecacheRequest = cacheRequest.isPrecacheRequest();
 
 		ImageCacherListener cacheListener;
 		if (isPrecacheRequest) {
