@@ -17,15 +17,21 @@
 package com.xtremelabs.imageutils;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
+import android.annotation.SuppressLint;
+import android.os.Build;
+
+@SuppressLint("NewApi")
 class QueuingMaps {
-	private final Set<Request<?>> mRunningRequests = new HashSet<Request<?>>();
-	private final Map<Request<?>, List<Prioritizable>> mRequestListeners = new HashMap<Request<?>, List<Prioritizable>>();
+	private static final int GINGERBREAD = 9;
+	private final Set<Request<?>> mRunningRequests = Build.VERSION.SDK_INT >= GINGERBREAD ? Collections.newSetFromMap(new ConcurrentHashMap<Request<?>, Boolean>()) : new HashSet<Request<?>>();
+	private final Map<Request<?>, List<Prioritizable>> mRequestListeners = new ConcurrentHashMap<Request<?>, List<Prioritizable>>();
 
 	public synchronized void put(Prioritizable prioritizable) {
 		Request<?> request = prioritizable.getRequest();
@@ -65,9 +71,12 @@ class QueuingMaps {
 	}
 
 	public synchronized boolean cancel(Prioritizable prioritizable) {
-		List<Prioritizable> list = mRequestListeners.get(prioritizable.getRequest());
+		Request<?> request = prioritizable.getRequest();
+		List<Prioritizable> list = mRequestListeners.get(request);
 		if (list != null) {
 			list.remove(prioritizable);
+			if (list.size() == 0)
+				mRequestListeners.remove(request);
 		}
 		prioritizable.cancel();
 		return mRunningRequests.contains(prioritizable.getRequest());

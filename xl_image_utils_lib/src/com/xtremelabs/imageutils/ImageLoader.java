@@ -555,7 +555,8 @@ public class ImageLoader {
 	}
 
 	private void performImageRequest(ImageView imageView, CacheRequest cacheRequest, Options options, ImageManagerListener imageManagerListener) {
-		mapImageView(imageView, imageManagerListener);
+		if (!cacheRequest.isPrecacheRequest())
+			mapImageView(imageView, imageManagerListener);
 		setPreLoadImage(imageView, options);
 
 		mReferenceManager.getBitmap(mKey, cacheRequest, imageManagerListener);
