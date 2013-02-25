@@ -67,14 +67,16 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 		String uri = cacheRequest.getUri();
 		throwExceptionIfNeeded(cacheRequest, imageCacherListener);
 
-		int sampleSize = getSampleSize(cacheRequest);
-		boolean isCached = mDiskCache.isCached(cacheRequest);
-		if (isCached && sampleSize != -1) {
-			Bitmap bitmap;
-			DecodeSignature decodeSignature = new DecodeSignature(uri, sampleSize, cacheRequest.getOptions().preferedConfig);
-			bitmap = mMemoryCache.getBitmap(decodeSignature);
-			if (bitmap != null)
-				return new ImageResponse(bitmap, ImageReturnedFrom.MEMORY, ImageResponseStatus.SUCCESS);
+		if (!cacheRequest.isPrecacheRequest()) {
+			int sampleSize = getSampleSize(cacheRequest);
+			boolean isCached = mDiskCache.isCached(cacheRequest);
+			if (isCached && sampleSize != -1) {
+				Bitmap bitmap;
+				DecodeSignature decodeSignature = new DecodeSignature(uri, sampleSize, cacheRequest.getOptions().preferedConfig);
+				bitmap = mMemoryCache.getBitmap(decodeSignature);
+				if (bitmap != null)
+					return new ImageResponse(bitmap, ImageReturnedFrom.MEMORY, ImageResponseStatus.SUCCESS);
+			}
 		}
 
 		new AsyncImageRequest(cacheRequest, imageCacherListener).execute();
