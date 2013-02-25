@@ -45,8 +45,9 @@ class OperationTracker<OPERATION_KEY, OPERATION_LIST_VALUE, KEY_REFERENCE> {
 				if (valueMatcher.shouldRemoveValue(value)) {
 					valueList.remove(i);
 					mReferenceToOperation.remove(keyReferenceProvider.getKeyReference(key, value));
-					if (valueList.size() == 0)
+					if (valueList.size() == 0) {
 						mOperationKeyToValueList.remove(key);
+					}
 					break;
 				}
 			}

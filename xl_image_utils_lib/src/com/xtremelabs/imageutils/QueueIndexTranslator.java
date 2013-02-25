@@ -36,7 +36,9 @@ class QueueIndexTranslator {
 			return 2;
 		case PRECACHE_TO_DISK_FOR_ADAPTER:
 			return 3;
-		case DEPRIORITIZED_FOR_ADAPTER:
+		case DEPRIORITIZED:
+		case DEPRIORITIZED_PRECACHE_TO_MEMORY_FOR_ADAPTER:
+		case DEPRIORITIZED_PRECACHE_TO_DISK_FOR_ADAPTER:
 			return 4;
 		case PRECACHE_TO_MEMORY:
 			return 5;

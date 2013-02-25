@@ -107,8 +107,8 @@ public class KittenAdapter extends BaseAdapter {
 			}
 		});
 
-		mImagePrecacheAssistant.setMemCacheRange(3);
-		mImagePrecacheAssistant.setDiskCacheRange(7);
+		mImagePrecacheAssistant.setMemCacheRange(5);
+		mImagePrecacheAssistant.setDiskCacheRange(10);
 	}
 
 	@Override
@@ -150,14 +150,18 @@ public class KittenAdapter extends BaseAdapter {
 		if (kittenViews == null)
 			kittenViews = (KittenViews) convertView.getTag();
 
+		Options o = new Options();
+
 		// if (position % 2 == 0) {
 		ImageRequest imageRequest1 = new ImageRequest(kittenViews.kitten1, (String) getItem(position) + "1");
 		imageRequest1.setImageLoaderListener(mListener);
+		imageRequest1.setOptions(o);
 		mImagePrecacheAssistant.loadImage(imageRequest1, position);
 		// mImageLoader.loadImage(imageRequest1);
 
 		ImageRequest imageRequest2 = new ImageRequest(kittenViews.kitten2, (String) getItem(position) + "2");
 		imageRequest2.setImageLoaderListener(mListener);
+		imageRequest2.setOptions(o);
 		mImagePrecacheAssistant.loadImage(imageRequest2, position);
 		// mImageLoader.loadImage(imageRequest2);
 		// } else {
