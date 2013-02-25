@@ -241,7 +241,7 @@ class AdapterAccessor implements PriorityAccessor {
 
 		switch (mAdapterAccessorType) {
 		case DEPRIORITIZED:
-			for (int i = 0; i < positions.length && position != null; i++) {
+			for (int i = 0; i < positions.length && temp != null; i++) {
 				Position placeholder = positions[i];
 				positions[i] = temp;
 				temp = placeholder;
@@ -258,7 +258,9 @@ class AdapterAccessor implements PriorityAccessor {
 		}
 
 		if (temp != null) {
-			mObserver.onRequestsCancelled(temp.prioritizables);
+			// The deprioritized accessor does not use an observer, so we need to perform the null check here.
+			if (mObserver != null)
+				mObserver.onRequestsCancelled(temp.prioritizables);
 			mSize -= temp.prioritizables.size();
 		}
 
