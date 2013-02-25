@@ -18,6 +18,7 @@ package com.xtremelabs.imageutils;
 
 import java.util.List;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Application;
@@ -34,7 +35,10 @@ import android.widget.ImageView;
 
 import com.xtremelabs.imageutils.ThreadChecker.CalledFromWrongThreadException;
 
-public class ImageLoader {
+/**
+ * This class is extending AbstractImageLoader for legacy purposes.
+ */
+public class ImageLoader implements AbstractImageLoader {
 	public static final String TAG = "ImageLoader";
 
 	private final ImageViewReferenceMapper mViewMapper = new ImageViewReferenceMapper();
@@ -70,6 +74,17 @@ public class ImageLoader {
 
 	static ImageLoader buildImageLoaderForTesting(Object object, Context context) {
 		return new ImageLoader(object, context);
+	}
+
+	@Deprecated
+	public ImageLoader(Activity activity) {
+		this(activity, activity.getApplicationContext());
+	}
+
+	@SuppressLint("NewApi")
+	@Deprecated
+	public ImageLoader(Fragment fragment) {
+		this(fragment, fragment.getActivity().getApplicationContext());
 	}
 
 	/**
