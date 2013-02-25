@@ -2,11 +2,12 @@ CHANGE LOG
 
 v1.3
 API CHANGES:
+- BREAKING CHANGE: The import has changed for the Options object. This class now directly belongs to the ImageLoader class. If upgrading, please import Options from the new package.
+- BREAKING CHANGE: The ImagePrecacheAssistant is now more appropriately called the AdapterImagesAssistant. The pre cache interface has had its methods and requests changed slightly.
+- Legacy support has been added for most API changes. The only big API 
 - ImageLoader objects are now created via ImageLoader.build...() methods rather than being directly constructed.
-- The ImageLoaderSupport and AbstractImageLoader classes have been removed. There are now only the ImageLoader and WidgetImageLoader classes, and both are created via the ImageLoader.build…() methods.
-- The import has changed for the Options object. This class now directly belongs to the ImageLoader class.
+- The ImageLoaderSupport and AbstractImageLoader classes have been deprecated. Apps should now only be using the ImageLoader and WidgetImageLoader classes, and both are created via the ImageLoader.build…() methods.
 - Some APIs have been deprecated. Please view the Javadoc associated with the deprecated calls and update to the newer APIs.
-- The ImagePrecacheAssistant is now more appropriately called the AdapterImagesAssistant. The pre cache interface has had its methods and requests changed slightly.
 
 New Features:
 - The image cache now spends ~90% less time on the UI thread (measured using the AdapterImagesAssistant) when making requests (versus version 1.2), resulting in a smoother UI experience.

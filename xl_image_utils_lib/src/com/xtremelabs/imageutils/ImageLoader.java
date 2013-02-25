@@ -38,6 +38,7 @@ import com.xtremelabs.imageutils.ThreadChecker.CalledFromWrongThreadException;
 /**
  * This class is extending AbstractImageLoader for legacy purposes.
  */
+@SuppressWarnings("deprecation")
 public class ImageLoader implements AbstractImageLoader {
 	public static final String TAG = "ImageLoader";
 
