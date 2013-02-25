@@ -1,17 +1,25 @@
 package com.xtremelabs.imageutils;
 
+import java.util.List;
+
 import android.test.AndroidTestCase;
 
 import com.xtremelabs.imageutils.AdapterAccessor.AdapterAccessorType;
+import com.xtremelabs.imageutils.AdapterAccessor.RequestObserver;
 
 public class AdapterAccessorTests extends AndroidTestCase {
 	private AdapterAccessor mAccessor;
 	private DefaultPrioritizable[] mRequests;
+	private final RequestObserver mRequestObserver = new RequestObserver() {
+		@Override
+		public void onRequestsCancelled(List<DefaultPrioritizable> cancelledPrioritizables) {
+		}
+	};
 
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		mAccessor = new AdapterAccessor(AdapterAccessorType.DEPRIORITIZED);
+		mAccessor = new AdapterAccessor(AdapterAccessorType.DEPRIORITIZED, mRequestObserver);
 		mRequests = new DefaultPrioritizable[5];
 
 		mRequests[0] = generatePrioritizable(0);
@@ -43,19 +51,19 @@ public class AdapterAccessorTests extends AndroidTestCase {
 
 		p = (DefaultPrioritizable) mAccessor.detachHighestPriorityItem();
 		assertEquals(mRequests[4], p);
-		assertEquals(ImageRequestType.PRECACHE_TO_MEMORY_FOR_ADAPTER, p.getCacheRequest().getImageRequestType());
+		assertEquals(ImageRequestType.DEPRIORITIZED_PRECACHE_TO_MEMORY_FOR_ADAPTER, p.getCacheRequest().getImageRequestType());
 
 		p = (DefaultPrioritizable) mAccessor.detachHighestPriorityItem();
 		assertEquals(mRequests[3], p);
-		assertEquals(ImageRequestType.PRECACHE_TO_MEMORY_FOR_ADAPTER, p.getCacheRequest().getImageRequestType());
+		assertEquals(ImageRequestType.DEPRIORITIZED_PRECACHE_TO_MEMORY_FOR_ADAPTER, p.getCacheRequest().getImageRequestType());
 
 		p = (DefaultPrioritizable) mAccessor.detachHighestPriorityItem();
 		assertEquals(mRequests[2], p);
-		assertEquals(ImageRequestType.PRECACHE_TO_DISK_FOR_ADAPTER, p.getCacheRequest().getImageRequestType());
+		assertEquals(ImageRequestType.DEPRIORITIZED_PRECACHE_TO_DISK_FOR_ADAPTER, p.getCacheRequest().getImageRequestType());
 
 		p = (DefaultPrioritizable) mAccessor.detachHighestPriorityItem();
 		assertEquals(mRequests[1], p);
-		assertEquals(ImageRequestType.PRECACHE_TO_DISK_FOR_ADAPTER, p.getCacheRequest().getImageRequestType());
+		assertEquals(ImageRequestType.DEPRIORITIZED_PRECACHE_TO_DISK_FOR_ADAPTER, p.getCacheRequest().getImageRequestType());
 
 		p = (DefaultPrioritizable) mAccessor.detachHighestPriorityItem();
 		assertNull(p);
@@ -115,9 +123,9 @@ public class AdapterAccessorTests extends AndroidTestCase {
 	}
 
 	public void testSwap() {
-		AdapterAccessor memAccessor = new AdapterAccessor(AdapterAccessorType.PRECACHE_MEMORY);
-		AdapterAccessor diskAccessor = new AdapterAccessor(AdapterAccessorType.PRECACHE_DISK);
-		AdapterAccessor deprioritizedAccessor = new AdapterAccessor(AdapterAccessorType.DEPRIORITIZED);
+		AdapterAccessor memAccessor = new AdapterAccessor(AdapterAccessorType.PRECACHE_MEMORY, mRequestObserver);
+		AdapterAccessor diskAccessor = new AdapterAccessor(AdapterAccessorType.PRECACHE_DISK, mRequestObserver);
+		AdapterAccessor deprioritizedAccessor = new AdapterAccessor(AdapterAccessorType.DEPRIORITIZED, mRequestObserver);
 
 		memAccessor.attach(mRequests[0]);
 		memAccessor.attach(mRequests[1]);
@@ -143,9 +151,9 @@ public class AdapterAccessorTests extends AndroidTestCase {
 	}
 
 	public void testSwapWhileAllEmpty() {
-		AdapterAccessor memAccessor = new AdapterAccessor(AdapterAccessorType.PRECACHE_MEMORY);
-		AdapterAccessor diskAccessor = new AdapterAccessor(AdapterAccessorType.PRECACHE_DISK);
-		AdapterAccessor deprioritizedAccessor = new AdapterAccessor(AdapterAccessorType.DEPRIORITIZED);
+		AdapterAccessor memAccessor = new AdapterAccessor(AdapterAccessorType.PRECACHE_MEMORY, mRequestObserver);
+		AdapterAccessor diskAccessor = new AdapterAccessor(AdapterAccessorType.PRECACHE_DISK, mRequestObserver);
+		AdapterAccessor deprioritizedAccessor = new AdapterAccessor(AdapterAccessorType.DEPRIORITIZED, mRequestObserver);
 
 		assertEquals(0, memAccessor.size());
 		assertEquals(0, diskAccessor.size());
@@ -159,9 +167,9 @@ public class AdapterAccessorTests extends AndroidTestCase {
 	}
 
 	public void testSwapWhileMemEmpty() {
-		AdapterAccessor memAccessor = new AdapterAccessor(AdapterAccessorType.PRECACHE_MEMORY);
-		AdapterAccessor diskAccessor = new AdapterAccessor(AdapterAccessorType.PRECACHE_DISK);
-		AdapterAccessor deprioritizedAccessor = new AdapterAccessor(AdapterAccessorType.DEPRIORITIZED);
+		AdapterAccessor memAccessor = new AdapterAccessor(AdapterAccessorType.PRECACHE_MEMORY, mRequestObserver);
+		AdapterAccessor diskAccessor = new AdapterAccessor(AdapterAccessorType.PRECACHE_DISK, mRequestObserver);
+		AdapterAccessor deprioritizedAccessor = new AdapterAccessor(AdapterAccessorType.DEPRIORITIZED, mRequestObserver);
 
 		diskAccessor.attach(mRequests[0]);
 		diskAccessor.attach(mRequests[1]);
@@ -186,9 +194,9 @@ public class AdapterAccessorTests extends AndroidTestCase {
 	}
 
 	public void testSwapWithOnlyDiskSwap() {
-		AdapterAccessor memAccessor = new AdapterAccessor(AdapterAccessorType.PRECACHE_MEMORY);
-		AdapterAccessor diskAccessor = new AdapterAccessor(AdapterAccessorType.PRECACHE_DISK);
-		AdapterAccessor deprioritizedAccessor = new AdapterAccessor(AdapterAccessorType.DEPRIORITIZED);
+		AdapterAccessor memAccessor = new AdapterAccessor(AdapterAccessorType.PRECACHE_MEMORY, mRequestObserver);
+		AdapterAccessor diskAccessor = new AdapterAccessor(AdapterAccessorType.PRECACHE_DISK, mRequestObserver);
+		AdapterAccessor deprioritizedAccessor = new AdapterAccessor(AdapterAccessorType.DEPRIORITIZED, mRequestObserver);
 
 		deprioritizedAccessor.attach(mRequests[0]);
 		deprioritizedAccessor.attach(mRequests[1]);
@@ -221,6 +229,7 @@ public class AdapterAccessorTests extends AndroidTestCase {
 
 	private CacheRequest generateCacheRequest(int position) {
 		CacheRequest cacheRequest = new CacheRequest("blah");
+		cacheRequest.setImageRequestType(ImageRequestType.DEPRIORITIZED);
 		cacheRequest.setCacheKey(new CacheKey(1, position, 2, 2));
 		return cacheRequest;
 	}

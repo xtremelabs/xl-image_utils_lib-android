@@ -210,12 +210,19 @@ class AdapterAccessor implements PriorityAccessor {
 	}
 
 	private void forceRunnableToAppropriateCache(int targetKeyIndex, DefaultPrioritizable targetRunnable) {
+		if (mAdapterAccessorType != AdapterAccessorType.DEPRIORITIZED)
+			return;
+
+		ImageRequestType imageRequestType = targetRunnable.mCacheRequest.getImageRequestType();
 		CacheRequest cacheRequest = targetRunnable.getCacheRequest();
 		CacheKey cacheKey = cacheRequest.getCacheKey();
-		if (mAdapterAccessorType == AdapterAccessorType.PRECACHE_MEMORY || (mAdapterAccessorType == AdapterAccessorType.DEPRIORITIZED && targetKeyIndex < cacheKey.memCacheRange))
-			cacheRequest.setImageRequestType(ImageRequestType.PRECACHE_TO_MEMORY_FOR_ADAPTER);
-		else if (mAdapterAccessorType == AdapterAccessorType.PRECACHE_DISK || mAdapterAccessorType == AdapterAccessorType.DEPRIORITIZED)
-			cacheRequest.setImageRequestType(ImageRequestType.PRECACHE_TO_DISK_FOR_ADAPTER);
+
+		if (imageRequestType == ImageRequestType.DEPRIORITIZED) {
+			if (targetKeyIndex < cacheKey.memCacheRange)
+				cacheRequest.setImageRequestType(ImageRequestType.DEPRIORITIZED_PRECACHE_TO_MEMORY_FOR_ADAPTER);
+			else
+				cacheRequest.setImageRequestType(ImageRequestType.DEPRIORITIZED_PRECACHE_TO_DISK_FOR_ADAPTER);
+		}
 	}
 
 	private Position getOrGeneratePosition(CacheKey cacheKey, Position[] positions) {
