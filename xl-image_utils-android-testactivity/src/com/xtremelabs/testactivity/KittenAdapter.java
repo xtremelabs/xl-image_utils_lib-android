@@ -90,6 +90,7 @@ public class KittenAdapter extends BaseAdapter {
 				// list.add((String) getItem(position));
 				// }
 				return list;
+				// return null;
 			}
 
 			@Override
@@ -102,6 +103,7 @@ public class KittenAdapter extends BaseAdapter {
 				// list.add(new PrecacheRequest((String) getItem(position), mOptions));
 				// }
 				return list;
+				// return null;
 			}
 		});
 
@@ -155,7 +157,7 @@ public class KittenAdapter extends BaseAdapter {
 		// mImageLoader.loadImage(imageRequest1);
 
 		ImageRequest imageRequest2 = new ImageRequest(kittenViews.kitten2, (String) getItem(position) + "2");
-		imageRequest1.setImageLoaderListener(mListener);
+		imageRequest2.setImageLoaderListener(mListener);
 		mImagePrecacheAssistant.loadImage(imageRequest2, position);
 		// mImageLoader.loadImage(imageRequest2);
 		// } else {

@@ -35,9 +35,9 @@ class AsyncOperationsMaps {
 		QUEUED_FOR_NETWORK_REQUEST, QUEUED_FOR_DETAILS_REQUEST, QUEUED_FOR_DECODE_REQUEST, NOT_QUEUED
 	}
 
-	private final OperationTracker<String, RequestParameters, ImageCacherListener> mNetworkOperationTracker = new OperationTracker<String, RequestParameters, ImageCacherListener>();
-	private final OperationTracker<String, RequestParameters, ImageCacherListener> mDetailsOperationTracker = new OperationTracker<String, RequestParameters, ImageCacherListener>();
-	private final OperationTracker<DecodeSignature, RequestParameters, ImageCacherListener> mDecodeOperationTracker = new OperationTracker<DecodeSignature, RequestParameters, ImageCacherListener>();
+	private final OperationTracker<String, RequestParameters, ImageCacherListener> mNetworkOperationTracker = new OperationTracker<String, RequestParameters, ImageCacherListener>("Network");
+	private final OperationTracker<String, RequestParameters, ImageCacherListener> mDetailsOperationTracker = new OperationTracker<String, RequestParameters, ImageCacherListener>("Details");
+	private final OperationTracker<DecodeSignature, RequestParameters, ImageCacherListener> mDecodeOperationTracker = new OperationTracker<DecodeSignature, RequestParameters, ImageCacherListener>("Decode");
 
 	private final OperationsObserver mObserver;
 
@@ -56,7 +56,7 @@ class AsyncOperationsMaps {
 		accessors[1] = new StackPriorityAccessor();
 		accessors[2] = new AdapterAccessor(AdapterAccessorType.PRECACHE_MEMORY, requestObserver);
 		accessors[3] = new AdapterAccessor(AdapterAccessorType.PRECACHE_DISK, requestObserver);
-		accessors[4] = new AdapterAccessor(AdapterAccessorType.DEPRIORITIZED, requestObserver);
+		accessors[4] = new AdapterAccessor(AdapterAccessorType.DEPRIORITIZED, null);
 		accessors[5] = new QueuePriorityAccessor();
 		accessors[6] = new QueuePriorityAccessor();
 		return accessors;
@@ -304,7 +304,7 @@ class AsyncOperationsMaps {
 	private void cancelDiskRequestsFromTracker(List<DefaultPrioritizable> cancelledPrioritizables) {
 		for (final DefaultPrioritizable cancelledPrioritizable : cancelledPrioritizables) {
 			mDiskExecutor.cancel(cancelledPrioritizable);
-			Object cancelledRequest = cancelledPrioritizable.getRequest();
+			Object cancelledRequest = cancelledPrioritizable.getRequest().getData();
 			OperationTracker tracker;
 			KeyReferenceProvider keyReferenceProvider;
 			if (cancelledRequest instanceof DecodeSignature) {
@@ -355,11 +355,11 @@ class AsyncOperationsMaps {
 			mNetworkExecutor.cancel(requestParameters.prioritizable);
 
 			// We want to re-schedule cancelled adapter requests.
-			CacheRequest cacheRequest = requestParameters.cacheRequest;
-			if (cacheRequest.getImageRequestType() == ImageRequestType.ADAPTER_REQUEST) {
-				cacheRequest.setImageRequestType(ImageRequestType.DEPRIORITIZED_FOR_ADAPTER);
-				mNetworkExecutor.execute(mObserver.getNetworkRunnable(requestParameters.cacheRequest));
-			}
+			// CacheRequest cacheRequest = requestParameters.cacheRequest;
+			// if (cacheRequest.getImageRequestType() == ImageRequestType.ADAPTER_REQUEST) {
+			// cacheRequest.setImageRequestType(ImageRequestType.DEPRIORITIZED_FOR_ADAPTER);
+			// mNetworkExecutor.execute(mObserver.getNetworkRunnable(requestParameters.cacheRequest));
+			// }
 		}
 	}
 
@@ -369,11 +369,11 @@ class AsyncOperationsMaps {
 			mDiskExecutor.cancel(requestParameters.prioritizable);
 
 			// We want to re-schedule cancelled adapter requests.
-			CacheRequest cacheRequest = requestParameters.cacheRequest;
-			if (cacheRequest.getImageRequestType() == ImageRequestType.ADAPTER_REQUEST) {
-				cacheRequest.setImageRequestType(ImageRequestType.DEPRIORITIZED_FOR_ADAPTER);
-				mDiskExecutor.execute(mObserver.getDetailsRunnable(requestParameters.cacheRequest));
-			}
+			// CacheRequest cacheRequest = requestParameters.cacheRequest;
+			// if (cacheRequest.getImageRequestType() == ImageRequestType.ADAPTER_REQUEST) {
+			// cacheRequest.setImageRequestType(ImageRequestType.DEPRIORITIZED_FOR_ADAPTER);
+			// mDiskExecutor.execute(mObserver.getDetailsRunnable(requestParameters.cacheRequest));
+			// }
 		}
 	}
 
@@ -383,11 +383,11 @@ class AsyncOperationsMaps {
 			mDiskExecutor.cancel(requestParameters.prioritizable);
 
 			// We want to re-schedule cancelled adapter requests.
-			CacheRequest cacheRequest = requestParameters.cacheRequest;
-			if (cacheRequest.getImageRequestType() == ImageRequestType.ADAPTER_REQUEST) {
-				cacheRequest.setImageRequestType(ImageRequestType.DEPRIORITIZED_FOR_ADAPTER);
-				mDiskExecutor.execute(mObserver.getDecodeRunnable(requestParameters.cacheRequest, requestParameters.decodeSignature));
-			}
+			// CacheRequest cacheRequest = requestParameters.cacheRequest;
+			// if (cacheRequest.getImageRequestType() == ImageRequestType.ADAPTER_REQUEST) {
+			// cacheRequest.setImageRequestType(ImageRequestType.DEPRIORITIZED_FOR_ADAPTER);
+			// mDiskExecutor.execute(mObserver.getDecodeRunnable(requestParameters.cacheRequest, requestParameters.decodeSignature));
+			// }
 		}
 	}
 
