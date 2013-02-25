@@ -9,7 +9,7 @@ API CHANGES:
 - The ImagePrecacheAssistant is now more appropriately called the AdapterImagesAssistant. The pre cache interface has had its methods and requests changed slightly.
 
 New Features:
-- The image cache now spends ~86% less time on the UI thread when making requests (versus version 1.2), resulting in a smoother UI experience.
+- The image cache now spends ~90% less time on the UI thread (measured using the AdapterImagesAssistant) when making requests (versus version 1.2), resulting in a smoother UI experience.
 - Widgets are now supported. A WidgetImageLoader can now be constructed via the method ImageLoader.buildWidgetImageLoader(Object key, Context context).
 - The AdapterImagePrecacher is now available for use. This class helps manage what images need to be downloaded and precached, and it comes performance, battery life and data usage saving features. Helps to vastly smooth out adapter view scrolling.
 - Data usage, battery life and processing power savings! The image system now automatically cancels image requests for Activities and Fragments that have been destroyed without cancelling valid pending requests for the same URIs.
