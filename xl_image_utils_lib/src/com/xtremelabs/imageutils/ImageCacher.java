@@ -56,9 +56,9 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 		mAsyncOperationsMap = new AsyncOperationsMaps(this);
 	}
 
-	public static synchronized ImageCacher getInstance(Context appContext) {
+	public static synchronized ImageCacher getInstance(Context context) {
 		if (mImageCacher == null) {
-			mImageCacher = new ImageCacher(appContext);
+			mImageCacher = new ImageCacher(context.getApplicationContext());
 		}
 		return mImageCacher;
 	}

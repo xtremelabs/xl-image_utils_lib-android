@@ -21,7 +21,6 @@ import java.util.List;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.app.Application;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.res.Resources;
@@ -45,7 +44,7 @@ public class ImageLoader implements AbstractImageLoader {
 	private final ImageViewReferenceMapper mViewMapper = new ImageViewReferenceMapper();
 	private ReferenceManager mReferenceManager;
 	private final DisplayUtility mDisplayUtility = new DisplayUtility();
-	private Context mApplicationContext;
+	private Context mContext;
 	private Object mKey;
 	private volatile boolean mDestroyed = false;
 
@@ -57,20 +56,20 @@ public class ImageLoader implements AbstractImageLoader {
 	 * TODO Add documentation that explains that this call should not be used for loading images into fragments.
 	 */
 	public static ImageLoader buildImageLoaderForActivity(Activity activity) {
-		return new ImageLoader(activity, activity.getApplicationContext());
+		return new ImageLoader(activity, activity);
 	}
 
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 	public static ImageLoader buildImageLoaderForFragment(Fragment fragment) {
-		return new ImageLoader(fragment, fragment.getActivity().getApplicationContext());
+		return new ImageLoader(fragment, fragment.getActivity());
 	}
 
 	public static ImageLoader buildSupportImageLoaderForFragment(android.support.v4.app.Fragment fragment) {
-		return new ImageLoader(fragment, fragment.getActivity().getApplicationContext());
+		return new ImageLoader(fragment, fragment.getActivity());
 	}
 
 	public static WidgetImageLoader buildWidgetImageLoader(Object key, Context context) {
-		return new WidgetImageLoader(key, context.getApplicationContext());
+		return new WidgetImageLoader(key, context);
 	}
 
 	static ImageLoader buildImageLoaderForTesting(Object object, Context context) {
@@ -79,13 +78,13 @@ public class ImageLoader implements AbstractImageLoader {
 
 	@Deprecated
 	public ImageLoader(Activity activity) {
-		this(activity, activity.getApplicationContext());
+		this(activity, activity);
 	}
 
 	@SuppressLint("NewApi")
 	@Deprecated
 	public ImageLoader(Fragment fragment) {
-		this(fragment, fragment.getActivity().getApplicationContext());
+		this(fragment, fragment.getActivity());
 	}
 
 	/**
@@ -97,14 +96,14 @@ public class ImageLoader implements AbstractImageLoader {
 	 * @throws CalledFromWrongThreadException
 	 *             This constructor must be called from the UI thread.
 	 */
-	protected ImageLoader(Object key, Context applicationContext) {
+	protected ImageLoader(Object key, Context context) {
 		ThreadChecker.throwErrorIfOffUiThread();
 
 		if (key == null) {
 			throw new IllegalArgumentException("Key inside the ImageLoader cannot be null!");
 		}
-		initKeyAndAppContext(key, applicationContext);
-		mReferenceManager = LifecycleReferenceManager.getInstance(applicationContext);
+		initKeyAndContext(key, context);
+		mReferenceManager = LifecycleReferenceManager.getInstance(context);
 	}
 
 	/**
@@ -341,7 +340,7 @@ public class ImageLoader implements AbstractImageLoader {
 				imageView.setImageResource(resourceId);
 			}
 		} else {
-			new Handler(mApplicationContext.getMainLooper()).post(new Runnable() {
+			new Handler(mContext.getMainLooper()).post(new Runnable() {
 				@Override
 				public void run() {
 					loadImageFromResource(imageView, resourceId);
@@ -382,12 +381,9 @@ public class ImageLoader implements AbstractImageLoader {
 	 * @param uri
 	 *            The file system URI to remove.
 	 */
-	public static void invalidateFileSystemUri(Context applicationContext, String uri) {
-		if (!(applicationContext instanceof Application)) {
-			applicationContext = applicationContext.getApplicationContext();
-		}
-
-		ImageCacher.getInstance(applicationContext).invalidateFileSystemUri(uri);
+	public static void invalidateFileSystemUri(Context context, String uri) {
+		context = context.getApplicationContext();
+		ImageCacher.getInstance(context).invalidateFileSystemUri(uri);
 	}
 
 	/**
@@ -397,7 +393,7 @@ public class ImageLoader implements AbstractImageLoader {
 	 * referenced.
 	 */
 	public void clearMemCache() {
-		ImageCacher.getInstance(mApplicationContext).clearMemCache();
+		ImageCacher.getInstance(mContext).clearMemCache();
 	}
 
 	/**
@@ -411,7 +407,22 @@ public class ImageLoader implements AbstractImageLoader {
 	 * @param maxSizeInBytes
 	 */
 	public void setMaximumMemCacheSize(long maxSizeInBytes) {
-		ImageCacher.getInstance(mApplicationContext).setMaximumMemCacheSize(maxSizeInBytes);
+		ImageCacher.getInstance(mContext).setMaximumMemCacheSize(maxSizeInBytes);
+	}
+
+	/**
+	 * Sets the maximum size of the memory cache in bytes.<br>
+	 * <br>
+	 * WARNING: Setting the memory cache size value too high will result in OutOfMemory exceptions. Developers should test their apps thoroughly and modify the value set using this method based on memory consumption and
+	 * app performance. A larger cache size means better performance but worse memory usage. A smaller cache size means worse performance but better memory usage.<br>
+	 * <br>
+	 * The image system will only violate the maximum size specified if a single image is loaded that is larger than the specified maximum size.
+	 * 
+	 * @param maxSizeInBytes
+	 */
+	public static void setMaximumMemCacheSize(Context context, long maxSizeInBytes) {
+		context = context.getApplicationContext();
+		ImageCacher.getInstance(context).setMaximumMemCacheSize(maxSizeInBytes);
 	}
 
 	/**
@@ -420,7 +431,16 @@ public class ImageLoader implements AbstractImageLoader {
 	 * @param maxSizeInBytes
 	 */
 	public void setMaximumDiskCacheSize(long maxSizeInBytes) {
-		ImageCacher.getInstance(mApplicationContext).setMaximumDiskCacheSize(maxSizeInBytes);
+		ImageCacher.getInstance(mContext).setMaximumDiskCacheSize(maxSizeInBytes);
+	}
+
+	/**
+	 * Sets the maximum disk cache size. This value defaults to 50MB. Most applications will probably need much less space.
+	 * 
+	 * @param maxSizeInBytes
+	 */
+	public static void setMaximumDiskCacheSize(Context context, long maxSizeInBytes) {
+		ImageCacher.getInstance(context).setMaximumDiskCacheSize(maxSizeInBytes);
 	}
 
 	/**
@@ -436,7 +456,7 @@ public class ImageLoader implements AbstractImageLoader {
 	 * @param applicationContext
 	 */
 	public void precacheImageToDisk(String uri) {
-		precacheImageToDisk(uri, mApplicationContext, ImageRequestType.PRECACHE_TO_DISK);
+		precacheImageToDisk(uri, mContext, ImageRequestType.PRECACHE_TO_DISK);
 	}
 
 	/**
@@ -456,20 +476,17 @@ public class ImageLoader implements AbstractImageLoader {
 		precacheImageToDisk(uri, applicationContext, ImageRequestType.PRECACHE_TO_DISK);
 	}
 
-	private static void precacheImageToDisk(String uri, Context applicationContext, ImageRequestType imageRequestType) {
-		if (!(applicationContext instanceof Application))
-			throw new IllegalArgumentException("The context passed in must be an ApplicationContext!");
-
+	private static void precacheImageToDisk(String uri, Context context, ImageRequestType imageRequestType) {
 		CacheRequest cacheRequest = new CacheRequest(uri);
 		cacheRequest.setImageRequestType(imageRequestType);
-		ImageCacher.getInstance(applicationContext).getBitmap(cacheRequest, new BlankImageCacherListener());
+		ImageCacher.getInstance(context).getBitmap(cacheRequest, new BlankImageCacherListener());
 	}
 
 	public void precacheImageToDiskAndMemory(PrecacheRequest precacheRequest) {
 		Options options = precacheRequest.options;
 		CacheRequest cacheRequest = new CacheRequest(precacheRequest.uri, getScalingInfo(null, options), options);
 		cacheRequest.setImageRequestType(ImageRequestType.PRECACHE_TO_MEMORY);
-		ImageCacher.getInstance(mApplicationContext).getBitmap(cacheRequest, new BlankImageCacherListener());
+		ImageCacher.getInstance(mContext).getBitmap(cacheRequest, new BlankImageCacherListener());
 	}
 
 	/**
@@ -539,16 +556,16 @@ public class ImageLoader implements AbstractImageLoader {
 	}
 
 	protected Context getApplicationContext() {
-		return mApplicationContext;
+		return mContext;
 	}
 
-	private void initKeyAndAppContext(Object key, Context applicationContext) {
-		mApplicationContext = applicationContext;
+	private void initKeyAndContext(Object key, Context context) {
+		mContext = context.getApplicationContext();
 		mKey = key;
 	}
 
 	void notifyDirectionSwapped(CacheKey cacheKey) {
-		ImageCacher.getInstance(mApplicationContext).notifyDirectionSwapped(cacheKey);
+		ImageCacher.getInstance(mContext).notifyDirectionSwapped(cacheKey);
 	}
 
 	void stubReferenceManager(ReferenceManager referenceManager) {
@@ -559,7 +576,7 @@ public class ImageLoader implements AbstractImageLoader {
 		if (ThreadChecker.isOnUiThread())
 			performImageRequest(imageView, cacheRequest, options, imageManagerListener);
 		else {
-			new Handler(mApplicationContext.getMainLooper()).post(new Runnable() {
+			new Handler(mContext.getMainLooper()).post(new Runnable() {
 
 				@Override
 				public void run() {
@@ -611,7 +628,7 @@ public class ImageLoader implements AbstractImageLoader {
 		Integer height = options.heightBounds;
 
 		if (options.useScreenSizeAsBounds) {
-			Dimensions screenSize = mDisplayUtility.getDisplaySize(mApplicationContext);
+			Dimensions screenSize = mDisplayUtility.getDisplaySize(mContext);
 			width = Math.min(screenSize.width, width == null ? screenSize.width : width);
 			height = Math.min(screenSize.height, height == null ? screenSize.height : height);
 		}
