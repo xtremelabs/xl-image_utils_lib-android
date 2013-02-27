@@ -429,13 +429,17 @@ public class ImageLoader implements AbstractImageLoader {
 	 * Sets the maximum disk cache size. This value defaults to 50MB. Most applications will probably need much less space.
 	 * 
 	 * @param maxSizeInBytes
+	 * @deprecated The disk cache size should only ever be set on application startup, in your application's "onCreate" method. Please use {@link ImageLoader#setMaximumDiskCacheSize(Context, long)} instead.
 	 */
+	@Deprecated
 	public void setMaximumDiskCacheSize(long maxSizeInBytes) {
-		ImageCacher.getInstance(mContext).setMaximumDiskCacheSize(maxSizeInBytes);
+		setMaximumDiskCacheSize(mContext, maxSizeInBytes);
 	}
 
 	/**
-	 * Sets the maximum disk cache size. This value defaults to 50MB. Most applications will probably need much less space.
+	 * Sets the maximum disk cache size. This value defaults to 50MB. Most applications will probably need much less space.<br>
+	 * <br>
+	 * You should only be using this method in the onCreate method of your Application object.
 	 * 
 	 * @param maxSizeInBytes
 	 */
@@ -553,10 +557,6 @@ public class ImageLoader implements AbstractImageLoader {
 
 	protected Options getDefaultOptions() {
 		return mDefaultOptions;
-	}
-
-	protected Context getApplicationContext() {
-		return mContext;
 	}
 
 	private void initKeyAndContext(Object key, Context context) {
