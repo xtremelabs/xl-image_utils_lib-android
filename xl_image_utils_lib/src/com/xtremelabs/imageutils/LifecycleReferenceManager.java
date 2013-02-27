@@ -18,7 +18,6 @@ package com.xtremelabs.imageutils;
 
 import java.util.List;
 
-import android.app.Application;
 import android.content.Context;
 import android.os.Handler;
 
@@ -46,13 +45,9 @@ class LifecycleReferenceManager implements ReferenceManager {
 		mUiThreadHandler = new Handler(applicationContext.getMainLooper());
 	}
 
-	public synchronized static LifecycleReferenceManager getInstance(Context applicationContext) {
-		if (!(applicationContext instanceof Application)) {
-			throw new IllegalArgumentException("The context passed in must be an application context!");
-		}
-
+	public synchronized static LifecycleReferenceManager getInstance(Context context) {
 		if (referenceManager == null) {
-			referenceManager = new LifecycleReferenceManager(applicationContext);
+			referenceManager = new LifecycleReferenceManager(context.getApplicationContext());
 		}
 
 		return referenceManager;
