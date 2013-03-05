@@ -64,7 +64,7 @@ public class ImageLoader implements AbstractImageLoader {
 		return new ImageLoader(fragment, fragment.getActivity());
 	}
 
-	public static ImageLoader buildSupportImageLoaderForFragment(android.support.v4.app.Fragment fragment) {
+	public static ImageLoader buildImageLoaderForSupportFragment(android.support.v4.app.Fragment fragment) {
 		return new ImageLoader(fragment, fragment.getActivity());
 	}
 
