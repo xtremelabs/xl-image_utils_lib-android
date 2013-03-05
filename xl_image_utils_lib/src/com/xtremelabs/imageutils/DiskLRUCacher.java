@@ -102,14 +102,17 @@ class DiskLRUCacher implements ImageDiskCacherInterface {
 					bitmap = getBitmapSynchronouslyFromDisk(cacheRequest, decodeSignature);
 				} catch (FileNotFoundException e) {
 					failed = true;
-					errorMessage = "Disk decode failed with error message: " + e.getMessage();
+					errorMessage = "FileNotFoundException -- Disk decode failed with error message: " + e.getMessage();
 				} catch (FileFormatException e) {
 					failed = true;
-					errorMessage = "Disk decode failed with error message: " + e.getMessage();
+					errorMessage = "FileFormatException -- Disk decode failed with error message: " + e.getMessage();
 				}
 
 				if (!failed) {
 					mImageDiskObserver.onImageDecoded(decodeSignature, bitmap, imageReturnedFrom);
+				} else if (cacheRequest.isFileSystemRequest()) {
+					mPermanentStorageMap.remove(decodeSignature.uri);
+					mImageDiskObserver.onImageDecodeFailed(decodeSignature, errorMessage);
 				} else {
 					mDiskManager.deleteFile(encode(decodeSignature.uri));
 					mDatabaseHelper.deleteEntry(decodeSignature.uri);

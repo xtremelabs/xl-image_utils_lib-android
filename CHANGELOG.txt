@@ -19,10 +19,12 @@ New Features:
 - You can now fetch a bitmap from the image library without providing an ImageView.
 - Images can now be requested with an ImageRequest object. This API simplifies some of the logic involved when requesting images with complicated options, and may make API changes smoother in the future.
 - There is a new loadImage request that takes a listener without an Options object. This method will use the default options for its requests and report back to the listener when the request is complete.
+- Improved error messages coming from the disk system.
 
 Bug Fixes:
 - Fixed a crash caused by a ConcurrentModificationException.
 - Resolved a case where references to Activities or Fragments would be retained briefly after destruction.
+- FileFormatExceptions for file system images will now remove the details cache appropriately, and will no longer attempt to remove the image from disk.
 
 v1.2
 - XL Studio compatibility.
