@@ -30,6 +30,7 @@ import android.os.Environment;
  * This class is not thread safe.
  */
 class DiskManager {
+	private static final int MAXIMUM_CACHE_DIR_ATTEMPTS = 3;
 	private final String subDirectory;
 	private final Context appContext;
 	private File cacheDir; // Do not access this variable directly. It can disappear at any time. Use "getCacheDir()" instead.
@@ -37,7 +38,6 @@ class DiskManager {
 	public DiskManager(String subDirectory, Context appContext) {
 		this.subDirectory = subDirectory;
 		this.appContext = appContext;
-		getCacheDir();
 	}
 
 	public boolean isOnDisk(String filename) {
@@ -85,23 +85,36 @@ class DiskManager {
 		}
 	}
 
-	private synchronized File getCacheDir() {
-		if (cacheDir == null || !cacheDir.exists()) {
-			String state = Environment.getExternalStorageState();
-			if (Environment.MEDIA_MOUNTED.equals(state) && appContext.getExternalCacheDir() != null) {
-				String directory = appContext.getExternalCacheDir().getAbsolutePath() + File.separatorChar + subDirectory;
-				cacheDir = new File(directory);
-			} else {
-				String directory = appContext.getCacheDir().getAbsolutePath() + File.separatorChar + subDirectory;
-				cacheDir = new File(directory);
-			}
-
-			if (!cacheDir.exists()) {
-				if (!cacheDir.mkdirs()) {
-					throw new RuntimeException("Was unable to create the directory!");
+	private File getCacheDir() {
+		boolean cacheDirExists = false;
+		int attempts = 0;
+		do {
+			if (attempts != 0) {
+				try {
+					Thread.sleep(50);
+				} catch (InterruptedException e) {
 				}
 			}
-		}
+
+			synchronized (this) {
+				if (cacheDir == null || !cacheDir.exists()) {
+					String state = Environment.getExternalStorageState();
+					if (Environment.MEDIA_MOUNTED.equals(state) && appContext.getExternalCacheDir() != null) {
+						String directory = appContext.getExternalCacheDir().getAbsolutePath() + File.separatorChar + subDirectory;
+						cacheDir = new File(directory);
+					} else {
+						String directory = appContext.getCacheDir().getAbsolutePath() + File.separatorChar + subDirectory;
+						cacheDir = new File(directory);
+					}
+
+					cacheDirExists = !(cacheDir == null || (!cacheDir.exists() && !cacheDir.mkdirs()));
+				}
+			}
+		} while (attempts++ < MAXIMUM_CACHE_DIR_ATTEMPTS && !cacheDirExists);
+
+		if (attempts == MAXIMUM_CACHE_DIR_ATTEMPTS)
+			throw new RuntimeException("Was unable to create the cache directory!");
+
 		return cacheDir;
 	}
 
