@@ -16,6 +16,7 @@
 
 package com.xtremelabs.imageutils;
 
+import java.lang.ref.WeakReference;
 import java.util.List;
 
 import android.annotation.SuppressLint;
@@ -32,6 +33,7 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.widget.ImageView;
 
+import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
 import com.xtremelabs.imageutils.ThreadChecker.CalledFromWrongThreadException;
 
 /**
@@ -484,6 +486,31 @@ public class ImageLoader implements AbstractImageLoader {
 		CacheRequest cacheRequest = new CacheRequest(uri);
 		cacheRequest.setImageRequestType(imageRequestType);
 		ImageCacher.getInstance(context).getBitmap(cacheRequest, new BlankImageCacherListener());
+	}
+
+	public static void precacheImageToDisk(Context context, String uri, PrecacheListener precacheListener) {
+		final WeakReference<PrecacheListener> weakPrecacheListener = new WeakReference<PrecacheListener>(precacheListener);
+
+		CacheRequest cacheRequest = new CacheRequest(uri);
+		cacheRequest.setImageRequestType(ImageRequestType.PRECACHE_TO_DISK);
+
+		ImageCacher.getInstance(context).getBitmap(cacheRequest, new ImageCacherListener() {
+			@Override
+			public void onImageAvailable(ImageResponse imageResponse) {
+				PrecacheListener precacheListener = weakPrecacheListener.get();
+				if (precacheListener != null) {
+					precacheListener.onPrecacheComplete();
+				}
+			}
+
+			@Override
+			public void onFailure(String message) {
+				PrecacheListener precacheListener = weakPrecacheListener.get();
+				if (precacheListener != null) {
+					precacheListener.onPrecacheFailed(message);
+				}
+			}
+		});
 	}
 
 	public void precacheImageToDiskAndMemory(PrecacheRequest precacheRequest) {
