@@ -1,0 +1,18 @@
+{
+	"platform": "android",
+		"manifest": "xl-image_utils-android-testactivity/AndroidManifest.xml",
+		"directory": "xl-image_utils-android-testactivity",
+		"email": "james.halpern@xtremelabs.com",
+		"targets": [
+		{
+			"name": "Xtreme Image Utilities",
+			"tests": [
+			{
+				"type": "uitest",
+				"directory": "xl-image_utils-test_suite",
+				"package": "com.xtremelabs.imageutils"
+			}
+			]
+		}
+	]
+}
