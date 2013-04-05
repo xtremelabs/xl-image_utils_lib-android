@@ -349,7 +349,7 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 
 			if (isCached && sampleSize != -1) {
 				if (cacheRequest.getImageRequestType() == ImageRequestType.PRECACHE_TO_DISK) {
-					// TODO Should probably report that the image is cached on disk here.
+					imageCacherListener.onImageAvailable(new ImageResponse(null, null, ImageResponseStatus.CACHED_ON_DISK));
 					return null;
 				}
 
