@@ -6,5 +6,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/xl-image_utils-android-testactivity"/>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
+	<classpathentry kind="con" path="com.android.ide.eclipse.adt.DEPENDENCIES"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>
