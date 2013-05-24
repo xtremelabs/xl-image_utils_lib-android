@@ -27,7 +27,7 @@ public class ImageResponse {
 	private final Bitmap mBitmap;
 	private final ImageReturnedFrom mImageReturnedFrom;
 
-	public ImageResponse(Bitmap bitmap, ImageReturnedFrom imageReturnedFrom, ImageResponseStatus imageResponseStatus) {
+	ImageResponse(Bitmap bitmap, ImageReturnedFrom imageReturnedFrom, ImageResponseStatus imageResponseStatus) {
 		mBitmap = bitmap;
 		mImageReturnedFrom = imageReturnedFrom;
 		mImageResponseStatus = imageResponseStatus;
@@ -37,10 +37,20 @@ public class ImageResponse {
 		return mBitmap;
 	}
 
+	/**
+	 * Indicates the location the image was recovered from. This can be the network, disk, or memory.
+	 * 
+	 * @return
+	 */
 	public ImageReturnedFrom getImageReturnedFrom() {
 		return mImageReturnedFrom;
 	}
 
+	/**
+	 * The response status indicates whether the image is available now as part of the response, cached on disk, or queued to be retrieved from network or disk.
+	 * 
+	 * @return
+	 */
 	public ImageResponseStatus getImageResponseStatus() {
 		return mImageResponseStatus;
 	}

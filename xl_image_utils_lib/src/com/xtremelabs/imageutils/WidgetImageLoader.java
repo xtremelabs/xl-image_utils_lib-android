@@ -24,6 +24,14 @@ import android.util.Log;
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
 import com.xtremelabs.imageutils.ImageLoader.Options;
 
+/**
+ * This class should be instantiated from the method {@link ImageLoader#buildWidgetImageLoader(Object, Context)}.<br>
+ * <br>
+ * This class is designed to utilize the {@link ImageLoader} to load images specifically for widgets. Placing images in widgets is fairly different from loading images for an app, and therefore any image loads should be
+ * going through this class instead of straight through the ImageLoader itself.<br>
+ * <br>
+ * This class should be instantiated from within any class that manages the images for the widget, and destroyed when that class is destroyed with the "destroy" method.
+ */
 public class WidgetImageLoader {
 	private final ImageLoader mImageLoader;
 	private volatile boolean mDestroyed = false;
@@ -34,6 +42,15 @@ public class WidgetImageLoader {
 		mContext = context;
 	}
 
+	/**
+	 * This method will either immediately return a bitmap (if one is available), or report that a request for the image has been "queued". Once the requested image is available,
+	 * {@link ImageDownloadedListener#onImageDownloaded()} will be called, allowing the widget to be updated with the now-available image.
+	 * 
+	 * @param uri
+	 * @param options
+	 * @param listener
+	 * @return
+	 */
 	// TODO This does not handle bad URIs. The system just crashes.
 	public ImageResponse loadImageSynchronouslyOrQueueNetworkRequest(String uri, Options options, ImageDownloadedListener listener) {
 		if (!isDestroyed()) {
@@ -65,6 +82,9 @@ public class WidgetImageLoader {
 		};
 	}
 
+	/**
+	 * This method must be called when your widget is destroyed.
+	 */
 	public synchronized void destroy() {
 		mDestroyed = true;
 

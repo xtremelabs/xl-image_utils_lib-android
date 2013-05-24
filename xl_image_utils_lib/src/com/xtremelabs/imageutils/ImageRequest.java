@@ -20,6 +20,9 @@ import android.widget.ImageView;
 
 import com.xtremelabs.imageutils.ImageLoader.Options;
 
+/**
+ * Encapsulates all the setting for a single request.
+ */
 public class ImageRequest {
 	private String mUri;
 	private ImageView mImageView;
@@ -44,6 +47,10 @@ public class ImageRequest {
 	ImageRequest() {
 	}
 
+	/**
+	 * @param imageView
+	 *            The image view to which the image should be loaded.
+	 */
 	public void setImageView(ImageView imageView) {
 		mImageView = imageView;
 	}
