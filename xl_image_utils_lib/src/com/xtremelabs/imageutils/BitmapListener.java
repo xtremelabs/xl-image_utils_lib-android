@@ -19,6 +19,9 @@ package com.xtremelabs.imageutils;
 import android.graphics.Bitmap;
 import android.widget.ImageView;
 
+/**
+ * This class can be registered with image requests if the status of an image request is required.
+ */
 public abstract class BitmapListener {
 	private final ImageLoaderListener mImageLoaderListener;
 

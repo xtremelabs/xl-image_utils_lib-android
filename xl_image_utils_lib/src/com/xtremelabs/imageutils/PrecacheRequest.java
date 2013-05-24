@@ -18,6 +18,9 @@ package com.xtremelabs.imageutils;
 
 import com.xtremelabs.imageutils.ImageLoader.Options;
 
+/**
+ * This class encapsulates a request to precache an image to memory.
+ */
 public class PrecacheRequest {
 	final String uri;
 	final Options options;
