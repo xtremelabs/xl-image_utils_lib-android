@@ -51,7 +51,7 @@ public class WidgetImageLoader {
 		}
 	}
 
-	private ImageCacherListener getImageCacherListener(final ImageDownloadedListener listener) {
+	private static ImageCacherListener getImageCacherListener(final ImageDownloadedListener listener) {
 		return new ImageCacherListener() {
 			@Override
 			public void onImageAvailable(ImageResponse imageResponse) {

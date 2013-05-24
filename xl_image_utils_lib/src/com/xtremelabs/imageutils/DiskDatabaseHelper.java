@@ -152,7 +152,7 @@ class DiskDatabaseHelper extends SQLiteOpenHelper {
 		mDatabaseCache = new DatabaseCache();
 	}
 
-	private FileEntry createFileEntry(Cursor cursor) {
+	private static FileEntry createFileEntry(Cursor cursor) {
 		FileEntry fileEntry = new FileEntry(cursor.getString(0), cursor.getLong(1), cursor.getInt(2), cursor.getInt(3), cursor.getLong(4));
 		return fileEntry;
 	}

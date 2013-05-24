@@ -239,7 +239,7 @@ class DiskLRUCacher implements ImageDiskCacherInterface {
 		return mDiskManager.getFile(encode(uri));
 	}
 
-	private String encode(String uri) {
+	private static String encode(String uri) {
 		try {
 			return URLEncoder.encode(uri, "UTF-8");
 		} catch (UnsupportedEncodingException e) {
@@ -248,7 +248,7 @@ class DiskLRUCacher implements ImageDiskCacherInterface {
 		return null;
 	}
 
-	private Dimensions getImageDimensionsFromDisk(File file) throws FileNotFoundException {
+	private static Dimensions getImageDimensionsFromDisk(File file) throws FileNotFoundException {
 		FileInputStream fileInputStream = null;
 		try {
 			fileInputStream = new FileInputStream(file);

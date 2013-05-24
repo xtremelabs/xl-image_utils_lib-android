@@ -147,7 +147,7 @@ class AdapterAccessor implements PriorityAccessor {
 			removeAdapter(adapterId);
 	}
 
-	private int getSize(Position[] array, int startIndex, int length) {
+	private static int getSize(Position[] array, int startIndex, int length) {
 		int size = 0;
 		for (int i = startIndex; i < length; i++) {
 			if (array[i] != null)

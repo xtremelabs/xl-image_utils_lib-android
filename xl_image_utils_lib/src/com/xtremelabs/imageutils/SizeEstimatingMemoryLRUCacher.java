@@ -102,7 +102,7 @@ class SizeEstimatingMemoryLRUCacher implements ImageMemoryCacherInterface {
 		}
 	}
 
-	private long getBitmapSize(Bitmap bitmap, DecodeSignature decodeSignature) {
+	private static long getBitmapSize(Bitmap bitmap, DecodeSignature decodeSignature) {
 		int bytesPerPixel;
 		Bitmap.Config config = decodeSignature.bitmapConfig;
 

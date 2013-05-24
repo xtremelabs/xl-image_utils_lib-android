@@ -37,7 +37,11 @@ import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
 import com.xtremelabs.imageutils.ThreadChecker.CalledFromWrongThreadException;
 
 /**
- * This class is extending AbstractImageLoader for legacy purposes.
+ * This class should be constructed using its static "build" methods. The class should be instantiated in either onCreate (for activities) or onCreateView (for fragments).<br>
+ * <br>
+ * The {@link ImageLoader#destroy()} method <i>must</i> be called from either the activity's onDestroy method, or the fragment's onDestroyView method. This class should not be accessed after destroy has been called.<br>
+ * <br>
+ * This class is implementing {@link AbstractImageLoader} for legacy purposes. The {@link AbstractImageLoader} interface will be removed in a later API version.
  */
 @SuppressWarnings("deprecation")
 public class ImageLoader implements AbstractImageLoader {
@@ -622,7 +626,7 @@ public class ImageLoader implements AbstractImageLoader {
 		mReferenceManager.getBitmap(mKey, cacheRequest, imageManagerListener);
 	}
 
-	private void setPreLoadImage(ImageView imageView, Options options) {
+	private static void setPreLoadImage(ImageView imageView, Options options) {
 		if (imageView != null && options.wipeOldImageOnPreload) {
 			if (options.placeholderImageResourceId != null) {
 				imageView.setImageResource(options.placeholderImageResourceId);
@@ -661,26 +665,26 @@ public class ImageLoader implements AbstractImageLoader {
 		}
 
 		if (options.autoDetectBounds && imageView != null) {
-			Point imageBounds = ViewDimensionsUtil.getImageViewDimensions(imageView);
-			if (imageBounds.x != -1) {
-				if (width == null) {
-					width = imageBounds.x;
-				} else {
-					width = Math.min(width, imageBounds.x);
-				}
-			}
-			if (imageBounds.y != -1) {
-				if (height == null) {
-					height = imageBounds.y;
-				} else {
-					height = Math.min(height, imageBounds.y);
-				}
-			}
+			Point viewBounds = ViewDimensionsUtil.getImageViewDimensions(imageView);
+
+			width = getBounds(width, viewBounds.x);
+			height = getBounds(height, viewBounds.y);
 		}
 
 		scalingInfo.width = width;
 		scalingInfo.height = height;
 		return scalingInfo;
+	}
+
+	private static Integer getBounds(Integer currentDimension, int viewDimension) {
+		if (viewDimension != -1) {
+			if (currentDimension == null) {
+				currentDimension = viewDimension;
+			} else {
+				currentDimension = Math.min(currentDimension, viewDimension);
+			}
+		}
+		return currentDimension;
 	}
 
 	private void mapImageView(ImageView view, ImageManagerListener listener) {

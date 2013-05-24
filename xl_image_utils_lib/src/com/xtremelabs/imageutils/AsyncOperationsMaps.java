@@ -50,7 +50,7 @@ class AsyncOperationsMaps {
 		mDiskExecutor = new AuxiliaryExecutor.Builder(generateAccessors(mDiskRequestObserver)).setCorePoolSize(1).create();
 	}
 
-	private PriorityAccessor[] generateAccessors(RequestObserver requestObserver) {
+	private static PriorityAccessor[] generateAccessors(RequestObserver requestObserver) {
 		PriorityAccessor[] accessors = new PriorityAccessor[7];
 		accessors[0] = new StackPriorityAccessor();
 		accessors[1] = new StackPriorityAccessor();
