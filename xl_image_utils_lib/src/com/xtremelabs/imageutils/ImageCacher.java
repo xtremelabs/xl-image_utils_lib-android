@@ -221,7 +221,7 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 		mAsyncOperationsMap.registerDecodeRequest(cacheRequest, decodeSignature, imageCacherListener);
 	}
 
-	private void throwExceptionIfNeeded(CacheRequest cacheRequest, ImageCacherListener imageCacherListener) {
+	private static void throwExceptionIfNeeded(CacheRequest cacheRequest, ImageCacherListener imageCacherListener) {
 		String uri = cacheRequest.getUri();
 		if (uri == null || uri.length() == 0)
 			throw new IllegalArgumentException("Null URI passed into the image system.");
@@ -307,7 +307,7 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 		mAsyncOperationsMap = asyncOperationsMaps;
 	}
 
-	private ImageResponse generateQueuedResponse() {
+	private static ImageResponse generateQueuedResponse() {
 		return new ImageResponse(null, null, ImageResponseStatus.REQUEST_QUEUED);
 	}
 

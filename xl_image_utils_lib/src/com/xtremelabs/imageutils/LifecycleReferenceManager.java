@@ -100,7 +100,7 @@ class LifecycleReferenceManager implements ReferenceManager {
 		return cacheListener;
 	}
 
-	private ImageCacherListener generateBlankImageCacherListener() {
+	private static ImageCacherListener generateBlankImageCacherListener() {
 		return new ImageCacherListener() {
 			@Override
 			public void onImageAvailable(ImageResponse imageResponse) {

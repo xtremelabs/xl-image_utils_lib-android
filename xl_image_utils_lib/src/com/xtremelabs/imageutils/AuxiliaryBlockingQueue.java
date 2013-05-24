@@ -220,9 +220,10 @@ class AuxiliaryBlockingQueue extends AbstractQueue<Runnable> implements Blocking
 			return prioritizable.isCancelled() ? null : prioritizable;
 	}
 
-	private void checkNotNull(Object o) {
-		if (o == null)
+	private static void checkNotNull(Object o) {
+		if (o == null) {
 			throw new NullPointerException();
+		}
 	}
 
 	public void notifySwap(CacheKey cacheKey, int targetIndex, int memoryIndex, int diskIndex) {
