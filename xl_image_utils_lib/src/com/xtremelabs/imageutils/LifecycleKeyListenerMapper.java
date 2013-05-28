@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
@@ -32,9 +33,9 @@ import com.xtremelabs.imageutils.LifecycleReferenceManager.ImageManagerCacheList
  * The {@link Object} "key" in this class refers to either an Activity or a Fragment.
  */
 class LifecycleKeyListenerMapper {
-	private final HashMap<Object, Set<ImageManagerListener>> mKeyToListenersMap = new HashMap<Object, Set<ImageManagerListener>>();
-	private final HashMap<ImageManagerListener, ListenerInfo> mListenerToInfoMap = new HashMap<ImageManagerListener, ListenerInfo>();
-	private final HashMap<ImageManagerCacheListener, ImageManagerListener> mCacheListenerToImageReceivedListenerMap = new HashMap<ImageManagerCacheListener, ImageManagerListener>();
+	private final Map<Object, Set<ImageManagerListener>> mKeyToListenersMap = new HashMap<Object, Set<ImageManagerListener>>();
+	private final Map<ImageManagerListener, ListenerInfo> mListenerToInfoMap = new HashMap<ImageManagerListener, ListenerInfo>();
+	private final Map<ImageManagerCacheListener, ImageManagerListener> mCacheListenerToImageReceivedListenerMap = new HashMap<ImageManagerCacheListener, ImageManagerListener>();
 
 	public synchronized void registerNewListener(ImageManagerListener imageManagerListener, Object key, ImageManagerCacheListener customImageListener) {
 		Set<ImageManagerListener> imageManagerListenersList = mKeyToListenersMap.get(key);
