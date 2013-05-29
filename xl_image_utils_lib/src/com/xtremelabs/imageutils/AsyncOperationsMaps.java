@@ -91,10 +91,10 @@ class AsyncOperationsMaps {
 			registerNetworkRequest(cacheRequest, imageCacherListener);
 			state = AsyncOperationState.QUEUED_FOR_NETWORK_REQUEST;
 		} else if (isDetailsRequestPending(cacheRequest)) {
-			registerDetailsRequest(cacheRequest, imageCacherListener);
+			registerDetailsRequest(cacheRequest, imageCacherListener, ImageReturnedFrom.DISK);
 			state = AsyncOperationState.QUEUED_FOR_DETAILS_REQUEST;
 		} else if (imageRequestType != ImageRequestType.PRECACHE_TO_DISK && isDecodeRequestPending((decodeSignature = getDecodeSignature(cacheRequest)))) { // FIXME We should be doing this check for all disk requests.
-			registerDecodeRequest(cacheRequest, decodeSignature, imageCacherListener);
+			registerDecodeRequest(cacheRequest, decodeSignature, imageCacherListener, ImageReturnedFrom.DISK);
 			state = AsyncOperationState.QUEUED_FOR_DECODE_REQUEST;
 		}
 
@@ -132,25 +132,25 @@ class AsyncOperationsMaps {
 	synchronized void registerNetworkRequest(CacheRequest imageRequest, ImageCacherListener imageCacherListener) {
 		Prioritizable prioritizable = mObserver.getNetworkRunnable(imageRequest);
 
-		RequestParameters networkRequestParameters = new RequestParameters(imageCacherListener, imageRequest, prioritizable);
-		mNetworkOperationTracker.register(imageRequest.getUri(), networkRequestParameters, imageCacherListener);
+		RequestParameters requestParameters = new RequestParameters(imageCacherListener, imageRequest, prioritizable, ImageReturnedFrom.NETWORK);
+		mNetworkOperationTracker.register(imageRequest.getUri(), requestParameters, imageCacherListener);
 
 		mNetworkExecutor.execute(prioritizable);
 	}
 
-	synchronized void registerDetailsRequest(CacheRequest imageRequest, ImageCacherListener imageCacherListener) {
+	synchronized void registerDetailsRequest(CacheRequest imageRequest, ImageCacherListener imageCacherListener, ImageReturnedFrom imageReturnedFrom) {
 		Prioritizable prioritizable = mObserver.getDetailsRunnable(imageRequest);
 
-		RequestParameters networkRequestParameters = new RequestParameters(imageCacherListener, imageRequest, prioritizable);
-		mDetailsOperationTracker.register(imageRequest.getUri(), networkRequestParameters, imageCacherListener);
+		RequestParameters requestParameters = new RequestParameters(imageCacherListener, imageRequest, prioritizable, imageReturnedFrom);
+		mDetailsOperationTracker.register(imageRequest.getUri(), requestParameters, imageCacherListener);
 
 		mDiskExecutor.execute(prioritizable);
 	}
 
-	synchronized void registerDecodeRequest(CacheRequest cacheRequest, DecodeSignature decodeSignature, ImageCacherListener imageCacherListener) {
-		Prioritizable prioritizable = mObserver.getDecodeRunnable(cacheRequest, decodeSignature);
+	synchronized void registerDecodeRequest(CacheRequest cacheRequest, DecodeSignature decodeSignature, ImageCacherListener imageCacherListener, ImageReturnedFrom imageReturnedFrom) {
+		Prioritizable prioritizable = mObserver.getDecodeRunnable(cacheRequest, decodeSignature, imageReturnedFrom);
 
-		RequestParameters requestParameters = new RequestParameters(imageCacherListener, cacheRequest, prioritizable);
+		RequestParameters requestParameters = new RequestParameters(imageCacherListener, cacheRequest, prioritizable, imageReturnedFrom);
 		requestParameters.decodeSignature = decodeSignature;
 		mDecodeOperationTracker.register(decodeSignature, requestParameters, imageCacherListener);
 
@@ -186,8 +186,8 @@ class AsyncOperationsMaps {
 		}
 
 		if (requestParametersList != null) {
-			for (RequestParameters networkRequestParameters : requestParametersList) {
-				networkRequestParameters.imageCacherListener.onFailure(message);
+			for (RequestParameters requestParameters : requestParametersList) {
+				requestParameters.imageCacherListener.onFailure(message);
 			}
 		}
 	}
@@ -199,8 +199,8 @@ class AsyncOperationsMaps {
 			mDiskExecutor.notifyRequestComplete(new Request<String>(uri));
 			mDetailsOperationTracker.transferOperation(uri, new OperationTransferer<String, RequestParameters, ImageCacherListener>() {
 				@Override
-				public void transferOperation(String uri, RequestParameters networkRequestParameters, ImageCacherListener imageCacherListener) {
-					ImageRequestType requestType = networkRequestParameters.cacheRequest.getImageRequestType();
+				public void transferOperation(String uri, RequestParameters requestParameters, ImageCacherListener imageCacherListener) {
+					ImageRequestType requestType = requestParameters.cacheRequest.getImageRequestType();
 
 					switch (requestType) {
 					case PRECACHE_TO_DISK:
@@ -214,11 +214,11 @@ class AsyncOperationsMaps {
 					case DEPRIORITIZED:
 					case DEPRIORITIZED_PRECACHE_TO_MEMORY_FOR_ADAPTER:
 					case DEFAULT:
-						CacheRequest cacheRequest = networkRequestParameters.cacheRequest;
+						CacheRequest cacheRequest = requestParameters.cacheRequest;
 						int sampleSize = mObserver.getSampleSize(cacheRequest);
-						DecodeSignature decodeSignature = new DecodeSignature(uri, sampleSize, networkRequestParameters.cacheRequest.getOptions().preferedConfig);
+						DecodeSignature decodeSignature = new DecodeSignature(uri, sampleSize, requestParameters.cacheRequest.getOptions().preferedConfig);
 
-						registerDecodeRequest(cacheRequest, decodeSignature, imageCacherListener);
+						registerDecodeRequest(cacheRequest, decodeSignature, imageCacherListener, requestParameters.imageReturnedFrom);
 						break;
 					default:
 						throw new IllegalStateException("The request type of the cache request was not present!");
@@ -240,8 +240,8 @@ class AsyncOperationsMaps {
 		}
 
 		if (list != null) {
-			for (RequestParameters networkRequestParameters : list) {
-				networkRequestParameters.imageCacherListener.onFailure(message);
+			for (RequestParameters requestParameters : list) {
+				requestParameters.imageCacherListener.onFailure(message);
 			}
 		}
 	}
@@ -391,7 +391,7 @@ class AsyncOperationsMaps {
 			CacheRequest cacheRequest = requestParameters.cacheRequest;
 			if (cacheRequest.getImageRequestType() == ImageRequestType.ADAPTER_REQUEST) {
 				cacheRequest.setImageRequestType(ImageRequestType.DEPRIORITIZED);
-				mDiskExecutor.execute(mObserver.getDecodeRunnable(requestParameters.cacheRequest, requestParameters.decodeSignature));
+				mDiskExecutor.execute(mObserver.getDecodeRunnable(requestParameters.cacheRequest, requestParameters.decodeSignature, requestParameters.imageReturnedFrom));
 			}
 		}
 	}
@@ -404,7 +404,7 @@ class AsyncOperationsMaps {
 	static interface OperationsObserver {
 		public Prioritizable getNetworkRunnable(CacheRequest cacheRequest);
 
-		public Prioritizable getDecodeRunnable(CacheRequest cacheRequest, DecodeSignature decodeSignature);
+		public Prioritizable getDecodeRunnable(CacheRequest cacheRequest, DecodeSignature decodeSignature, ImageReturnedFrom imageReturnedFrom);
 
 		public Prioritizable getDetailsRunnable(CacheRequest cacheRequest);
 
@@ -412,15 +412,17 @@ class AsyncOperationsMaps {
 	}
 
 	private class RequestParameters {
-		ImageCacherListener imageCacherListener;
-		CacheRequest cacheRequest;
-		Prioritizable prioritizable;
+		final ImageCacherListener imageCacherListener;
+		final CacheRequest cacheRequest;
+		final Prioritizable prioritizable;
+		final ImageReturnedFrom imageReturnedFrom;
 		DecodeSignature decodeSignature;
 
-		RequestParameters(ImageCacherListener imageCacherListener, CacheRequest imageRequest, Prioritizable prioritizable) {
+		RequestParameters(ImageCacherListener imageCacherListener, CacheRequest imageRequest, Prioritizable prioritizable, ImageReturnedFrom imageReturnedFrom) {
 			this.imageCacherListener = imageCacherListener;
 			this.cacheRequest = imageRequest;
 			this.prioritizable = prioritizable;
+			this.imageReturnedFrom = imageReturnedFrom;
 		}
 	}
 }

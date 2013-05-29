@@ -53,7 +53,7 @@ public class ImageCacherTests extends AndroidTestCase {
 			}
 
 			@Override
-			synchronized void registerDetailsRequest(CacheRequest imageRequest, ImageCacherListener imageCacherListener) {
+			synchronized void registerDetailsRequest(CacheRequest imageRequest, ImageCacherListener imageCacherListener, ImageReturnedFrom imageReturnedFrom) {
 				delayedLoop.flagSuccess();
 			}
 		});

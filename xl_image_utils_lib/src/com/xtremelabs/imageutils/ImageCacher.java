@@ -157,36 +157,6 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 		return sampleSize;
 	}
 
-	/**
-	 * Caches the image at the provided uri to disk. If the image is already on disk, it gets bumped on the eviction queue.
-	 * 
-	 * @param uri
-	 */
-	// public void precacheImageToDisk(ImageRequest imageRequest) {
-	// String uri = imageRequest.getUri();
-	// validateUri(uri);
-	//
-	// if (GeneralUtils.isFileSystemUri(uri)) {
-	// return;
-	// }
-	//
-	// if (!mAsyncOperationsMap.isNetworkRequestPending(imageRequest) && !mDiskCache.isCached(uri)) {
-	// mAsyncOperationsMap.registerNetworkRequest(imageRequest, new ImageCacherListener() {
-	// @Override
-	// public void onImageAvailable(ImageResponse imageResponse) {
-	// // Intentionally blank.
-	// }
-	//
-	// @Override
-	// public void onFailure(String message) {
-	// // Intentionally blank.
-	// }
-	// });
-	// } else {
-	// mDiskCache.bumpOnDisk(uri);
-	// }
-	// }
-
 	public void clearMemCache() {
 		mMemoryCache.clearCache();
 	}
@@ -214,11 +184,11 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 	}
 
 	private void retrieveImageDetails(CacheRequest imageRequest, ImageCacherListener imageCacherListener) {
-		mAsyncOperationsMap.registerDetailsRequest(imageRequest, imageCacherListener);
+		mAsyncOperationsMap.registerDetailsRequest(imageRequest, imageCacherListener, ImageReturnedFrom.DISK);
 	}
 
 	private void decodeBitmapFromDisk(CacheRequest cacheRequest, DecodeSignature decodeSignature, ImageCacherListener imageCacherListener) {
-		mAsyncOperationsMap.registerDecodeRequest(cacheRequest, decodeSignature, imageCacherListener);
+		mAsyncOperationsMap.registerDecodeRequest(cacheRequest, decodeSignature, imageCacherListener, ImageReturnedFrom.DISK);
 	}
 
 	private static void throwExceptionIfNeeded(CacheRequest cacheRequest, ImageCacherListener imageCacherListener) {
@@ -283,8 +253,8 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 	}
 
 	@Override
-	public Prioritizable getDecodeRunnable(CacheRequest cacheRequest, DecodeSignature decodeSignature) {
-		return mDiskCache.getDecodePrioritizable(cacheRequest, decodeSignature, null);
+	public Prioritizable getDecodeRunnable(CacheRequest cacheRequest, DecodeSignature decodeSignature, ImageReturnedFrom imageReturnedFrom) {
+		return mDiskCache.getDecodePrioritizable(cacheRequest, decodeSignature, imageReturnedFrom);
 	}
 
 	public void setNetworkRequestCreator(NetworkRequestCreator networkRequestCreator) {
