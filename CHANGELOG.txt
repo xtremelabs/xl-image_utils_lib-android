@@ -1,5 +1,9 @@
 CHANGE LOG
 
+v1.4
+Bug fix:
+- The ImageReturnedFrom value now correctly indicates when an image is recovered from Disk or Network.
+
 v1.3
 API CHANGES:
 - BREAKING CHANGE: The import has changed for the Options object. This class now directly belongs to the ImageLoader class. If upgrading, please import Options from the new package.
