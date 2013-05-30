@@ -124,7 +124,7 @@ public class DiskDatabaseHelperTests extends AndroidTestCase {
 		assertEquals(height, entry.getDimensions().height.intValue());
 	}
 
-	private void sleep(long ms) {
+	private static void sleep(long ms) {
 		try {
 			Thread.sleep(ms);
 		} catch (InterruptedException e) {

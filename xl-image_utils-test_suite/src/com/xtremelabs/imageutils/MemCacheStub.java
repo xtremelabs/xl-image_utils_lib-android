@@ -18,7 +18,7 @@ package com.xtremelabs.imageutils;
 
 import android.graphics.Bitmap;
 
-public class MemCacheStub implements ImageMemoryCacherInterface {
+public class MemCacheStub implements ImageSystemMemoryCache {
 
 	@Override
 	public void clearCache() {

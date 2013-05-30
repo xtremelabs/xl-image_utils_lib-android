@@ -29,7 +29,7 @@ import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 
 @SuppressLint("NewApi")
-class AdvancedMemoryLRUCacher implements ImageMemoryCacherInterface {
+class AdvancedMemoryLRUCacher implements ImageSystemMemoryCache {
 	private long mMaximumSizeInBytes = 20 * 1024 * 1024; // 20MB default
 	private volatile long mSize = 0;
 

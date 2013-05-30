@@ -26,7 +26,7 @@ import com.xtremelabs.imageutils.DiskLRUCacher.FileFormatException;
 /**
  * This interface defines the mechanisms that the ImageCacher uses to interract with the Disk Cache.
  */
-interface ImageDiskCacherInterface extends NetworkToDiskInterface {
+interface ImageSystemDiskCache extends NetworkToDiskInterface {
 	boolean isCached(CacheRequest cacheRequest);
 
 	int getSampleSize(CacheRequest imageRequest);

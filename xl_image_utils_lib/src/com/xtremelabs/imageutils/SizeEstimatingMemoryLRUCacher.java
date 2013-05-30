@@ -25,7 +25,7 @@ import java.util.Set;
 
 import android.graphics.Bitmap;
 
-class SizeEstimatingMemoryLRUCacher implements ImageMemoryCacherInterface {
+class SizeEstimatingMemoryLRUCacher implements ImageSystemMemoryCache {
 	private long mMaximumSizeInBytes = 6 * 1024 * 1024; // 6MB default
 	private long mSize = 0;
 

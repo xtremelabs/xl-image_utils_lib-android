@@ -40,14 +40,12 @@ import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
 class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, OperationsObserver {
 	private static ImageCacher mImageCacher;
 
-	private ImageDiskCacherInterface mDiskCache;
-	private ImageMemoryCacherInterface mMemoryCache;
+	private ImageSystemDiskCache mDiskCache;
+	private ImageSystemMemoryCache mMemoryCache;
 	private ImageNetworkInterface mNetworkInterface;
 
 	private AsyncOperationsMaps mAsyncOperationsMap;
 	private Handler mHandler;
-	private final long mTotalTime = 0;
-	private final long mRequests = 0;
 
 	private ImageCacher(Context appContext) {
 		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
@@ -88,11 +86,13 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 			}
 		}
 
+		AsyncImageRequest request = new AsyncImageRequest(cacheRequest, imageCacherListener);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-			new AsyncImageRequest(cacheRequest, imageCacherListener).execute();
+			request.execute();
 		} else {
-			mHandler.post(new AsyncImageRequest(cacheRequest, imageCacherListener));
+			mHandler.post(request);
 		}
+
 		return generateQueuedResponse();
 	}
 
@@ -280,11 +280,11 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 		mNetworkInterface.setNetworkRequestCreator(networkRequestCreator);
 	}
 
-	void stubMemCache(ImageMemoryCacherInterface memoryCache) {
+	void stubMemCache(ImageSystemMemoryCache memoryCache) {
 		mMemoryCache = memoryCache;
 	}
 
-	void stubDiskCache(ImageDiskCacherInterface imageDiskCacherInterface) {
+	void stubDiskCache(ImageSystemDiskCache imageDiskCacherInterface) {
 		mDiskCache = imageDiskCacherInterface;
 	}
 

@@ -28,7 +28,7 @@ public class StackPriorityAccessorTests extends AndroidTestCase {
 		assertEquals(p1, p);
 	}
 
-	private Prioritizable generatePrioritizable() {
+	private static Prioritizable generatePrioritizable() {
 		return new Prioritizable() {
 			@Override
 			public int getTargetPriorityAccessorIndex() {

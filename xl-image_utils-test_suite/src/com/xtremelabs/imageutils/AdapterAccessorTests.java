@@ -219,7 +219,7 @@ public class AdapterAccessorTests extends AndroidTestCase {
 		assertNull(deprioritizedAccessor.detachHighestPriorityItem());
 	}
 
-	private DefaultPrioritizable generatePrioritizable(int position) {
+	private static DefaultPrioritizable generatePrioritizable(int position) {
 		return new DefaultPrioritizable(generateCacheRequest(position), new Request<String>("baller")) {
 			@Override
 			public void execute() {
@@ -227,7 +227,7 @@ public class AdapterAccessorTests extends AndroidTestCase {
 		};
 	}
 
-	private CacheRequest generateCacheRequest(int position) {
+	private static CacheRequest generateCacheRequest(int position) {
 		CacheRequest cacheRequest = new CacheRequest("blah");
 		cacheRequest.setImageRequestType(ImageRequestType.DEPRIORITIZED);
 		cacheRequest.setCacheKey(new CacheKey(1, position, 2, 2));

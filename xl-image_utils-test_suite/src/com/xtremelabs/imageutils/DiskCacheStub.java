@@ -25,7 +25,7 @@ import android.graphics.Bitmap;
 
 import com.xtremelabs.imageutils.DiskLRUCacher.FileFormatException;
 
-public class DiskCacheStub implements ImageDiskCacherInterface {
+public class DiskCacheStub implements ImageSystemDiskCache {
 	@Override
 	public void downloadImageFromInputStream(String uri, InputStream inputStream) throws IOException {
 	}
