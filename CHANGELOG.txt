@@ -1,7 +1,11 @@
 CHANGE LOG
 
+v1.5
+Bug fixes:
+- Fixed a race condition that could have duplicated requests in Froyo and Gingerbread.
+
 v1.4
-Bug fix:
+Bug fixes:
 - The ImageReturnedFrom value now correctly indicates when an image is recovered from Disk or Network.
 
 v1.3

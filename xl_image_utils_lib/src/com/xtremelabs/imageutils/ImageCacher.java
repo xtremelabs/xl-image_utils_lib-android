@@ -23,6 +23,8 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.util.Log;
 
 import com.xtremelabs.imageutils.AsyncOperationsMaps.AsyncOperationState;
@@ -43,8 +45,15 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 	private ImageNetworkInterface mNetworkInterface;
 
 	private AsyncOperationsMaps mAsyncOperationsMap;
+	private Handler mHandler;
+	private final long mTotalTime = 0;
+	private final long mRequests = 0;
 
 	private ImageCacher(Context appContext) {
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
+			initializeHandler();
+		}
+
 		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB_MR1) {
 			mMemoryCache = new SizeEstimatingMemoryLRUCacher();
 		} else {
@@ -79,7 +88,11 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 			}
 		}
 
-		new AsyncImageRequest(cacheRequest, imageCacherListener).execute();
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+			new AsyncImageRequest(cacheRequest, imageCacherListener).execute();
+		} else {
+			mHandler.post(new AsyncImageRequest(cacheRequest, imageCacherListener));
+		}
 		return generateQueuedResponse();
 	}
 
@@ -205,6 +218,12 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 		}
 	}
 
+	private void initializeHandler() {
+		HandlerThread handlerThread = new HandlerThread("Image Utils Background Handler");
+		handlerThread.start();
+		mHandler = new Handler(handlerThread.getLooper());
+	}
+
 	public static abstract class ImageCacherListener {
 		public abstract void onImageAvailable(ImageResponse imageResponse);
 
@@ -290,7 +309,10 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 		mAsyncOperationsMap.notifyDirectionSwapped(cacheKey);
 	}
 
-	private class AsyncImageRequest extends AsyncTask<Void, Void, Void> {
+	/*
+	 * This class is treated as an AsyncTask for API 11+, and a Runnable for API 8-10. This is due to changes in how AsyncTasks worked as of API level 11.
+	 */
+	private class AsyncImageRequest extends AsyncTask<Void, Void, Void> implements Runnable {
 		private final CacheRequest cacheRequest;
 		private final ImageCacherListener imageCacherListener;
 
@@ -337,6 +359,14 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 			}
 
 			return null;
+		}
+
+		@Override
+		public void run() {
+			/*
+			 * For API versions 8-10, we need to use a handler with a runnable, as the AsyncTask will run things in parallel, which we do not want.
+			 */
+			doInBackground();
 		}
 	}
 }
