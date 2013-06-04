@@ -10,7 +10,7 @@
 			{
 				"type": "uitest",
 				"directory": "xl-image_utils-test_suite",
-				"package": "com.xtremelabs.imageutils"
+				"package": "com.xtremelabs.imageutils.test"
 			}
 			]
 		}
