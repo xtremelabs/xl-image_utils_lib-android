@@ -166,8 +166,6 @@ class AsyncOperationsMaps {
 	 */
 
 	public synchronized void onDownloadComplete(String uri) {
-		// FIXME Do we want the decode to happen regardless of whether or not we have runnables to complete the decode?
-		// TODO Create a queue for details requests and force them to happen first on disk?
 		List<RequestParameters> requests = mNetworkOperationTracker.transferOperationToTracker(uri, mDetailsOperationTracker, mNetworkAndDetailsKeyReferenceProvider);
 		mNetworkExecutor.notifyRequestComplete(new Request<String>(uri));
 		if (requests != null) {

@@ -16,7 +16,6 @@
 
 package com.xtremelabs.imageutils;
 
-import java.util.Iterator;
 
 class AuxiliaryQueue {
 	private final int mNumAccessors;
@@ -66,30 +65,6 @@ class AuxiliaryQueue {
 				return prioritizable;
 			}
 		}
-		return null;
-	}
-
-	// TODO Fill in the iterator.
-	public Iterator<Runnable> buildIterator() {
-		return new Iterator<Runnable>() {
-			@Override
-			public boolean hasNext() {
-				return false;
-			}
-
-			@Override
-			public Runnable next() {
-				return null;
-			}
-
-			@Override
-			public void remove() {
-			}
-		};
-	}
-
-	// TODO Fill in the "buildArray" method.
-	public Object[] buildArray() {
 		return null;
 	}
 

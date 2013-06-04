@@ -25,17 +25,9 @@ import android.widget.BaseAdapter;
  * <br>
  * <b>Instructions:</b><br>
  * Create a new instance of this class from within adapter.<br>
- * Implement the methods {@link PrecacheInformationProvider#onRowPrecacheRequestsRequired(int)} and {@link PrecacheInformationProvider#getCount()}.<br>
+ * Implement the methods {@link PrecacheInformationProvider#onRowPrecacheRequestsRequired(int)} and
+ * {@link PrecacheInformationProvider#getCount()}.<br>
  * In the "getView" method of the adapter, call {@link #onPositionVisited(int)}, and pass in the current position.
- */
-/*
- * TODO This class still has a couple of inefficiencies. Namely, there are some duplicate calls being made. Find the duplicate calls and code them away.
- * 
- * TODO This class' API needs some additional work. The PrecacheInformationProvider needs to be using options and/or accept an ImageView so its API is closer to that of the ImageLoader.loadImage methods.
- * 
- * TODO This class needs the ability to support adapters that loop from position 0 -> count - 1, and count-1 -> 0.
- * 
- * TODO Research into extending different kinds of adapters. (Start with ListViews)
  */
 public class AdapterImagesAssistant {
 	private volatile static int mNextId = 0;
@@ -69,11 +61,6 @@ public class AdapterImagesAssistant {
 	 * @param position
 	 *            The current position within the adapter.
 	 */
-	/*
-	 * TODO Should the disk requests use Strings? Or URIs?
-	 * 
-	 * TODO Consider changing the List to a Set so that requests are not duplicated.
-	 */
 	public void onPositionVisited(int position) {
 		calculateDirection(position);
 		RangesToCache ranges = calculateRanges(position);
@@ -96,21 +83,22 @@ public class AdapterImagesAssistant {
 	}
 
 	/**
-	 * Adjust the number of positions ahead that become cached in both the disk and memory caches.
+	 * Sets the range that will be cached onto both disk and memory. This range specifies the number of adapter positions ahead of the
+	 * current scroll direction that will be cached to memory.
 	 * 
 	 * @param range
+	 *            Precache range in number of positions.
 	 */
-	// TODO Fix the javadoc to be more descriptive here.
 	public void setMemCacheRange(int range) {
 		mMemCacheRange = range;
 	}
 
 	/**
-	 * Adjust the number of positions ahead of those that become cached in memory that will be cached on disk.
+	 * Sets the range that will be cached onto disk. This range specifies the number of adapter positions ahead of the memory cache range
+	 * that will be cached to disk.
 	 * 
 	 * @param range
 	 */
-	// TODO Fix the javadoc to be more descriptive here.
 	public void setDiskCacheRange(int range) {
 		mDiskCacheRange = range;
 	}
@@ -225,7 +213,8 @@ public class AdapterImagesAssistant {
 	 */
 	public static interface PrecacheInformationProvider {
 		/**
-		 * This method must return the number of elements in the adapter. In most cases, it should return the same value as the {@link BaseAdapter#getCount()} method.
+		 * This method must return the number of elements in the adapter. In most cases, it should return the same value as the
+		 * {@link BaseAdapter#getCount()} method.
 		 * 
 		 * @return
 		 */
@@ -238,11 +227,9 @@ public class AdapterImagesAssistant {
 		 * 
 		 * @param position
 		 *            The position for which images will be precached.
-		 * @return A list of {@link PrecacheRequest}s. Each PrecacheRequest should contain a URI for a particular image and the bounds of the view the image will be loaded into. The bounds should be provided in pixels,
-		 *         or be given as null.
+		 * @return A list of {@link PrecacheRequest}s. Each PrecacheRequest should contain a URI for a particular image and the bounds of
+		 *         the view the image will be loaded into. The bounds should be provided in pixels, or be given as null.
 		 */
-		// public List<PrecacheRequest> onRowPrecacheRequestsRequired(int position);
-
 		public List<String> getRequestsForDiskPrecache(int position);
 
 		// TODO Try to map the requests by R.id to ImageViews within the rows.

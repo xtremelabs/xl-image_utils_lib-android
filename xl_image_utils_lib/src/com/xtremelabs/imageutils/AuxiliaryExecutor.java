@@ -20,7 +20,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-// TODO Build unit tests
 class AuxiliaryExecutor {
 
 	private final ThreadPoolExecutor mExecutor;

@@ -51,7 +51,6 @@ public class WidgetImageLoader {
 	 * @param listener
 	 * @return
 	 */
-	// TODO This does not handle bad URIs. The system just crashes.
 	public ImageResponse loadImageSynchronouslyOrQueueNetworkRequest(String uri, Options options, ImageDownloadedListener listener) {
 		if (!isDestroyed()) {
 			if (options == null) {

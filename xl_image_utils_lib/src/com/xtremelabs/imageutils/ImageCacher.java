@@ -45,6 +45,7 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 	private ImageNetworkInterface mNetworkInterface;
 
 	private AsyncOperationsMaps mAsyncOperationsMap;
+
 	private Handler mHandler;
 
 	private ImageCacher(Context appContext) {
@@ -106,8 +107,6 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 				return generateQueuedResponse();
 			case QUEUED_FOR_DETAILS_REQUEST:
 			case QUEUED_FOR_DECODE_REQUEST:
-				// FIXME I do not believe the "Cancel Pending Request" method does what it should be doing. Needs investigation.
-				// mAsyncOperationsMap.cancelPendingRequest(imageCacherListener);
 				break;
 			case NOT_QUEUED:
 				break;
@@ -146,7 +145,6 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 			downloadImageFromNetwork(cacheRequest, imageCacherListener);
 		}
 
-		// FIXME We should be returning an ImageResponse with the result "Request Queued"
 		return null;
 	}
 
@@ -156,7 +154,6 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 		return new ImageResponse(bitmap, ImageReturnedFrom.DISK, ImageResponseStatus.SUCCESS);
 	}
 
-	// TODO This method is VERY slow. Find ways to improve performance.
 	@Override
 	public int getSampleSize(CacheRequest imageRequest) {
 		ScalingInfo scalingInfo = imageRequest.getScalingInfo();

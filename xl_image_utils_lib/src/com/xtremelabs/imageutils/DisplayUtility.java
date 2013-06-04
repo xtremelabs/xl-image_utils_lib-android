@@ -26,7 +26,6 @@ import android.view.WindowManager;
 class DisplayUtility {
 	private volatile Dimensions displaySize;
 
-	// TODO Getting the screen dimensions is fairly costly. We should look into caching this value.
 	@SuppressLint("NewApi")
 	@SuppressWarnings("deprecation")
 	public Dimensions getDisplaySize(Context applicationContext) {

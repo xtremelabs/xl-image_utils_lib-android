@@ -127,9 +127,6 @@ class DiskDatabaseHelper extends SQLiteOpenHelper {
 		return 1 == getWritableDatabase().delete(DICTIONARY_TABLE_NAME, columns[0] + " = ?", args);
 	}
 
-	/*
-	 * TODO: Have the LRU information cached in memory. The database updates can take time.
-	 */
 	public void updateFile(final String uri) {
 		if (GeneralUtils.isStringBlank(uri)) {
 			throw new IllegalArgumentException("Cannot add a null URL to the database.");

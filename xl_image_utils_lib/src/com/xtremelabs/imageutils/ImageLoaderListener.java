@@ -20,9 +20,6 @@ import android.graphics.Bitmap;
 import android.widget.ImageView;
 
 public interface ImageLoaderListener {
-	/*
-	 * TODO The onImageAvailable should return an ImageResponse containing important data from the request. That object should include the "returnedFrom" parameter.
-	 */
 	/**
 	 * This method provides you with the {@link ImageView} and {@link Bitmap} from your ImageLoader's loadImage request.
 	 * 
@@ -37,7 +34,6 @@ public interface ImageLoaderListener {
 	 */
 	public void onImageAvailable(ImageView imageView, Bitmap bitmap, ImageReturnedFrom returnedFrom);
 
-	// TODO: Include an error type enum in the error response.
 	/**
 	 * Called in the event the bitmap could not be retreived.
 	 */
