@@ -29,15 +29,15 @@ import android.os.Environment;
  * 
  * This class is not thread safe.
  */
-class DiskManager {
+class FileSystemManager {
 	private static final int MAXIMUM_CACHE_DIR_ATTEMPTS = 3;
-	private final String subDirectory;
-	private final Context appContext;
+	private final String mSubDirectory;
+	private final Context mAppContext;
 	private File cacheDir; // Do not access this variable directly. It can disappear at any time. Use "getCacheDir()" instead.
 
-	public DiskManager(String subDirectory, Context appContext) {
-		this.subDirectory = subDirectory;
-		this.appContext = appContext;
+	public FileSystemManager(String subDirectory, Context appContext) {
+		mSubDirectory = subDirectory;
+		mAppContext = appContext;
 	}
 
 	public boolean isOnDisk(String filename) {
@@ -99,11 +99,11 @@ class DiskManager {
 			synchronized (this) {
 				if (cacheDir == null || !cacheDir.exists()) {
 					String state = Environment.getExternalStorageState();
-					if (Environment.MEDIA_MOUNTED.equals(state) && appContext.getExternalCacheDir() != null) {
-						String directory = appContext.getExternalCacheDir().getAbsolutePath() + File.separatorChar + subDirectory;
+					if (Environment.MEDIA_MOUNTED.equals(state) && mAppContext.getExternalCacheDir() != null) {
+						String directory = mAppContext.getExternalCacheDir().getAbsolutePath() + File.separatorChar + mSubDirectory;
 						cacheDir = new File(directory);
 					} else {
-						String directory = appContext.getCacheDir().getAbsolutePath() + File.separatorChar + subDirectory;
+						String directory = mAppContext.getCacheDir().getAbsolutePath() + File.separatorChar + mSubDirectory;
 						cacheDir = new File(directory);
 					}
 

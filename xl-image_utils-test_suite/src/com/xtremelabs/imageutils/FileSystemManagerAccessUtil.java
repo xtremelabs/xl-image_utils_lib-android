@@ -21,26 +21,26 @@ import java.io.InputStream;
 
 import android.content.Context;
 
-public class DiskManagerAccessUtil {
-	private final DiskManager mDiskManager;
+public class FileSystemManagerAccessUtil {
+	private final FileSystemManager mFileSystemManager;
 
-	public DiskManagerAccessUtil(Context applicationContext) {
-		mDiskManager = new DiskManager("img", applicationContext);
+	public FileSystemManagerAccessUtil(Context applicationContext) {
+		mFileSystemManager = new FileSystemManager("img", applicationContext);
 	}
 
 	public void clearDiskCache() {
-		mDiskManager.clearDirectory();
+		mFileSystemManager.clearDirectory();
 	}
 
 	public void loadStreamToFile(InputStream inputStream, String filename) throws IOException {
-		mDiskManager.loadStreamToFile(inputStream, filename);
+		mFileSystemManager.loadStreamToFile(inputStream, filename);
 	}
 
 	public void deleteFile(String filename) {
-		mDiskManager.deleteFile(filename);
+		mFileSystemManager.deleteFile(filename);
 	}
 
 	public boolean isOnDisk(String filename) {
-		return mDiskManager.isOnDisk(filename);
+		return mFileSystemManager.isOnDisk(filename);
 	}
 }

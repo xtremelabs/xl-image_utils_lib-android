@@ -16,9 +16,34 @@
 
 package com.xtremelabs.imageutils;
 
-import java.io.IOException;
 import java.io.InputStream;
 
 interface NetworkToDiskInterface {
-	public void downloadImageFromInputStream(String url, InputStream inputStream) throws IOException;
+	public ImageDownloadResult downloadImageFromInputStream(String url, InputStream inputStream);
+
+	static class ImageDownloadResult {
+		enum Result {
+			SUCCESS, FAILURE
+		}
+
+		private final Result mResult;
+		private String mErrorMessage;
+
+		public ImageDownloadResult(Result result) {
+			mResult = result;
+		}
+
+		public ImageDownloadResult(Result result, String errorMessage) {
+			mResult = result;
+			mErrorMessage = errorMessage;
+		}
+
+		public Result getResult() {
+			return mResult;
+		}
+
+		public String getErrorMessage() {
+			return mErrorMessage;
+		}
+	}
 }

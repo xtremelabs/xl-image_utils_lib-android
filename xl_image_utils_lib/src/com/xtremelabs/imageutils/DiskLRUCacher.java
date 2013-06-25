@@ -32,12 +32,13 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
 import com.xtremelabs.imageutils.DiskDatabaseHelper.DiskDatabaseHelperObserver;
+import com.xtremelabs.imageutils.NetworkToDiskInterface.ImageDownloadResult.Result;
 
 class DiskLRUCacher implements ImageSystemDiskCache {
 	private static final int MAX_PERMANENT_STORAGE_IMAGE_DIMENSIONS_CACHED = 25;
 
 	private long mMaximumCacheSizeInBytes = 50 * 1024 * 1024; // 50MB
-	private final DiskManager mDiskManager;
+	private final FileSystemManager mDiskManager;
 	private final DiskDatabaseHelper mDatabaseHelper;
 	private ImageDiskObserver mImageDiskObserver;
 	private final Map<String, Dimensions> mPermanentStorageMap = new LRUMap<String, Dimensions>(34, MAX_PERMANENT_STORAGE_IMAGE_DIMENSIONS_CACHED);
@@ -48,7 +49,7 @@ class DiskLRUCacher implements ImageSystemDiskCache {
 		 * 
 		 * It is highly recommended to leave the number of decode threads at one. Increasing this number too high will cause performance problems.
 		 */
-		mDiskManager = new DiskManager("img", appContext);
+		mDiskManager = new FileSystemManager("img", appContext);
 		mDatabaseHelper = new DiskDatabaseHelper(appContext, mDiskDatabaseHelperObserver);
 		mImageDiskObserver = imageDecodeObserver;
 	}
@@ -157,8 +158,16 @@ class DiskLRUCacher implements ImageSystemDiskCache {
 	}
 
 	@Override
-	public void downloadImageFromInputStream(String uri, InputStream inputStream) throws IOException {
-		mDiskManager.loadStreamToFile(inputStream, encode(uri));
+	public ImageDownloadResult downloadImageFromInputStream(String uri, InputStream inputStream) {
+		ImageDownloadResult result;
+		try {
+			mDiskManager.loadStreamToFile(inputStream, encode(uri));
+			result = new ImageDownloadResult(Result.SUCCESS);
+		} catch (IOException e) {
+			result = new ImageDownloadResult(Result.FAILURE, "Failed to download image to disk! IOException caught. Error message: " + e.getMessage());
+		}
+
+		return result;
 	}
 
 	@Override

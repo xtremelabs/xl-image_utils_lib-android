@@ -10,10 +10,53 @@ public class DiskCacheTests extends AndroidTestCase {
 	protected void setUp() throws Exception {
 		super.setUp();
 
-		mDiskCache = new DiskCache(getContext(), mImageDiskObserver);
+		mDiskCache = new DiskCache(getContext(), mImageDiskObserver) {
+		};
 	}
 	
-	
+	public void testDownloadImageFromInputStream() {
+		fail();
+	}
+
+	public void testIsCached() {
+		fail();
+	}
+
+	public void testGetSampleSize() {
+		fail();
+	}
+
+	public void testBumpOnDisk() {
+		fail();
+	}
+
+	public void testSetDiskCacheSize() {
+		fail();
+	}
+
+	public void testGetImageDimensions() {
+		fail();
+	}
+
+	public void testInvalidateUri() {
+		fail();
+	}
+
+	public void testGetBitmapSynchronouslyFromDisk() {
+		fail();
+	}
+
+	public void testCalculateAndSaveImageDetails() {
+		fail();
+	}
+
+	public void testGetDetailsPrioritizable() {
+		fail();
+	}
+
+	public void testGetDecodePrioritizable() {
+		fail();
+	}
 
 	private final ImageDiskObserver mImageDiskObserver = new ImageDiskObserver() {
 		@Override

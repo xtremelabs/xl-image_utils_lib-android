@@ -9,11 +9,15 @@ import android.content.Context;
 import android.graphics.Bitmap;
 
 import com.xtremelabs.imageutils.DiskLRUCacher.FileFormatException;
+import com.xtremelabs.imageutils.NetworkToDiskInterface.ImageDownloadResult.Result;
 
 class DiskCache implements ImageSystemDiskCache {
 
 	private final Context mContext;
 	private final ImageDiskObserver mImageDiskObserver;
+
+	private ImageSystemDatabase mImageSystemDatabase;
+	private FileSystemManager mFileSystemManager;
 
 	DiskCache(Context context, ImageDiskObserver imageDiskObserver) {
 		mContext = context;
@@ -21,9 +25,21 @@ class DiskCache implements ImageSystemDiskCache {
 	}
 	
 	@Override
-	public void downloadImageFromInputStream(String url, InputStream inputStream) throws IOException {
-		// TODO Auto-generated method stub
+	public ImageDownloadResult downloadImageFromInputStream(String uri, InputStream inputStream) {
+		ImageDownloadResult result;
 
+		mImageSystemDatabase.beginWrite(uri);
+		ImageEntry imageEntry = mImageSystemDatabase.getEntry(uri);
+		try {
+			mFileSystemManager.loadStreamToFile(inputStream, imageEntry.getFileName());
+			mImageSystemDatabase.endWrite(uri);
+			result = new ImageDownloadResult(Result.SUCCESS);
+		} catch (IOException e) {
+			mImageSystemDatabase.writeFailed(uri);
+			result = new ImageDownloadResult(Result.FAILURE, "Failed to download image to disk! IOException caught. Error message: " + e.getMessage());
+		}
+
+		return result;
 	}
 
 	@Override

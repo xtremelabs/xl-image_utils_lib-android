@@ -22,35 +22,35 @@ import android.test.AndroidTestCase;
 
 import com.xtremelabs.imageutils.testutils.OneKilobyteStream;
 
-public class DiskManagerTests extends AndroidTestCase {
-	private DiskManager mDiskManager;
+public class FileSystemManagerTests extends AndroidTestCase {
+	private FileSystemManager mFileSystemManager;
 
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 
-		mDiskManager = new DiskManager("testdir", getContext());
+		mFileSystemManager = new FileSystemManager("testdir", getContext());
 	}
 
 	public void testBasics() {
 		String file1 = "file1";
 		try {
-			mDiskManager.loadStreamToFile(new OneKilobyteStream(), file1);
+			mFileSystemManager.loadStreamToFile(new OneKilobyteStream(), file1);
 		} catch (IOException e) {
 			fail();
 		}
-		assertTrue(mDiskManager.isOnDisk(file1));
-		mDiskManager.deleteFile(file1);
-		assertFalse(mDiskManager.isOnDisk(file1));
+		assertTrue(mFileSystemManager.isOnDisk(file1));
+		mFileSystemManager.deleteFile(file1);
+		assertFalse(mFileSystemManager.isOnDisk(file1));
 
 		try {
-			mDiskManager.loadStreamToFile(new OneKilobyteStream(), file1);
+			mFileSystemManager.loadStreamToFile(new OneKilobyteStream(), file1);
 		} catch (IOException e) {
 			fail();
 		}
 
-		assertTrue(mDiskManager.isOnDisk(file1));
-		mDiskManager.clearDirectory();
-		assertFalse(mDiskManager.isOnDisk(file1));
+		assertTrue(mFileSystemManager.isOnDisk(file1));
+		mFileSystemManager.clearDirectory();
+		assertFalse(mFileSystemManager.isOnDisk(file1));
 	}
 }

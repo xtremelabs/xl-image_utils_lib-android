@@ -21,7 +21,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.test.ActivityInstrumentationTestCase2;
 import android.widget.ImageView;
 
-import com.xtremelabs.imageutils.DiskManagerAccessUtil;
+import com.xtremelabs.imageutils.FileSystemManagerAccessUtil;
 import com.xtremelabs.imageutils.ImageLoader;
 import com.xtremelabs.imageutils.ImageLoaderListener;
 import com.xtremelabs.imageutils.ImageReturnedFrom;
@@ -38,7 +38,7 @@ public class ImageLoaderTests extends ActivityInstrumentationTestCase2<MainActiv
 	private ImageReturnedFrom mImageReturnedFrom;
 	private boolean mComplete, mFailed;
 	private String mErrorMessage;
-	private DiskManagerAccessUtil mDiskManagerAccessUtil;
+	private FileSystemManagerAccessUtil mDiskManagerAccessUtil;
 
 	public ImageLoaderTests() {
 		super(MainActivity.class);
@@ -63,7 +63,7 @@ public class ImageLoaderTests extends ActivityInstrumentationTestCase2<MainActiv
 				public void run() {
 					ImageLoader imageLoader = ImageLoader.buildImageLoaderForActivity(getActivity());
 
-					mDiskManagerAccessUtil = new DiskManagerAccessUtil(getActivity().getApplicationContext());
+					mDiskManagerAccessUtil = new FileSystemManagerAccessUtil(getActivity().getApplicationContext());
 					mDiskManagerAccessUtil.clearDiskCache();
 
 					ImageView imageView = new ImageView(getActivity());
@@ -123,7 +123,7 @@ public class ImageLoaderTests extends ActivityInstrumentationTestCase2<MainActiv
 				public void run() {
 					ImageLoader imageLoader = ImageLoader.buildImageLoaderForActivity(getActivity());
 
-					mDiskManagerAccessUtil = new DiskManagerAccessUtil(getActivity().getApplicationContext());
+					mDiskManagerAccessUtil = new FileSystemManagerAccessUtil(getActivity().getApplicationContext());
 
 					mDiskManagerAccessUtil.clearDiskCache();
 

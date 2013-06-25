@@ -55,6 +55,10 @@ public abstract class Table<T> {
 		return db.query(getTableName(), getColumns(), null, null, null, null, null);
 	}
 
+	public Cursor selectFromTable(SQLiteDatabase db, String selection, String[] selectArgs) {
+		return db.query(getTableName(), getColumns(), selection, selectArgs, null, null, null);
+	}
+
 	public void insert(List<T> items, SQLiteDatabase db) {
 		for (T item : items) {
 			insert(item, db);
@@ -69,5 +73,9 @@ public abstract class Table<T> {
 	public void update(T item, String where, String[] whereArgs, SQLiteDatabase db) {
 		ContentValues values = toContentValues(item);
 		db.updateWithOnConflict(getTableName(), values, where, whereArgs, SQLiteDatabase.CONFLICT_REPLACE);
+	}
+
+	public void delete(SQLiteDatabase db, String whereClause, String[] whereArgs) {
+		db.delete(getTableName(), whereClause, whereArgs);
 	}
 }

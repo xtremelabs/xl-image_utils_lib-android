@@ -22,6 +22,8 @@ import java.io.InputStream;
 import android.util.Log;
 
 import com.xtremelabs.imageutils.NetworkRequestCreator.InputStreamListener;
+import com.xtremelabs.imageutils.NetworkToDiskInterface.ImageDownloadResult;
+import com.xtremelabs.imageutils.NetworkToDiskInterface.ImageDownloadResult.Result;
 
 class ImageDownloader implements ImageNetworkInterface {
 	@SuppressWarnings("unused")
@@ -92,11 +94,10 @@ class ImageDownloader implements ImageNetworkInterface {
 
 		private String loadInputStreamToDisk(InputStream inputStream) {
 			String errorMessage = null;
+			ImageDownloadResult result = null;
 			if (inputStream != null) {
 				try {
-					mNetworkToDiskInterface.downloadImageFromInputStream(mCacheRequest.getUri(), inputStream);
-				} catch (IOException e) {
-					errorMessage = "IOException when downloading image: " + mCacheRequest.getUri() + ", Exception type: " + e.getClass().getName() + ", Exception message: " + e.getMessage();
+					result = mNetworkToDiskInterface.downloadImageFromInputStream(mCacheRequest.getUri(), inputStream);
 				} catch (IllegalArgumentException e) {
 					errorMessage = "Failed to download image with error message: " + e.getMessage();
 				} catch (IllegalStateException e) {
@@ -116,6 +117,11 @@ class ImageDownloader implements ImageNetworkInterface {
 					}
 				}
 			}
+
+			if (result != null && result.getResult() == Result.FAILURE) {
+				errorMessage = "Error when downloading image: " + mCacheRequest.getUri() + " -- " + result.getErrorMessage();
+			}
+
 			return errorMessage;
 		}
 	}

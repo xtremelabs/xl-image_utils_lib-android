@@ -17,7 +17,6 @@
 package com.xtremelabs.imageutils;
 
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 
@@ -27,7 +26,8 @@ import com.xtremelabs.imageutils.DiskLRUCacher.FileFormatException;
 
 public class DiskCacheStub implements ImageSystemDiskCache {
 	@Override
-	public void downloadImageFromInputStream(String uri, InputStream inputStream) throws IOException {
+	public ImageDownloadResult downloadImageFromInputStream(String uri, InputStream inputStream) {
+		return null;
 	}
 
 	@Override
