@@ -1,5 +1,6 @@
 package com.xtremelabs.imageutils;
 
+import android.os.SystemClock;
 import android.test.AndroidTestCase;
 
 import com.xtremelabs.imageutils.ImageSystemDatabase.ImageSystemDatabaseObserver;
@@ -37,6 +38,20 @@ public class ImageSystemDatabaseTests extends AndroidTestCase {
 		assertNotNull(entry);
 		assertTrue(entry.onDisk);
 		assertFalse(entry.hasDetails());
+	}
+
+	public void testBump() {
+		mDatabase.beginWrite(TEST_URI_1);
+		mDatabase.endWrite(TEST_URI_1);
+
+		ImageEntry entry = mDatabase.getEntry(TEST_URI_1);
+		long lastAccessedTime = entry.lastAccessedTime;
+
+		SystemClock.sleep(10);
+
+		mDatabase.bump(TEST_URI_1);
+
+		assertTrue(lastAccessedTime != entry.lastAccessedTime);
 	}
 
 	public void testWriteFailed() {
@@ -78,6 +93,10 @@ public class ImageSystemDatabaseTests extends AndroidTestCase {
 
 		mDatabase.submitDetails(TEST_URI_3, new Dimensions(0, 0));
 
+		assertNotNull(mDatabase.getEntry(TEST_URI_1));
+		assertNotNull(mDatabase.getEntry(TEST_URI_2));
+		assertNotNull(mDatabase.getEntry(TEST_URI_3));
+
 		mDatabase.clear();
 
 		assertNull(mDatabase.getEntry(TEST_URI_1));
@@ -101,6 +120,8 @@ public class ImageSystemDatabaseTests extends AndroidTestCase {
 		assertFalse(entry.onDisk);
 		assertFalse(entry.hasDetails());
 		assertEquals(TEST_URI_1, entry.uri);
+
+		mDatabase.close();
 
 		ImageSystemDatabase database = new ImageSystemDatabase(mDatabaseObserver);
 		entry = database.getEntry(TEST_URI_1);
@@ -134,25 +155,30 @@ public class ImageSystemDatabaseTests extends AndroidTestCase {
 		fail();
 	}
 
-	public void testJournalingLruEvictions() {
-		fail();
-	}
-
 	public void testDetailsOnDatabaseRecovery() {
 		fail();
 	}
 
-	public void testNoEvictionsForIncompleteDownloads() {
+	public void testJournalingLruEvictions() {
+		// TODO on reboot make sure we have not exceeded file system size
 		fail();
+	}
+
+	public void testNoImageOnDiskTriggerDownload() {
+		fail();
+		// should probably be somewhere else
+	}
+
+	public void testNoLruEvictionsForIncompleteDownloads() {
+		fail();
+		// make sure things that have not finished writing are not considered for eviction
 	}
 
 	private final ImageSystemDatabaseObserver mDatabaseObserver = new ImageSystemDatabaseObserver() {
 		@Override
-		public void onDetailsRequired(String filename) {
-		}
+		public void onDetailsRequired(String filename) {}
 
 		@Override
-		public void onBadJournalEntry(String filename) {
-		}
+		public void onBadJournalEntry(String filename) {}
 	};
 }

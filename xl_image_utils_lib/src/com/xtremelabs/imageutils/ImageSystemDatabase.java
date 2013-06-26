@@ -14,7 +14,7 @@ import android.util.Log;
 import com.xtremelabs.imageutils.db.Database;
 import com.xtremelabs.imageutils.db.Table;
 
-class ImageSystemDatabase {
+class ImageSystemDatabase { // TODO should this be implementing an interface?
 	private final ImagesTable mImagesTable = ImagesTable.getInstance();
 	private final ImageSystemDatabaseObserver mObserver;
 	private Database mDatabase;
@@ -29,8 +29,8 @@ class ImageSystemDatabase {
 		tables.add(mImagesTable);
 
 		mDatabase = new Database(context, new SQLiteDatabase.CursorFactory() {
-			@SuppressWarnings("deprecation")
 			@Override
+			@SuppressWarnings("deprecation")
 			public Cursor newCursor(SQLiteDatabase db, SQLiteCursorDriver masterQuery, String editTable, SQLiteQuery query) {
 				return new SQLiteCursor(db, masterQuery, editTable, query);
 			}
@@ -43,6 +43,7 @@ class ImageSystemDatabase {
 	public void beginWrite(String uri) {
 		ImageEntry entry = new ImageEntry();
 		entry.uri = uri;
+		entry.lastAccessedTime = System.currentTimeMillis();
 		mImagesTable.insert(entry, mDatabase.getWritableDatabase());
 		mCache.putEntry(entry);
 	}
@@ -50,6 +51,11 @@ class ImageSystemDatabase {
 	public void endWrite(String uri) {
 		ImageEntry entry = mCache.getEntry(uri);
 		entry.onDisk = true;
+		mImagesTable.insert(entry, mDatabase.getWritableDatabase());
+	}
+
+	public void bump(String uri) {
+		ImageEntry entry = mCache.getEntry(uri);
 		entry.lastAccessedTime = System.currentTimeMillis();
 		mImagesTable.insert(entry, mDatabase.getWritableDatabase());
 	}
@@ -59,6 +65,10 @@ class ImageSystemDatabase {
 		String whereClause = ImagesTable.Columns.ID.getColumnName() + "=?";
 		String[] whereArgs = new String[] { Long.toString(entry.id) };
 		mImagesTable.delete(mDatabase.getWritableDatabase(), whereClause, whereArgs);
+	}
+
+	public void deleteEntry(String uri) {
+		// TODO Auto-generated method stub
 	}
 
 	ImageEntry getEntry(String uri) {
@@ -127,4 +137,5 @@ class ImageSystemDatabase {
 
 		void onDetailsRequired(String filename);
 	}
+
 }

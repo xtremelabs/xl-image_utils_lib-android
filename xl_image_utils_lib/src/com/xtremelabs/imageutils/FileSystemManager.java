@@ -134,6 +134,10 @@ class FileSystemManager {
 
 	public void deleteFile(String name) {
 		File file = getFile(name);
+		deleteFile(file);
+	}
+
+	public void deleteFile(File file) {
 		if (!file.isDirectory()) {
 			file.delete();
 		} else {

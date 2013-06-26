@@ -16,35 +16,12 @@
 
 package com.xtremelabs.imageutils;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
-import android.graphics.Point;
-import android.os.Build;
-import android.view.Display;
-import android.view.WindowManager;
+import android.util.DisplayMetrics;
 
 class DisplayUtility {
-	private volatile Dimensions displaySize;
-
-	@SuppressLint("NewApi")
-	@SuppressWarnings("deprecation")
 	public Dimensions getDisplaySize(Context applicationContext) {
-		if (displaySize == null) {
-			Display display = ((WindowManager) applicationContext.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
-
-			if (Build.VERSION.SDK_INT < 13) {
-				// These method calls are used before API level 13.
-				displaySize = new Dimensions(display.getWidth(), display.getHeight());
-			} else {
-				Point size = new Point();
-				display.getSize(size);
-				displaySize = new Dimensions(size.x, size.y);
-			}
-		}
-		return displaySize;
-	}
-
-	public void notifyConfigurationChanged() {
-		displaySize = null;
+		DisplayMetrics metrics = applicationContext.getResources().getDisplayMetrics();
+		return new Dimensions(metrics.widthPixels, metrics.heightPixels);
 	}
 }

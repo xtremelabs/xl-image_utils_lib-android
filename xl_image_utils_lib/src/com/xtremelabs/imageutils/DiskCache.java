@@ -1,29 +1,40 @@
 package com.xtremelabs.imageutils;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Map;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 
 import com.xtremelabs.imageutils.DiskLRUCacher.FileFormatException;
+import com.xtremelabs.imageutils.ImageSystemDatabase.ImageSystemDatabaseObserver;
 import com.xtremelabs.imageutils.NetworkToDiskInterface.ImageDownloadResult.Result;
 
 class DiskCache implements ImageSystemDiskCache {
+	private static final int MAX_PERMANENT_STORAGE_IMAGE_DIMENSIONS_CACHED = 25;
 
 	private final Context mContext;
 	private final ImageDiskObserver mImageDiskObserver;
+	private final Map<String, Dimensions> mPermanentStorageMap = new LRUMap<String, Dimensions>(34, MAX_PERMANENT_STORAGE_IMAGE_DIMENSIONS_CACHED);
 
 	private ImageSystemDatabase mImageSystemDatabase;
 	private FileSystemManager mFileSystemManager;
 
 	DiskCache(Context context, ImageDiskObserver imageDiskObserver) {
-		mContext = context;
+		mContext = context.getApplicationContext();
 		mImageDiskObserver = imageDiskObserver;
+		mFileSystemManager = new FileSystemManager("img", mContext);
+		mImageSystemDatabase = new ImageSystemDatabase(mImageSystemDatabaseObserver);
+		mImageSystemDatabase.init(mContext);
 	}
-	
+
 	@Override
 	public ImageDownloadResult downloadImageFromInputStream(String uri, InputStream inputStream) {
 		ImageDownloadResult result;
@@ -34,6 +45,7 @@ class DiskCache implements ImageSystemDiskCache {
 			mFileSystemManager.loadStreamToFile(inputStream, imageEntry.getFileName());
 			mImageSystemDatabase.endWrite(uri);
 			result = new ImageDownloadResult(Result.SUCCESS);
+
 		} catch (IOException e) {
 			mImageSystemDatabase.writeFailed(uri);
 			result = new ImageDownloadResult(Result.FAILURE, "Failed to download image to disk! IOException caught. Error message: " + e.getMessage());
@@ -44,20 +56,30 @@ class DiskCache implements ImageSystemDiskCache {
 
 	@Override
 	public boolean isCached(CacheRequest cacheRequest) {
-		// TODO Auto-generated method stub
-		return false;
+		boolean isCached;
+		String uri = cacheRequest.getUri();
+		if (cacheRequest.isFileSystemRequest()) {
+			isCached = mPermanentStorageMap.get(uri) != null;
+		} else {
+			ImageEntry entry = mImageSystemDatabase.getEntry(uri);
+			isCached = entry != null && entry.onDisk;
+		}
+
+		return isCached;
 	}
 
 	@Override
-	public int getSampleSize(CacheRequest imageRequest) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getSampleSize(CacheRequest cacheRequest) {
+		Dimensions dimensions = getImageDimensions(cacheRequest);
+		if (dimensions == null)
+			return -1;
+
+		return SampleSizeCalculationUtility.calculateSampleSize(cacheRequest, dimensions);
 	}
 
 	@Override
 	public void bumpOnDisk(String uri) {
-		// TODO Auto-generated method stub
-
+		mImageSystemDatabase.bump(uri);
 	}
 
 	@Override
@@ -68,38 +90,184 @@ class DiskCache implements ImageSystemDiskCache {
 
 	@Override
 	public Dimensions getImageDimensions(CacheRequest cacheRequest) {
-		// TODO Auto-generated method stub
-		return null;
+		String uri = cacheRequest.getUri();
+		Dimensions dimensions;
+		if (cacheRequest.isFileSystemRequest()) {
+			dimensions = mPermanentStorageMap.get(uri);
+		} else {
+			ImageEntry entry = mImageSystemDatabase.getEntry(uri);
+			dimensions = entry != null ? new Dimensions(entry.sizeX, entry.sizeY) : null;
+		}
+		return dimensions;
 	}
 
 	@Override
 	public void invalidateFileSystemUri(String uri) {
-		// TODO Auto-generated method stub
-
+		mPermanentStorageMap.remove(uri);
 	}
 
 	@Override
 	public Bitmap getBitmapSynchronouslyFromDisk(CacheRequest cacheRequest, DecodeSignature decodeSignature) throws FileNotFoundException, FileFormatException {
-		// TODO Auto-generated method stub
-		return null;
+		int sampleSize = decodeSignature.sampleSize;
+		Bitmap.Config bitmapConfig = decodeSignature.bitmapConfig;
+
+		File file = getFile(cacheRequest);
+		FileInputStream fileInputStream = new FileInputStream(file);
+
+		BitmapFactory.Options opts = new BitmapFactory.Options();
+		opts.inSampleSize = sampleSize;
+		opts.inPreferredConfig = bitmapConfig;
+
+		Bitmap bitmap = BitmapFactory.decodeStream(fileInputStream, null, opts);
+		if (fileInputStream != null) {
+			try {
+				fileInputStream.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		if (bitmap == null) {
+			file.delete();
+			throw new FileFormatException();
+		}
+		return bitmap;
 	}
 
 	@Override
 	public void calculateAndSaveImageDetails(CacheRequest cacheRequest) throws URISyntaxException, FileNotFoundException {
-		// TODO Auto-generated method stub
+		String uri = cacheRequest.getUri();
+		File file = getFile(cacheRequest);
 
+		Dimensions dimensions = getImageDimensionsFromDisk(file);
+
+		if (cacheRequest.isFileSystemRequest()) {
+			mPermanentStorageMap.put(uri, dimensions);
+		} else {
+			mImageSystemDatabase.submitDetails(uri, dimensions);
+			// TODO clear least used from cache?
+		}
+	}
+
+	private File getFile(CacheRequest cacheRequest) throws FileNotFoundException {
+		String uri = cacheRequest.getUri();
+		File file;
+		if (cacheRequest.isFileSystemRequest()) {
+			try {
+				file = new File(new URI(uri.replace(" ", "%20")).getPath());
+			} catch (URISyntaxException e) {
+				e.printStackTrace();
+				throw new FileNotFoundException();
+			}
+		} else {
+			ImageEntry entry = mImageSystemDatabase.getEntry(uri);
+			if (entry == null)
+				throw new FileNotFoundException();
+			file = mFileSystemManager.getFile(entry.getFileName());
+		}
+		return file;
+	}
+
+	private static Dimensions getImageDimensionsFromDisk(File file) throws FileNotFoundException {
+		FileInputStream fileInputStream = null;
+		try {
+			fileInputStream = new FileInputStream(file);
+			BitmapFactory.Options o = new BitmapFactory.Options();
+			o.inJustDecodeBounds = true;
+			BitmapFactory.decodeStream(fileInputStream, null, o);
+			return new Dimensions(o.outWidth, o.outHeight);
+
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			throw e;
+
+		} finally {
+			if (fileInputStream != null) {
+				try {
+					fileInputStream.close();
+				} catch (IOException e) {}
+			}
+		}
 	}
 
 	@Override
-	public Prioritizable getDetailsPrioritizable(CacheRequest imageRequest) {
-		// TODO Auto-generated method stub
-		return null;
+	public Prioritizable getDetailsPrioritizable(final CacheRequest cacheRequest) {
+		return new DefaultPrioritizable(cacheRequest, new Request<String>(cacheRequest.getUri())) {
+			@Override
+			public void execute() {
+				cacheImageDetails(cacheRequest);
+			}
+		};
+	}
+
+	void cacheImageDetails(CacheRequest cacheRequest) {
+		String uri = cacheRequest.getUri();
+		try {
+			calculateAndSaveImageDetails(cacheRequest);
+
+			mImageDiskObserver.onImageDetailsRetrieved(uri);
+		} catch (URISyntaxException e) {
+			mImageDiskObserver.onImageDetailsRequestFailed(uri, "URISyntaxException caught when attempting to retrieve image details. URI: " + uri);
+		} catch (FileNotFoundException e) {
+			mImageDiskObserver.onImageDetailsRequestFailed(uri, "Image file not found. URI: " + uri);
+		}
 	}
 
 	@Override
-	public Prioritizable getDecodePrioritizable(CacheRequest cacheRequest, DecodeSignature decodeSignature, ImageReturnedFrom imageReturnedFrom) {
-		// TODO Auto-generated method stub
-		return null;
+	public Prioritizable getDecodePrioritizable(final CacheRequest cacheRequest, final DecodeSignature decodeSignature, final ImageReturnedFrom imageReturnedFrom) {
+		return new DefaultPrioritizable(cacheRequest, new Request<DecodeSignature>(decodeSignature)) {
+			@Override
+			public void execute() {
+				boolean failed = false;
+				String errorMessage = null;
+				Bitmap bitmap = null;
+				try {
+					bitmap = getBitmapSynchronouslyFromDisk(cacheRequest, decodeSignature);
+
+				} catch (FileNotFoundException e) {
+					failed = true;
+					errorMessage = "FileNotFoundException -- Disk decode failed with error message: " + e.getMessage();
+
+				} catch (FileFormatException e) {
+					failed = true;
+					errorMessage = "FileFormatException -- Disk decode failed with error message: " + e.getMessage();
+				}
+
+				if (!failed) {
+					mImageDiskObserver.onImageDecoded(decodeSignature, bitmap, imageReturnedFrom);
+
+				} else if (cacheRequest.isFileSystemRequest()) {
+					mPermanentStorageMap.remove(decodeSignature.uri);
+					mImageDiskObserver.onImageDecodeFailed(decodeSignature, errorMessage);
+
+				} else {
+					try {
+						mFileSystemManager.deleteFile(getFile(cacheRequest));
+					} catch (FileNotFoundException e) {}
+					mImageSystemDatabase.deleteEntry(decodeSignature.uri);
+					mImageDiskObserver.onImageDecodeFailed(decodeSignature, errorMessage);
+				}
+				// TODO need to re-start entire process if image was supposed to be on disk but wasn't
+			}
+		};
+	}
+
+	private final ImageSystemDatabaseObserver mImageSystemDatabaseObserver = new ImageSystemDatabaseObserver() {
+
+		@Override
+		public void onDetailsRequired(String filename) {
+			cacheImageDetails(new CacheRequest(filename));
+			// TODO is this right?
+		}
+
+		@Override
+		public void onBadJournalEntry(String filename) {
+			mFileSystemManager.deleteFile(filename);
+		}
+	};
+
+	void clear() {
+		mImageSystemDatabase.clear();
+		mFileSystemManager.clearDirectory();
 	}
 
 }

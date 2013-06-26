@@ -174,10 +174,6 @@ public class ImageLoader implements AbstractImageLoader {
 		}
 	}
 
-	public void notifyConfigurationChanged() {
-		mDisplayUtility.notifyConfigurationChanged();
-	}
-
 	/**
 	 * The ImageLoader will default to the options provided here if no other options are provided.
 	 * 
