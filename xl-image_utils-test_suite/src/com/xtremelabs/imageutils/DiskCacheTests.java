@@ -6,7 +6,6 @@ import java.net.URL;
 
 import android.graphics.Bitmap;
 import android.graphics.Point;
-import android.os.AsyncTask;
 import android.test.AndroidTestCase;
 import android.test.MoreAsserts;
 import android.widget.ImageView;
@@ -56,8 +55,28 @@ public class DiskCacheTests extends AndroidTestCase {
 	}
 
 	public void testSetDiskCacheSize() {
-		fail();
-		// TODO how to test?
+		assertFalse(mDiskCache.isCached(CACHE_REQUEST));
+
+		downloadImage();
+		populateImageDetails();
+
+		assertTrue(mDiskCache.isCached(CACHE_REQUEST));
+
+		mDiskCache.setDiskCacheSize(1);
+
+		assertFalse(mDiskCache.isCached(CACHE_REQUEST));
+
+		downloadImage();
+		populateImageDetails();
+
+		assertFalse(mDiskCache.isCached(CACHE_REQUEST));
+
+		mDiskCache.setDiskCacheSize(1 * 1024 * 1024);
+
+		downloadImage();
+		populateImageDetails();
+
+		assertTrue(mDiskCache.isCached(CACHE_REQUEST));
 	}
 
 	public void testGetImageDimensions() {

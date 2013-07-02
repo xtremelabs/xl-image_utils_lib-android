@@ -85,8 +85,8 @@ class DiskCache implements ImageSystemDiskCache {
 
 	@Override
 	public void setDiskCacheSize(long sizeInBytes) {
-		// TODO Auto-generated method stub
-
+		mMaxCacheSize = sizeInBytes;
+		clearLRUFiles();
 	}
 
 	@Override

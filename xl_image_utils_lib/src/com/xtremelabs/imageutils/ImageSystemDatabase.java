@@ -126,8 +126,8 @@ class ImageSystemDatabase { // TODO should this be implementing an interface?
 
 	public ImageEntry removeLRU() {
 		String orderBy = Columns.LAST_ACCESSED_TIME + " ASC";
-		String selection = Columns.ON_DISK + "=?";
-		Cursor cursor = mImagesTable.selectFromTable(mDatabase.getReadableDatabase(), null, selection, new String[] { "1" }, null, null, orderBy, Integer.toString(0));
+		String selection = Columns.ON_DISK.getName() + "=?";
+		Cursor cursor = mImagesTable.selectFromTable(mDatabase.getReadableDatabase(), null, selection, new String[] { "1" }, null, null, orderBy, Integer.toString(1));
 
 		ImageEntry entry = null;
 		if (cursor.moveToFirst()) {
