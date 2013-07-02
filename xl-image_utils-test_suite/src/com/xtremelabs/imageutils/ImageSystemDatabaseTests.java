@@ -123,6 +123,10 @@ public class ImageSystemDatabaseTests extends AndroidTestCase {
 		mDatabase.submitDetails(TEST_URI_3, new Dimensions(0, 0), 100L);
 
 		assertEquals(300, mDatabase.getTotalFileSize());
+
+		mDatabase.submitDetails(TEST_URI_3, new Dimensions(0, 0), 200L);
+
+		assertEquals(400, mDatabase.getTotalFileSize());
 	}
 
 	public void testStartupDataRecovery() {
