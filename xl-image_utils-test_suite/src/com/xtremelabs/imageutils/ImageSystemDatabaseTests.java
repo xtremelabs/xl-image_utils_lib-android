@@ -16,7 +16,7 @@ public class ImageSystemDatabaseTests extends AndroidTestCase {
 		super.setUp();
 
 		mDatabase = new ImageSystemDatabase(mDatabaseObserver);
-		mDatabase.init(getContext());
+		mDatabase.init(mContext);
 		mDatabase.clear();
 	}
 
@@ -71,9 +71,13 @@ public class ImageSystemDatabaseTests extends AndroidTestCase {
 		int testSizeY = 10;
 		mDatabase.beginWrite(TEST_URI_1);
 		mDatabase.endWrite(TEST_URI_1);
-		mDatabase.submitDetails(TEST_URI_1, new Dimensions(testSizeX, testSizeY));
 
 		ImageEntry entry = mDatabase.getEntry(TEST_URI_1);
+		assertFalse(entry.hasDetails());
+
+		mDatabase.submitDetails(TEST_URI_1, new Dimensions(testSizeX, testSizeY), 100L);
+
+		entry = mDatabase.getEntry(TEST_URI_1);
 
 		assertNotNull(entry);
 		assertTrue(entry.onDisk);
@@ -91,7 +95,7 @@ public class ImageSystemDatabaseTests extends AndroidTestCase {
 		mDatabase.endWrite(TEST_URI_2);
 		mDatabase.endWrite(TEST_URI_3);
 
-		mDatabase.submitDetails(TEST_URI_3, new Dimensions(0, 0));
+		mDatabase.submitDetails(TEST_URI_3, new Dimensions(0, 0), 100L);
 
 		assertNotNull(mDatabase.getEntry(TEST_URI_1));
 		assertNotNull(mDatabase.getEntry(TEST_URI_2));
@@ -102,6 +106,23 @@ public class ImageSystemDatabaseTests extends AndroidTestCase {
 		assertNull(mDatabase.getEntry(TEST_URI_1));
 		assertNull(mDatabase.getEntry(TEST_URI_2));
 		assertNull(mDatabase.getEntry(TEST_URI_3));
+	}
+
+	public void testFileSize() {
+		mDatabase.beginWrite(TEST_URI_1);
+		mDatabase.beginWrite(TEST_URI_2);
+		mDatabase.beginWrite(TEST_URI_3);
+		mDatabase.endWrite(TEST_URI_1);
+		mDatabase.endWrite(TEST_URI_2);
+		mDatabase.endWrite(TEST_URI_3);
+
+		assertEquals(0, mDatabase.getTotalFileSize());
+
+		mDatabase.submitDetails(TEST_URI_1, new Dimensions(0, 0), 100L);
+		mDatabase.submitDetails(TEST_URI_2, new Dimensions(0, 0), 100L);
+		mDatabase.submitDetails(TEST_URI_3, new Dimensions(0, 0), 100L);
+
+		assertEquals(300, mDatabase.getTotalFileSize());
 	}
 
 	public void testStartupDataRecovery() {
@@ -135,12 +156,21 @@ public class ImageSystemDatabaseTests extends AndroidTestCase {
 
 		mDatabase.endWrite(TEST_URI_2);
 
+		ImageEntry entry1 = mDatabase.getEntry(TEST_URI_1);
+		ImageEntry entry2 = mDatabase.getEntry(TEST_URI_2);
+		ImageEntry entry3 = mDatabase.getEntry(TEST_URI_3);
+
+		assertNotNull(entry1);
+		assertNotNull(entry2);
+		assertNotNull(entry3);
+
 		mDatabase.close();
 
 		ImageSystemDatabase database = new ImageSystemDatabase(mDatabaseObserver);
-		ImageEntry entry1 = database.getEntry(TEST_URI_1);
-		ImageEntry entry2 = database.getEntry(TEST_URI_2);
-		ImageEntry entry3 = database.getEntry(TEST_URI_3);
+		database.init(mContext);
+		entry1 = database.getEntry(TEST_URI_1);
+		entry2 = database.getEntry(TEST_URI_2);
+		entry3 = database.getEntry(TEST_URI_3);
 
 		assertNull(entry1);
 		assertNotNull(entry2);
@@ -179,6 +209,7 @@ public class ImageSystemDatabaseTests extends AndroidTestCase {
 		public void onDetailsRequired(String filename) {}
 
 		@Override
-		public void onBadJournalEntry(String filename) {}
+		public void onBadJournalEntry(ImageEntry entry) {}
+
 	};
 }

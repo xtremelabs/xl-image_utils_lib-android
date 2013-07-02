@@ -55,24 +55,28 @@ public abstract class Table<T> {
 		return db.query(getTableName(), getColumns(), null, null, null, null, null);
 	}
 
+	public Cursor selectFromTable(SQLiteDatabase db, String[] columns, String selection, String[] selectionArgs, String groupBy, String having, String orderBy, String limit) {
+		return db.query(getTableName(), columns, selection, selectionArgs, groupBy, having, orderBy, limit);
+	}
+
 	public Cursor selectFromTable(SQLiteDatabase db, String selection, String[] selectArgs) {
 		return db.query(getTableName(), getColumns(), selection, selectArgs, null, null, null);
 	}
 
-	public void insert(List<T> items, SQLiteDatabase db) {
+	public void insert(SQLiteDatabase db, List<T> items) {
 		for (T item : items) {
-			insert(item, db);
+			insert(db, item);
 		}
 	}
 
-	public void insert(T item, SQLiteDatabase db) {
+	public void insert(SQLiteDatabase db, T item) {
 		ContentValues values = toContentValues(item);
-		db.insertWithOnConflict(getTableName(), null, values, SQLiteDatabase.CONFLICT_REPLACE);
+		db.insert(getTableName(), null, values);
 	}
 
-	public void update(T item, String where, String[] whereArgs, SQLiteDatabase db) {
+	public void update(SQLiteDatabase db, T item, String where, String[] whereArgs) {
 		ContentValues values = toContentValues(item);
-		db.updateWithOnConflict(getTableName(), values, where, whereArgs, SQLiteDatabase.CONFLICT_REPLACE);
+		db.update(getTableName(), values, where, whereArgs);
 	}
 
 	public void delete(SQLiteDatabase db, String whereClause, String[] whereArgs) {

@@ -26,6 +26,7 @@ class DiskCache implements ImageSystemDiskCache {
 
 	private ImageSystemDatabase mImageSystemDatabase;
 	private FileSystemManager mFileSystemManager;
+	private long mMaxCacheSize = 50 * 1024 * 1024;
 
 	DiskCache(Context context, ImageDiskObserver imageDiskObserver) {
 		mContext = context.getApplicationContext();
@@ -143,8 +144,15 @@ class DiskCache implements ImageSystemDiskCache {
 		if (cacheRequest.isFileSystemRequest()) {
 			mPermanentStorageMap.put(uri, dimensions);
 		} else {
-			mImageSystemDatabase.submitDetails(uri, dimensions);
-			// TODO clear least used from cache?
+			mImageSystemDatabase.submitDetails(uri, dimensions, file.length());
+			clearLRUFiles();
+		}
+	}
+
+	private void clearLRUFiles() {
+		while (mImageSystemDatabase.getTotalFileSize() > mMaxCacheSize) {
+			ImageEntry entry = mImageSystemDatabase.removeLRU();
+			mFileSystemManager.deleteFile(entry.getFileName());
 		}
 	}
 
@@ -256,12 +264,11 @@ class DiskCache implements ImageSystemDiskCache {
 		@Override
 		public void onDetailsRequired(String filename) {
 			cacheImageDetails(new CacheRequest(filename));
-			// TODO is this right?
 		}
 
 		@Override
-		public void onBadJournalEntry(String filename) {
-			mFileSystemManager.deleteFile(filename);
+		public void onBadJournalEntry(ImageEntry entry) {
+			mFileSystemManager.deleteFile(entry.getFileName());
 		}
 	};
 
