@@ -2,6 +2,7 @@ package com.xtremelabs.imageutils;
 
 import android.os.SystemClock;
 import android.test.AndroidTestCase;
+import android.test.MoreAsserts;
 
 import com.xtremelabs.imageutils.ImageSystemDatabase.ImageSystemDatabaseObserver;
 
@@ -17,7 +18,12 @@ public class ImageSystemDatabaseTests extends AndroidTestCase {
 
 		mDatabase = new ImageSystemDatabase(mDatabaseObserver);
 		mDatabase.init(mContext);
+	}
+
+	@Override
+	protected void tearDown() throws Exception {
 		mDatabase.clear();
+		super.tearDown();
 	}
 
 	public void testBeginWrite() {
@@ -51,7 +57,7 @@ public class ImageSystemDatabaseTests extends AndroidTestCase {
 
 		mDatabase.bump(TEST_URI_1);
 
-		assertTrue(lastAccessedTime != entry.lastAccessedTime);
+		MoreAsserts.assertNotEqual(lastAccessedTime, entry.lastAccessedTime);
 	}
 
 	public void testWriteFailed() {
@@ -129,12 +135,49 @@ public class ImageSystemDatabaseTests extends AndroidTestCase {
 		assertEquals(400, mDatabase.getTotalFileSize());
 	}
 
-	public void testStartupDataRecovery() {
+	public void testNoImageOnDiskTriggerDownload() {
 		fail();
+		// should probably be somewhere else
 	}
 
 	public void testStartupDataRecoveryOrdering() {
-		fail();
+		mDatabase.beginWrite(TEST_URI_1);
+		mDatabase.beginWrite(TEST_URI_2);
+		mDatabase.beginWrite(TEST_URI_3);
+
+		mDatabase.endWrite(TEST_URI_1);
+		mDatabase.endWrite(TEST_URI_2);
+		mDatabase.endWrite(TEST_URI_3);
+
+		mDatabase.close();
+
+		mDatabase = new ImageSystemDatabase(mDatabaseObserver);
+		mDatabase.init(mContext);
+
+		assertEquals(mDatabase.removeLRU().uri, TEST_URI_1);
+		assertEquals(mDatabase.removeLRU().uri, TEST_URI_2);
+		assertEquals(mDatabase.removeLRU().uri, TEST_URI_3);
+		assertNull(mDatabase.removeLRU());
+
+		mDatabase.beginWrite(TEST_URI_1);
+		mDatabase.beginWrite(TEST_URI_2);
+		mDatabase.beginWrite(TEST_URI_3);
+
+		mDatabase.endWrite(TEST_URI_1);
+		mDatabase.endWrite(TEST_URI_2);
+		mDatabase.endWrite(TEST_URI_3);
+
+		mDatabase.bump(TEST_URI_1);
+
+		mDatabase.close();
+
+		mDatabase = new ImageSystemDatabase(mDatabaseObserver);
+		mDatabase.init(mContext);
+
+		assertEquals(mDatabase.removeLRU().uri, TEST_URI_2);
+		assertEquals(mDatabase.removeLRU().uri, TEST_URI_3);
+		assertEquals(mDatabase.removeLRU().uri, TEST_URI_1);
+		assertNull(mDatabase.removeLRU());
 	}
 
 	public void testJournalingEvictionWithNoWrite() {
@@ -151,6 +194,10 @@ public class ImageSystemDatabaseTests extends AndroidTestCase {
 		ImageSystemDatabase database = new ImageSystemDatabase(mDatabaseObserver);
 		entry = database.getEntry(TEST_URI_1);
 		assertNull(entry);
+	}
+
+	public void testJournalingData() {
+		fail(); // TODO make sure that data written is same as data read after re-start (seen it fail)
 	}
 
 	public void testJournalingEvictionsWithNoWrite() {
@@ -181,31 +228,47 @@ public class ImageSystemDatabaseTests extends AndroidTestCase {
 		assertNull(entry3);
 	}
 
-	public void testJournalingWithDetailsRequest() {
-		fail();
-	}
+	public void testRemoveLRU() {
+		mDatabase.beginWrite(TEST_URI_1);
+		mDatabase.beginWrite(TEST_URI_2);
+		mDatabase.beginWrite(TEST_URI_3);
 
-	public void testJournalingWithDetailsRequests() {
-		fail();
-	}
+		mDatabase.endWrite(TEST_URI_1);
+		mDatabase.endWrite(TEST_URI_2);
+		mDatabase.endWrite(TEST_URI_3);
 
-	public void testDetailsOnDatabaseRecovery() {
-		fail();
-	}
+		assertEquals(mDatabase.removeLRU().uri, TEST_URI_1);
+		assertEquals(mDatabase.removeLRU().uri, TEST_URI_2);
+		assertEquals(mDatabase.removeLRU().uri, TEST_URI_3);
+		assertNull(mDatabase.removeLRU());
 
-	public void testJournalingLruEvictions() {
-		// TODO on reboot make sure we have not exceeded file system size
-		fail();
-	}
+		mDatabase.beginWrite(TEST_URI_1);
+		mDatabase.beginWrite(TEST_URI_2);
+		mDatabase.beginWrite(TEST_URI_3);
 
-	public void testNoImageOnDiskTriggerDownload() {
-		fail();
-		// should probably be somewhere else
+		mDatabase.endWrite(TEST_URI_1);
+		mDatabase.endWrite(TEST_URI_2);
+		mDatabase.endWrite(TEST_URI_3);
+
+		mDatabase.bump(TEST_URI_1);
+
+		assertEquals(mDatabase.removeLRU().uri, TEST_URI_2);
+		assertEquals(mDatabase.removeLRU().uri, TEST_URI_3);
+		assertEquals(mDatabase.removeLRU().uri, TEST_URI_1);
+		assertNull(mDatabase.removeLRU());
 	}
 
 	public void testNoLruEvictionsForIncompleteDownloads() {
-		fail();
-		// make sure things that have not finished writing are not considered for eviction
+		mDatabase.beginWrite(TEST_URI_1);
+		mDatabase.beginWrite(TEST_URI_2);
+		mDatabase.beginWrite(TEST_URI_3);
+
+		mDatabase.endWrite(TEST_URI_2);
+		mDatabase.endWrite(TEST_URI_3);
+
+		assertEquals(mDatabase.removeLRU().uri, TEST_URI_2);
+		assertEquals(mDatabase.removeLRU().uri, TEST_URI_3);
+		assertNull(mDatabase.removeLRU());
 	}
 
 	private final ImageSystemDatabaseObserver mDatabaseObserver = new ImageSystemDatabaseObserver() {
@@ -214,6 +277,5 @@ public class ImageSystemDatabaseTests extends AndroidTestCase {
 
 		@Override
 		public void onBadJournalEntry(ImageEntry entry) {}
-
 	};
 }

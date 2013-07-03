@@ -30,6 +30,12 @@ public class DiskCacheTests extends AndroidTestCase {
 		if (mDiskCache == null)
 			mDiskCache = new DiskCache(getContext(), mImageDiskObserver);
 
+		mDiskCache.init();
+	}
+
+	@Override
+	protected void tearDown() throws Exception {
+		super.tearDown();
 		mDiskCache.clear();
 	}
 
@@ -43,15 +49,6 @@ public class DiskCacheTests extends AndroidTestCase {
 		downloadImage();
 
 		assertTrue(mDiskCache.isCached(CACHE_REQUEST));
-	}
-
-	public void testGetSampleSize() {
-		assertEquals(-1, mDiskCache.getSampleSize(CACHE_REQUEST));
-
-		downloadImage();
-		populateImageDetails();
-
-		MoreAsserts.assertNotEqual(-1, mDiskCache.getSampleSize(CACHE_REQUEST));
 	}
 
 	public void testSetDiskCacheSize() {
@@ -90,7 +87,45 @@ public class DiskCacheTests extends AndroidTestCase {
 
 	public void testInvalidateUri() {
 		fail();
-		// TODO how to test this?
+	}
+
+	public void testJournalingLruEvictions() {
+		assertFalse(mDiskCache.isCached(CACHE_REQUEST));
+
+		downloadImage();
+		populateImageDetails();
+
+		assertTrue(mDiskCache.isCached(CACHE_REQUEST));
+
+		mDiskCache = new DiskCache(mContext, mImageDiskObserver);
+		mDiskCache.setDiskCacheSizeWithoutClearing(1);
+		mDiskCache.init();
+
+		assertFalse(mDiskCache.isCached(CACHE_REQUEST));
+	}
+
+	public void testGetSampleSize() {
+		assertEquals(-1, mDiskCache.getSampleSize(CACHE_REQUEST));
+
+		downloadImage();
+		populateImageDetails();
+
+		MoreAsserts.assertNotEqual(-1, mDiskCache.getSampleSize(CACHE_REQUEST));
+	}
+
+	public void testGetSampleSizeWithNoDetailsSaved() {
+		assertFalse(mDiskCache.isCached(CACHE_REQUEST));
+
+		downloadImage();
+
+		Options options = new Options();
+		options.heightBounds = 300;
+		options.widthBounds = 200;
+		options.scalingPreference = ScalingPreference.MATCH_TO_SMALLER_DIMENSION;
+		CacheRequest cacheRequest = new CacheRequest(IMAGE_URL, getScalingInfo(null, options));
+		assertEquals(2, mDiskCache.getSampleSize(cacheRequest));
+
+		fail(); // TODO read comment in getSampleSize
 	}
 
 	public void testGetBitmapSynchronouslyFromDisk() throws FileNotFoundException, FileFormatException {

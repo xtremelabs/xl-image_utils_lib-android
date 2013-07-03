@@ -33,7 +33,11 @@ class DiskCache implements ImageSystemDiskCache {
 		mImageDiskObserver = imageDiskObserver;
 		mFileSystemManager = new FileSystemManager("img", mContext);
 		mImageSystemDatabase = new ImageSystemDatabase(mImageSystemDatabaseObserver);
+	}
+
+	void init() {
 		mImageSystemDatabase.init(mContext);
+		clearLRUFiles();
 	}
 
 	@Override
@@ -72,10 +76,19 @@ class DiskCache implements ImageSystemDiskCache {
 	@Override
 	public int getSampleSize(CacheRequest cacheRequest) {
 		Dimensions dimensions = getImageDimensions(cacheRequest);
-		if (dimensions == null)
-			return -1;
+		if (dimensions == null) {
+			cacheImageDetails(cacheRequest); // FIXME needs to be moved somewhere else (this method is called from UI thread)
+			dimensions = getImageDimensions(cacheRequest);
+		}
 
-		return SampleSizeCalculationUtility.calculateSampleSize(cacheRequest, dimensions);
+		int sampleSize;
+		if (dimensions != null) {
+			sampleSize = SampleSizeCalculationUtility.calculateSampleSize(cacheRequest, dimensions);
+		} else {
+			sampleSize = -1;
+		}
+
+		return sampleSize;
 	}
 
 	@Override
@@ -97,13 +110,14 @@ class DiskCache implements ImageSystemDiskCache {
 			dimensions = mPermanentStorageMap.get(uri);
 		} else {
 			ImageEntry entry = mImageSystemDatabase.getEntry(uri);
-			dimensions = entry != null ? new Dimensions(entry.sizeX, entry.sizeY) : null;
+			dimensions = entry != null && entry.hasDetails() ? new Dimensions(entry.sizeX, entry.sizeY) : null;
 		}
 		return dimensions;
 	}
 
 	@Override
 	public void invalidateFileSystemUri(String uri) {
+		// TODO WATCH OUT FOR SYNCHRONIZATION ISSUES, probably should go through same flow that for 2 identical requests
 		mPermanentStorageMap.remove(uri);
 	}
 
@@ -211,8 +225,8 @@ class DiskCache implements ImageSystemDiskCache {
 		String uri = cacheRequest.getUri();
 		try {
 			calculateAndSaveImageDetails(cacheRequest);
-
 			mImageDiskObserver.onImageDetailsRetrieved(uri);
+
 		} catch (URISyntaxException e) {
 			mImageDiskObserver.onImageDetailsRequestFailed(uri, "URISyntaxException caught when attempting to retrieve image details. URI: " + uri);
 		} catch (FileNotFoundException e) {
@@ -272,9 +286,15 @@ class DiskCache implements ImageSystemDiskCache {
 		}
 	};
 
+	/** ALL THE METHODS BELOW ARE FOR TESTING PURPOSES ONLY!!!! */
+
 	void clear() {
 		mImageSystemDatabase.clear();
 		mFileSystemManager.clearDirectory();
+	}
+
+	void setDiskCacheSizeWithoutClearing(long bytes) {
+		mMaxCacheSize = bytes;
 	}
 
 }

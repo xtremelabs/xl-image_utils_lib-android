@@ -62,7 +62,7 @@ class ImagesTable extends Table<ImageEntry> {
 
 	@Override
 	protected String getColumnsForCreation() {
-		String columns = COLUMNS[0] + " INTEGER PRIMARY KEY AUTOINCREMENT, " + COLUMNS[1] + " TEXT, " + COLUMNS[2] + " INTEGER, " + COLUMNS[3] + " INTEGER, " + COLUMNS[4] + " INTEGER, " + COLUMNS[5]
+		String columns = COLUMNS[0] + " INTEGER PRIMARY KEY, " + COLUMNS[1] + " TEXT, " + COLUMNS[2] + " INTEGER, " + COLUMNS[3] + " INTEGER, " + COLUMNS[4] + " INTEGER, " + COLUMNS[5]
 				+ " INTEGER, " + COLUMNS[6] + " INTEGER, " + COLUMNS[7] + " INTEGER, ";
 		return columns;
 	}
@@ -100,9 +100,9 @@ class ImagesTable extends Table<ImageEntry> {
 		ImageEntry entry = new ImageEntry();
 		entry.id = cursor.getLong(0);
 		entry.uri = cursor.getString(1);
-		entry.creationTime = cursor.getLong(2);
-		entry.lastAccessedTime = cursor.getLong(3);
-		entry.onDisk = cursor.getInt(4) == 1;
+		entry.onDisk = cursor.getInt(2) == 1;
+		entry.creationTime = cursor.getLong(3);
+		entry.lastAccessedTime = cursor.getLong(4);
 		entry.sizeX = cursor.getInt(5);
 		entry.sizeY = cursor.getInt(6);
 		entry.fileSize = cursor.getLong(7);

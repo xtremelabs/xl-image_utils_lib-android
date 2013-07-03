@@ -38,7 +38,7 @@ class ImageSystemDatabase { // TODO should this be implementing an interface?
 		mCache.putEntry(entry);
 	}
 
-	public void endWrite(String uri) {
+	public void endWrite(String uri) { // TODO what happens if try to endWrite with corresponding entry in cache?
 		ImageEntry entry = mCache.getEntry(uri);
 		entry.onDisk = true;
 		mImagesTable.insert(mDatabase.getWritableDatabase(), entry);
@@ -67,7 +67,9 @@ class ImageSystemDatabase { // TODO should this be implementing an interface?
 		String[] columns = new String[] { "SUM(" + Columns.FILE_SIZE.getName() + ")" };
 		Cursor cursor = mImagesTable.selectFromTable(mDatabase.getReadableDatabase(), columns, null, null, null, null, null, null);
 		cursor.moveToFirst();
-		return cursor.getLong(0);
+		long total = cursor.getLong(0);
+		cursor.close();
+		return total;
 	}
 
 	void clear() {
@@ -103,6 +105,7 @@ class ImageSystemDatabase { // TODO should this be implementing an interface?
 			deleteEntry(entry.uri);
 			mObserver.onBadJournalEntry(entry);
 		}
+		cursor.close();
 	}
 
 	private void deleteRow(String uri) {
