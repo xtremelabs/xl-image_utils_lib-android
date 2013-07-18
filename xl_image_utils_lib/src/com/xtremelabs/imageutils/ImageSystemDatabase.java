@@ -33,12 +33,11 @@ class ImageSystemDatabase { // TODO should this be implementing an interface?
 	public void beginWrite(String uri) {
 		ImageEntry entry = new ImageEntry();
 		entry.uri = uri;
-		entry.lastAccessedTime = System.currentTimeMillis();
-		mImagesTable.insert(mDatabase.getWritableDatabase(), entry);
+		entry.id = mImagesTable.insert(mDatabase.getWritableDatabase(), entry);
 		mCache.putEntry(entry);
 	}
 
-	public void endWrite(String uri) { // TODO what happens if try to endWrite with corresponding entry in cache?
+	public void endWrite(String uri) {
 		ImageEntry entry = mCache.getEntry(uri);
 		entry.onDisk = true;
 		mImagesTable.insert(mDatabase.getWritableDatabase(), entry);

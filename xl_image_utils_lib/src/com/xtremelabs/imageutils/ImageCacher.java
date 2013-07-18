@@ -80,7 +80,7 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 			boolean isCached = mDiskCache.isCached(cacheRequest);
 			if (isCached && sampleSize != -1) {
 				Bitmap bitmap;
-				DecodeSignature decodeSignature = new DecodeSignature(uri, sampleSize, cacheRequest.getOptions().preferedConfig);
+				DecodeSignature decodeSignature = new DecodeSignature(uri, sampleSize, cacheRequest.getOptions().preferredConfig);
 				bitmap = mMemoryCache.getBitmap(decodeSignature);
 				if (bitmap != null)
 					return new ImageResponse(bitmap, ImageReturnedFrom.MEMORY, ImageResponseStatus.SUCCESS);
@@ -118,7 +118,7 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 
 		try {
 			if (isCached && sampleSize != -1) {
-				DecodeSignature decodeSignature = new DecodeSignature(uri, sampleSize, cacheRequest.getOptions().preferedConfig);
+				DecodeSignature decodeSignature = new DecodeSignature(uri, sampleSize, cacheRequest.getOptions().preferredConfig);
 				Bitmap bitmap;
 				if ((bitmap = mMemoryCache.getBitmap(decodeSignature)) != null) {
 					return new ImageResponse(bitmap, ImageReturnedFrom.MEMORY, ImageResponseStatus.SUCCESS);
@@ -129,7 +129,7 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 				mDiskCache.calculateAndSaveImageDetails(cacheRequest);
 				sampleSize = getSampleSize(cacheRequest);
 				if (sampleSize != -1) {
-					DecodeSignature decodeSignature = new DecodeSignature(uri, sampleSize, cacheRequest.getOptions().preferedConfig);
+					DecodeSignature decodeSignature = new DecodeSignature(uri, sampleSize, cacheRequest.getOptions().preferredConfig);
 					return getBitmapSynchronouslyFromDisk(cacheRequest, decodeSignature);
 				}
 			}
@@ -342,14 +342,14 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 					return null;
 				}
 
-				DecodeSignature decodeSignature = new DecodeSignature(cacheRequest.getUri(), sampleSize, cacheRequest.getOptions().preferedConfig);
+				DecodeSignature decodeSignature = new DecodeSignature(cacheRequest.getUri(), sampleSize, cacheRequest.getOptions().preferredConfig);
 				Bitmap bitmap;
 				if ((bitmap = mMemoryCache.getBitmap(decodeSignature)) != null) {
 					imageCacherListener.onImageAvailable(new ImageResponse(bitmap, ImageReturnedFrom.DISK, ImageResponseStatus.SUCCESS));
 				} else {
 					decodeBitmapFromDisk(cacheRequest, decodeSignature, imageCacherListener);
 				}
-			} else if (cacheRequest.isFileSystemRequest()) {
+			} else if (cacheRequest.isFileSystemRequest() || isCached) {
 				retrieveImageDetails(cacheRequest, imageCacherListener);
 			} else {
 				downloadImageFromNetwork(cacheRequest, imageCacherListener);

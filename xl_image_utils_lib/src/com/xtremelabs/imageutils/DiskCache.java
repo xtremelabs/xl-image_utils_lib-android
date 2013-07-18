@@ -77,18 +77,10 @@ class DiskCache implements ImageSystemDiskCache {
 	public int getSampleSize(CacheRequest cacheRequest) {
 		Dimensions dimensions = getImageDimensions(cacheRequest);
 		if (dimensions == null) {
-			cacheImageDetails(cacheRequest); // FIXME needs to be moved somewhere else (this method is called from UI thread)
-			dimensions = getImageDimensions(cacheRequest);
+			return -1;
 		}
 
-		int sampleSize;
-		if (dimensions != null) {
-			sampleSize = SampleSizeCalculationUtility.calculateSampleSize(cacheRequest, dimensions);
-		} else {
-			sampleSize = -1;
-		}
-
-		return sampleSize;
+		return SampleSizeCalculationUtility.calculateSampleSize(cacheRequest, dimensions);
 	}
 
 	@Override

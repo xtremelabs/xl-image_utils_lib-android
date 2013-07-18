@@ -69,17 +69,26 @@ public abstract class Table<T> {
 		}
 	}
 
-	public void insert(SQLiteDatabase db, T item) {
+	/**
+	 * {@link SQLiteDatabase#insert(String, String, ContentValues)}
+	 */
+	public long insert(SQLiteDatabase db, T item) {
 		ContentValues values = toContentValues(item);
-		db.insert(getTableName(), null, values);
+		return db.insert(getTableName(), null, values);
 	}
 
-	public void update(SQLiteDatabase db, T item, String where, String[] whereArgs) {
+	/**
+	 * {@link SQLiteDatabase#update(String, ContentValues, String, String[])}
+	 */
+	public int update(SQLiteDatabase db, T item, String where, String[] whereArgs) {
 		ContentValues values = toContentValues(item);
-		db.update(getTableName(), values, where, whereArgs);
+		return db.update(getTableName(), values, where, whereArgs);
 	}
 
-	public void delete(SQLiteDatabase db, String whereClause, String[] whereArgs) {
-		db.delete(getTableName(), whereClause, whereArgs);
+	/**
+	 * {@link SQLiteDatabase#delete(String, String, String[])}
+	 */
+	public int delete(SQLiteDatabase db, String whereClause, String[] whereArgs) {
+		return db.delete(getTableName(), whereClause, whereArgs);
 	}
 }

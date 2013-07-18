@@ -3,6 +3,7 @@ package com.xtremelabs.imageutils;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.provider.BaseColumns;
 
 import com.xtremelabs.imageutils.db.Table;
 
@@ -12,42 +13,37 @@ class ImagesTable extends Table<ImageEntry> {
 
 	// must remain in same order as Columns enum
 	private static final String[] COLUMNS = {
-		"_id",
+		BaseColumns._ID,
 		"uri",
 		"on_disk",
 		"creation_time",
 		"last_accessed_time",
 		"size_x",
 		"size_y",
-		"fileSize" };
+		"fileSize",
+		"expiry"};
 
 	enum Columns {
-		ID(0),
-		URI(1),
-		ON_DISK(2),
-		CREATION_TIME(3),
-		LAST_ACCESSED_TIME(4),
-		SIZE_X(5),
-		SIZE_Y(6),
-		FILE_SIZE(7);
-
-		private final int mIndex;
-
-		private Columns(int index) {
-			mIndex = index;
-		}
+		ID,
+		URI,
+		ON_DISK,
+		CREATION_TIME,
+		LAST_ACCESSED_TIME,
+		SIZE_X,
+		SIZE_Y,
+		FILE_SIZE,
+		EXPIRY;
 
 		String getName() {
-			return COLUMNS[mIndex];
+			int index = ordinal();
+			return COLUMNS[index];
 		}
 	}
 
-	private static class InstanceHolder {
-		private static ImagesTable sInstance = new ImagesTable();
-	}
+	private static final ImagesTable sInstance = new ImagesTable();
 
 	static ImagesTable getInstance() {
-		return InstanceHolder.sInstance;
+		return sInstance;
 	}
 
 	@Override
@@ -62,8 +58,16 @@ class ImagesTable extends Table<ImageEntry> {
 
 	@Override
 	protected String getColumnsForCreation() {
-		String columns = COLUMNS[0] + " INTEGER PRIMARY KEY, " + COLUMNS[1] + " TEXT, " + COLUMNS[2] + " INTEGER, " + COLUMNS[3] + " INTEGER, " + COLUMNS[4] + " INTEGER, " + COLUMNS[5]
-				+ " INTEGER, " + COLUMNS[6] + " INTEGER, " + COLUMNS[7] + " INTEGER, ";
+		String columns =
+				COLUMNS[0] + " INTEGER PRIMARY KEY, " +
+				COLUMNS[1] + " TEXT, " +
+				COLUMNS[2] + " INTEGER, " +
+				COLUMNS[3] + " INTEGER, " +
+				COLUMNS[4] + " INTEGER, " +
+				COLUMNS[5] + " INTEGER, " +
+				COLUMNS[6] + " INTEGER, " +
+				COLUMNS[7] + " INTEGER, " +
+				COLUMNS[8] + " INTEGER, ";
 		return columns;
 	}
 
@@ -83,6 +87,7 @@ class ImagesTable extends Table<ImageEntry> {
 		contentValues.put(COLUMNS[5], item.sizeX);
 		contentValues.put(COLUMNS[6], item.sizeY);
 		contentValues.put(COLUMNS[7], item.fileSize);
+		contentValues.put(COLUMNS[8], item.expiry);
 		return contentValues;
 	}
 
@@ -106,6 +111,8 @@ class ImagesTable extends Table<ImageEntry> {
 		entry.sizeX = cursor.getInt(5);
 		entry.sizeY = cursor.getInt(6);
 		entry.fileSize = cursor.getLong(7);
+		entry.expiry = cursor.getLong(8);
 		return entry;
 	}
+
 }

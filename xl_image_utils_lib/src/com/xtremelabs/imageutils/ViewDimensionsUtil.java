@@ -17,15 +17,15 @@
 package com.xtremelabs.imageutils;
 
 import android.graphics.Point;
-import android.view.ViewGroup;
+import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.ImageView;
 
 class ViewDimensionsUtil {
 	public static Point getImageViewDimensions(ImageView imageView) {
 		Point dimensions = new Point();
-		dimensions.x = getDimensions(imageView, true);
-		dimensions.y = getDimensions(imageView, false);
+		dimensions.x = getDimension(imageView, true);
+		dimensions.y = getDimension(imageView, false);
 		if (dimensions.x <= 0) {
 			dimensions.x = -1;
 		}
@@ -35,41 +35,25 @@ class ViewDimensionsUtil {
 		return dimensions;
 	}
 
-	private static int getDimensions(ImageView imageView, boolean isWidth) {
-		LayoutParams params = imageView.getLayoutParams();
-		if (params == null) {
-			return -1;
-		}
-		int length = isWidth ? params.width : params.height;
-		if (length == LayoutParams.WRAP_CONTENT) {
-			return -1;
-		} else if (length == LayoutParams.MATCH_PARENT) {
-			try {
-				return getParentDimensions((ViewGroup) imageView.getParent(), isWidth);
-			} catch (ClassCastException e) {
-				return -1;
-			}
-		} else {
-			return length;
-		}
-	}
-
-	private static int getParentDimensions(ViewGroup parent, boolean isWidth) {
+	private static int getDimension(View view, boolean isWidth) {
 		LayoutParams params;
-		if (parent == null || (params = parent.getLayoutParams()) == null) {
-			return -1;
-		}
-		int length = isWidth ? params.width : params.height;
-		if (length == LayoutParams.WRAP_CONTENT) {
-			return -1;
-		} else if (length == LayoutParams.MATCH_PARENT) {
-			try {
-				return getParentDimensions((ViewGroup) parent.getParent(), isWidth);
-			} catch (ClassCastException e) {
+		while (view != null && (params = view.getLayoutParams()) != null) {
+			int length = isWidth ? params.width : params.height;
+			if (length == LayoutParams.WRAP_CONTENT) {
 				return -1;
+
+			} else if (length == LayoutParams.MATCH_PARENT) {
+				try {
+					view = (View) view.getParent();
+				} catch (ClassCastException e) {
+					return -1;
+				}
+
+			} else {
+				return length;
 			}
-		} else {
-			return length;
 		}
+
+		return -1;
 	}
 }

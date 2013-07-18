@@ -214,7 +214,7 @@ class AsyncOperationsMaps {
 					case DEFAULT:
 						CacheRequest cacheRequest = requestParameters.cacheRequest;
 						int sampleSize = mObserver.getSampleSize(cacheRequest);
-						DecodeSignature decodeSignature = new DecodeSignature(uri, sampleSize, requestParameters.cacheRequest.getOptions().preferedConfig);
+						DecodeSignature decodeSignature = new DecodeSignature(uri, sampleSize, requestParameters.cacheRequest.getOptions().preferredConfig);
 
 						registerDecodeRequest(cacheRequest, decodeSignature, imageCacherListener, requestParameters.imageReturnedFrom);
 						break;
@@ -396,7 +396,7 @@ class AsyncOperationsMaps {
 
 	private synchronized DecodeSignature getDecodeSignature(CacheRequest cacheRequest) {
 		int sampleSize = mObserver.getSampleSize(cacheRequest);
-		return new DecodeSignature(cacheRequest.getUri(), sampleSize, cacheRequest.getOptions().preferedConfig);
+		return new DecodeSignature(cacheRequest.getUri(), sampleSize, cacheRequest.getOptions().preferredConfig);
 	}
 
 	static interface OperationsObserver {

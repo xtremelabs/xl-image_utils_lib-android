@@ -610,7 +610,7 @@ public class ImageLoader implements AbstractImageLoader {
 		Options o = new Options();
 		o.autoDetectBounds = options.autoDetectBounds;
 		o.overrideSampleSize = options.overrideSampleSize;
-		o.preferedConfig = options.preferedConfig;
+		o.preferredConfig = options.preferredConfig;
 		o.scalingPreference = options.scalingPreference;
 		o.useScreenSizeAsBounds = options.useScreenSizeAsBounds;
 		o.widthBounds = bounds.width;
@@ -917,6 +917,6 @@ public class ImageLoader implements AbstractImageLoader {
 		 * <br>
 		 * Default value: null.
 		 */
-		public Bitmap.Config preferedConfig = null;
+		public Bitmap.Config preferredConfig = null;
 	}
 }

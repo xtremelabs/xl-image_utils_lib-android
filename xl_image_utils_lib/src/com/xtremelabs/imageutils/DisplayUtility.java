@@ -20,8 +20,14 @@ import android.content.Context;
 import android.util.DisplayMetrics;
 
 class DisplayUtility {
+	private Dimensions dimensions;
+
 	public Dimensions getDisplaySize(Context applicationContext) {
-		DisplayMetrics metrics = applicationContext.getResources().getDisplayMetrics();
-		return new Dimensions(metrics.widthPixels, metrics.heightPixels);
+		if (dimensions == null) {
+			DisplayMetrics metrics = applicationContext.getResources().getDisplayMetrics();
+			dimensions = new Dimensions(metrics.widthPixels, metrics.heightPixels);
+		}
+
+		return dimensions;
 	}
 }

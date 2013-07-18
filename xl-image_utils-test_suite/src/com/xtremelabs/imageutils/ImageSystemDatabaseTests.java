@@ -138,6 +138,20 @@ public class ImageSystemDatabaseTests extends AndroidTestCase {
 	public void testNoImageOnDiskTriggerDownload() {
 		fail();
 		// should probably be somewhere else
+		
+		/*
+		 * 1. Stub out getBitmapSynchronouslyFromDisk to throw a FileNotFoundException.
+		 * 
+		 * 2. Stub out the DiskCache interface with a method for "restart image load"
+		 * 
+		 * 3. Put an entry in the database for the "fake" image we are decoding.
+		 * 
+		 * 4. Create a decode prioritizable and synchronously call "execute" on it. 
+		 * 
+		 * 5. Assert true that the database has removed the row for our image.
+		 * 
+		 * 6. Assert true that the "restart image load" method was called. -- This is not built out yet and may not be 100% correct.
+		 */
 	}
 
 	public void testStartupDataRecoveryOrdering() {

@@ -19,9 +19,11 @@ package com.xtremelabs.imageutils;
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
+import android.os.Build;
 import android.test.AndroidTestCase;
 
 public class AdvancedMemoryCacherTests extends AndroidTestCase {
+	private static final boolean SHOULD_RUN = Build.VERSION_CODES.HONEYCOMB <= Build.VERSION.SDK_INT;
 	private AdvancedMemoryLRUCacher mMemCache;
 	private Bitmap.Config mBitmapConfig;
 
@@ -29,10 +31,16 @@ public class AdvancedMemoryCacherTests extends AndroidTestCase {
 	protected void setUp() throws Exception {
 		super.setUp();
 
-		mMemCache = new AdvancedMemoryLRUCacher();
+		if (SHOULD_RUN) {
+			mMemCache = new AdvancedMemoryLRUCacher();
+		}
 	}
 
 	public void testClearingCache() {
+		if (!SHOULD_RUN) {
+			return;
+		}
+
 		assertEquals(0, mMemCache.getNumImagesInCache());
 		mMemCache.cacheBitmap(getBitmap(), new DecodeSignature("url1", 1, mBitmapConfig));
 		assertEquals(1, mMemCache.getNumImagesInCache());
@@ -44,6 +52,10 @@ public class AdvancedMemoryCacherTests extends AndroidTestCase {
 
 	@SuppressLint("NewApi")
 	public void testGetBitmapAndLru() {
+		if (!SHOULD_RUN) {
+			return;
+		}
+
 		Bitmap bitmap = getBitmap();
 		mMemCache.cacheBitmap(bitmap, new DecodeSignature("url1", 1, mBitmapConfig));
 		mMemCache.cacheBitmap(bitmap, new DecodeSignature("url1", 2, mBitmapConfig));

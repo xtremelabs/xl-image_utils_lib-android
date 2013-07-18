@@ -9,6 +9,7 @@ class ImageEntry {
 	public int sizeX = -1;
 	public int sizeY = -1;
 	public long fileSize;
+	public long expiry = Long.MAX_VALUE;
 
 	String getFileName() {
 		return Long.toString(id);
