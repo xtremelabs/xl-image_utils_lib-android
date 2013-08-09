@@ -1,5 +1,0 @@
-<MANIFEST platform="android" api_level="15">
-    <PROJECT name="Image Utilities" dir="xl_image_utils_lib" />
-    <REPOSITORY git_project="xl-image_utils_lib-android" version="v1.4" url="https://github.com/xtremelabs/xl-image_utils_lib-android.git"/>
-    <LIBRARY path="xl_image_utils_lib/xl-image_utils_lib-android-v1.4.jar" url="api.github.com/repos/xtremelabs/xl-image_utils_lib-android/git/blobs/cc3ac9b4a1a75f408b6fd92e0af9075ab471d219" />
-</MANIFEST>
