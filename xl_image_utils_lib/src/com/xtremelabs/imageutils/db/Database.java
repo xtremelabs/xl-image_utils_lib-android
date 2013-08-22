@@ -14,10 +14,14 @@ public class Database extends SQLiteOpenHelper {
 
 	private final List<Table<?>> mTables;
 
+	public Database(Context context, List<Table<?>> tables) {
+		this(context, null, tables);
+	}
+
 	public Database(Context context, CursorFactory factory, List<Table<?>> tables) {
 		super(context, DatabaseConfig.NAME, factory, DatabaseConfig.VERSION);
-		if (tables == null)
-			throw new IllegalArgumentException("The list of tables cannot be null!");
+		if (tables == null || tables.isEmpty())
+			throw new IllegalArgumentException("The list of tables cannot be null or empty!");
 		mTables = tables;
 	}
 

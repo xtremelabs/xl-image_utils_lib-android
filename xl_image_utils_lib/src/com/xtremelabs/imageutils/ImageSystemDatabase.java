@@ -5,16 +5,13 @@ import java.util.List;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteCursor;
-import android.database.sqlite.SQLiteCursorDriver;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteQuery;
 import android.util.Log;
 
+import com.xtremelabs.imageutils.ImagesTable.Columns;
 import com.xtremelabs.imageutils.db.Database;
 import com.xtremelabs.imageutils.db.Table;
 
-class ImageSystemDatabase {
+class ImageSystemDatabase { // TODO should this be implementing an interface?
 	private final ImagesTable mImagesTable = ImagesTable.getInstance();
 	private final ImageSystemDatabaseObserver mObserver;
 	private Database mDatabase;
@@ -28,14 +25,7 @@ class ImageSystemDatabase {
 		List<Table<?>> tables = new ArrayList<Table<?>>();
 		tables.add(mImagesTable);
 
-		mDatabase = new Database(context, new SQLiteDatabase.CursorFactory() {
-			@SuppressWarnings("deprecation")
-			@Override
-			public Cursor newCursor(SQLiteDatabase db, SQLiteCursorDriver masterQuery, String editTable, SQLiteQuery query) {
-				return new SQLiteCursor(db, masterQuery, editTable, query);
-			}
-		}, tables);
-
+		mDatabase = new Database(context, tables);
 		populateCache();
 		performBadFileCheck();
 	}
@@ -43,26 +33,42 @@ class ImageSystemDatabase {
 	public void beginWrite(String uri) {
 		ImageEntry entry = new ImageEntry();
 		entry.uri = uri;
-		mImagesTable.insert(entry, mDatabase.getWritableDatabase());
+		entry.id = mImagesTable.insert(mDatabase.getWritableDatabase(), entry);
 		mCache.putEntry(entry);
 	}
 
 	public void endWrite(String uri) {
 		ImageEntry entry = mCache.getEntry(uri);
 		entry.onDisk = true;
+		mImagesTable.insert(mDatabase.getWritableDatabase(), entry);
+	}
+
+	public void bump(String uri) {
+		ImageEntry entry = mCache.getEntry(uri);
 		entry.lastAccessedTime = System.currentTimeMillis();
-		mImagesTable.insert(entry, mDatabase.getWritableDatabase());
+		mImagesTable.insert(mDatabase.getWritableDatabase(), entry);
 	}
 
 	public void writeFailed(String uri) {
-		ImageEntry entry = mCache.removeEntry(uri);
-		String whereClause = ImagesTable.Columns.ID.getColumnName() + "=?";
-		String[] whereArgs = new String[] { Long.toString(entry.id) };
-		mImagesTable.delete(mDatabase.getWritableDatabase(), whereClause, whereArgs);
+		deleteEntry(uri);
+	}
+
+	public void deleteEntry(String uri) {
+		mCache.removeEntry(uri);
+		deleteRow(uri);
 	}
 
 	ImageEntry getEntry(String uri) {
 		return mCache.getEntry(uri);
+	}
+
+	long getTotalFileSize() {
+		String[] columns = new String[] { "SUM(" + Columns.FILE_SIZE.getName() + ")" };
+		Cursor cursor = mImagesTable.selectFromTable(mDatabase.getReadableDatabase(), columns, null, null, null, null, null, null);
+		cursor.moveToFirst();
+		long total = cursor.getLong(0);
+		cursor.close();
+		return total;
 	}
 
 	void clear() {
@@ -70,49 +76,41 @@ class ImageSystemDatabase {
 		mImagesTable.onClear(mDatabase.getWritableDatabase());
 	}
 
-	void submitDetails(String uri, Dimensions dimensions) {
+	void submitDetails(String uri, Dimensions dimensions, long fileSize) {
 		ImageEntry entry = mCache.getEntry(uri);
 		entry.sizeX = dimensions.width;
 		entry.sizeY = dimensions.height;
-		mImagesTable.insert(entry, mDatabase.getWritableDatabase());
+		entry.fileSize = fileSize;
+		mImagesTable.insert(mDatabase.getWritableDatabase(), entry);
 	}
 
 	private void populateCache() {
 		Cursor allEntries = mImagesTable.selectAllFromTable(mDatabase.getReadableDatabase());
 		Log.d("JAMIE", "Entries in database: " + allEntries.getCount());
 		while (allEntries.moveToNext()) {
-			ImageEntry entry = new ImageEntry();
-			entry.id = allEntries.getLong(allEntries.getColumnIndex(ImagesTable.Columns.ID.getColumnName()));
-			entry.uri = allEntries.getString(allEntries.getColumnIndex(ImagesTable.Columns.URI.getColumnName()));
-			entry.creationTime = allEntries.getLong(allEntries.getColumnIndex(ImagesTable.Columns.CREATION_TIME.getColumnName()));
-			entry.lastAccessedTime = allEntries.getLong(allEntries.getColumnIndex(ImagesTable.Columns.LAST_ACCESSED_TIME.getColumnName()));
-			entry.onDisk = allEntries.getInt(allEntries.getColumnIndex(ImagesTable.Columns.ON_DISK.getColumnName())) == 1;
-			entry.sizeX = allEntries.getInt(allEntries.getColumnIndex(ImagesTable.Columns.SIZE_X.getColumnName()));
-			entry.sizeY = allEntries.getInt(allEntries.getColumnIndex(ImagesTable.Columns.SIZE_Y.getColumnName()));
-
+			ImageEntry entry = ImagesTable.getEntryFromCursor(allEntries);
 			mCache.putEntry(entry);
-
 			Log.d("JAMIE", "Recovered URI: " + entry.uri + ", ONDISK: " + entry.onDisk);
 		}
 	}
 
 	private void performBadFileCheck() {
-		String onDiskColumn = ImagesTable.Columns.ON_DISK.getColumnName();
+		String onDiskColumn = ImagesTable.Columns.ON_DISK.getName();
 		Cursor cursor = mImagesTable.selectFromTable(mDatabase.getReadableDatabase(), onDiskColumn + "=?", new String[] { "0" });
 
 		while (cursor.moveToNext()) {
-			Log.d("JAMIE", "Deleting an item. URI: " + cursor.getString(cursor.getColumnIndex(ImagesTable.Columns.URI.getColumnName())));
-			int columnIndex = cursor.getColumnIndex(ImagesTable.Columns.ID.getColumnName());
-			int badImageEntryId = cursor.getInt(columnIndex);
-			String filename = Integer.toString(badImageEntryId);
-
-			mObserver.onBadJournalEntry(filename);
-			deleteRow(badImageEntryId);
+			ImageEntry entry = ImagesTable.getEntryFromCursor(cursor);
+			Log.d("JAMIE", "Deleting an item. URI: " + entry.uri);
+			deleteEntry(entry.uri);
+			mObserver.onBadJournalEntry(entry);
 		}
+		cursor.close();
 	}
 
-	private void deleteRow(int badImageEntryId) {
-		mImagesTable.delete(mDatabase.getWritableDatabase(), ImagesTable.Columns.ID.getColumnName() + "=?", new String[] { Integer.toString(badImageEntryId) });
+	private void deleteRow(String uri) {
+		String whereClause = ImagesTable.Columns.URI.getName() + "=?";
+		String[] whereArgs = new String[] { uri };
+		mImagesTable.delete(mDatabase.getWritableDatabase(), whereClause, whereArgs);
 	}
 
 	/**
@@ -123,8 +121,23 @@ class ImageSystemDatabase {
 	}
 
 	interface ImageSystemDatabaseObserver {
-		void onBadJournalEntry(String filename);
+		void onBadJournalEntry(ImageEntry entry);
 
 		void onDetailsRequired(String filename);
 	}
+
+	public ImageEntry removeLRU() {
+		String orderBy = Columns.LAST_ACCESSED_TIME + " ASC";
+		String selection = Columns.ON_DISK.getName() + "=?";
+		Cursor cursor = mImagesTable.selectFromTable(mDatabase.getReadableDatabase(), null, selection, new String[] { "1" }, null, null, orderBy, Integer.toString(1));
+
+		ImageEntry entry = null;
+		if (cursor.moveToFirst()) {
+			entry = ImagesTable.getEntryFromCursor(cursor);
+			deleteEntry(entry.uri);
+		}
+
+		return entry;
+	}
+
 }

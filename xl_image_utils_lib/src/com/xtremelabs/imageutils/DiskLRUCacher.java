@@ -280,9 +280,6 @@ class DiskLRUCacher implements ImageSystemDiskCache {
 	}
 
 	public static class FileFormatException extends Exception {
-		/**
-		 * 
-		 */
 		private static final long serialVersionUID = -2180782787028503586L;
 	}
 
