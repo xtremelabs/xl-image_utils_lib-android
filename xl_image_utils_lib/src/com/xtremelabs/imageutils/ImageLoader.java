@@ -403,6 +403,46 @@ public class ImageLoader implements AbstractImageLoader {
 	}
 
 	/**
+	 * Forces the memory cache to release a percentage of its current size.
+	 * 
+	 * NOTE: The images in the memcache will not be garbage collected if the app still has references to the bitmaps. For example, if the bitmap is loaded to an {@link ImageView} and the ImageView is still being
+	 * referenced.
+	 */
+	public void trimMemCache(double percetangeToRemove) {
+		ImageCacher.getInstance(mContext).trimMemCache(percetangeToRemove);
+	}
+	
+	/**
+	 * Forces the memory cache to release at least the specified number of bytes.
+	 * 
+	 * NOTE: The images in the memcache will not be garbage collected if the app still has references to the bitmaps. For example, if the bitmap is loaded to an {@link ImageView} and the ImageView is still being
+	 * referenced.
+	 */
+	public void trimMemCache(long numBytes) {
+		ImageCacher.getInstance(mContext).trimMemCache(numBytes);
+	}
+	
+	/**
+	 * Forces the memory cache to release based on a percentage of the maximum cache size.
+	 * 
+	 * NOTE: The images in the memcache will not be garbage collected if the app still has references to the bitmaps. For example, if the bitmap is loaded to an {@link ImageView} and the ImageView is still being
+	 * referenced.
+	 */
+	public void trimCacheToPercentageOfMaximum(double percentage) {
+		ImageCacher.getInstance(mContext).trimCacheToPercentageOfMaximum(percentage);
+	}
+	
+	/**
+	 * Forces the memory cache to release based on a temporary max size.
+	 * 
+	 * NOTE: The images in the memcache will not be garbage collected if the app still has references to the bitmaps. For example, if the bitmap is loaded to an {@link ImageView} and the ImageView is still being
+	 * referenced.
+	 */
+	public void trimCacheToSize(long numBytes) {
+		ImageCacher.getInstance(mContext).trimCacheToSize(numBytes);
+	}
+	
+	/**
 	 * Sets the maximum size of the memory cache in bytes.<br>
 	 * <br>
 	 * WARNING: Setting the memory cache size value too high will result in OutOfMemory exceptions. Developers should test their apps thoroughly and modify the value set using this method based on memory consumption and

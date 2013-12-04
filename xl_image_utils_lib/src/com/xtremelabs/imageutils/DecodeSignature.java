@@ -67,4 +67,9 @@ class DecodeSignature {
 			return false;
 		return true;
 	}
+	
+	public String toString() {
+		String bitmapConfigString = bitmapConfig == null ? "" : bitmapConfig.name();
+		return uri + " :: " + sampleSize + " :: " + bitmapConfigString;
+	}
 }

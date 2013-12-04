@@ -22,7 +22,6 @@ import java.net.URISyntaxException;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.util.Log;
 
 import com.xtremelabs.imageutils.AsyncOperationsMaps.AsyncOperationState;
@@ -45,12 +44,7 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 	private AsyncOperationsMaps mAsyncOperationsMap;
 
 	private ImageCacher(Context appContext) {
-		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB_MR1) {
-			mMemoryCache = new SizeEstimatingMemoryLRUCacher();
-		} else {
-			mMemoryCache = new AdvancedMemoryLRUCacher();
-		}
-
+		mMemoryCache = new ImageMemoryLURCacher();
 		mDiskCache = new DiskLRUCacher(appContext, this);
 		mNetworkInterface = new ImageDownloader(mDiskCache, this);
 		mAsyncOperationsMap = new AsyncOperationsMaps(this);
@@ -159,6 +153,22 @@ class ImageCacher implements ImageDownloadObserver, ImageDiskObserver, Operation
 
 	public void clearMemCache() {
 		mMemoryCache.clearCache();
+	}
+	
+	public void trimMemCache(long numBytes) {
+		mMemoryCache.trimCache(numBytes);
+	}
+	
+	public void trimMemCache(double percetangeToRemove) {
+		mMemoryCache.trimCache(percetangeToRemove);
+	}
+	
+	public void trimCacheToPercentageOfMaximum(double percentage) {
+		mMemoryCache.trimCacheToPercentageOfMaximum(percentage);
+	}
+	
+	public void trimCacheToSize(long numBytes) {
+		mMemoryCache.trimCacheToSize(numBytes);
 	}
 
 	public void setMaximumMemCacheSize(long size) {

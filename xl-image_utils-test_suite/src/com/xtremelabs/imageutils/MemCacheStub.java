@@ -40,4 +40,21 @@ public class MemCacheStub implements ImageMemoryCacherInterface {
 	@Override
 	public void removeAllImagesForUri(String uri) {
 	}
+
+	@Override
+	public void trimCache(double percetangeToRemove) {
+	}
+
+	@Override
+	public void trimCache(long numBytes) {
+	}
+
+	@Override
+	public void trimCacheToPercentageOfMaximum(double percentage) {
+	}
+
+	@Override
+	public void trimCacheToSize(long numBytes) {
+	}
+
 }
