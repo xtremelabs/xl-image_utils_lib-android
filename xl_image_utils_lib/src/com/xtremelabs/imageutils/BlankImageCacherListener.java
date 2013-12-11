@@ -18,7 +18,7 @@ package com.xtremelabs.imageutils;
 
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
 
-class BlankImageCacherListener extends ImageCacherListener {
+class BlankImageCacherListener implements ImageCacherListener {
 
 	@Override
 	public void onImageAvailable(ImageResponse imageResponse) {

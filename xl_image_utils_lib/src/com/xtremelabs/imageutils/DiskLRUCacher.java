@@ -44,9 +44,11 @@ class DiskLRUCacher implements ImageDiskCacherInterface {
 
 	public DiskLRUCacher(Context appContext, ImageDiskObserver imageDecodeObserver) {
 		/*
-		 * WARNING: Increasing the number of threads for image decoding will lag the UI thread.
+		 * WARNING: Increasing the number of threads for image decoding will lag
+		 * the UI thread.
 		 * 
-		 * It is highly recommended to leave the number of decode threads at one. Increasing this number too high will cause performance problems.
+		 * It is highly recommended to leave the number of decode threads at
+		 * one. Increasing this number too high will cause performance problems.
 		 */
 		mDiskManager = new DiskManager("img", appContext);
 		mDatabaseHelper = new DiskDatabaseHelper(appContext, mDiskDatabaseHelperObserver);
@@ -217,12 +219,10 @@ class DiskLRUCacher implements ImageDiskCacherInterface {
 		opts.inSampleSize = sampleSize;
 		opts.inPreferredConfig = bitmapConfig;
 		Bitmap bitmap = BitmapFactory.decodeStream(fileInputStream, null, opts);
-		if (fileInputStream != null) {
-			try {
-				fileInputStream.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+		try {
+			fileInputStream.close();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 		if (bitmap == null) {
 			file.delete();

@@ -81,8 +81,10 @@ class ImageDownloader implements ImageNetworkInterface {
 
 		private void reportIllegalStateExceptionLoadFailure(IllegalStateException e) {
 			/*
-			 * NOTE: If a bad URL is passed in (for example, mUrl = "N/A", the client.execute() call will throw an IllegalStateException. We do not want this exception to crash the app. Rather, we want to log the error
-			 * and report a failure.
+			 * NOTE: If a bad URL is passed in (for example, mUrl = "N/A", the
+			 * client.execute() call will throw an IllegalStateException. We do
+			 * not want this exception to crash the app. Rather, we want to log
+			 * the error and report a failure.
 			 */
 			Log.w(ImageLoader.TAG, "IMAGE LOAD FAILED - An error occurred while performing the network request for the image. Stack trace below. URL: " + mCacheRequest.getUri());
 			e.printStackTrace();
@@ -101,17 +103,18 @@ class ImageDownloader implements ImageNetworkInterface {
 					errorMessage = "Failed to download image with error message: " + e.getMessage();
 				} catch (IllegalStateException e) {
 					/*
-					 * NOTE: If a bad URL is passed in (for example, mUrl = "N/A", the client.execute() call will throw an IllegalStateException. We do not want this exception to crash the app. Rather, we want to log the
-					 * error and report a failure.
+					 * NOTE: If a bad URL is passed in (for example, mUrl =
+					 * "N/A", the client.execute() call will throw an
+					 * IllegalStateException. We do not want this exception to
+					 * crash the app. Rather, we want to log the error and
+					 * report a failure.
 					 */
 					Log.w(ImageLoader.TAG, "IMAGE LOAD FAILED - An error occurred while performing the network request for the image. Stack trace below. URI: " + mCacheRequest.getUri());
 					e.printStackTrace();
 					errorMessage = "Failed to download image. A stack trace has been output to the logs. Message: " + e.getMessage();
 				} finally {
 					try {
-						if (inputStream != null) {
-							inputStream.close();
-						}
+						inputStream.close();
 					} catch (IOException e) {
 					}
 				}

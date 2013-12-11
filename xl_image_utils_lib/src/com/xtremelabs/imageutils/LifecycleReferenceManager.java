@@ -22,15 +22,20 @@ import android.content.Context;
 import android.os.Handler;
 
 import com.xtremelabs.imageutils.ImageCacher.ImageCacherListener;
-import com.xtremelabs.imageutils.ImageResponse.ImageResponseStatus;
 
 /**
- * This class is responsible for maintaining a clear separation between the cacher and the lifecycle classes that originally made image requests (ie. Activities and Fragments).
+ * This class is responsible for maintaining a clear separation between the
+ * cacher and the lifecycle classes that originally made image requests (ie.
+ * Activities and Fragments).
  * 
- * HashMaps are used to maintain mappings between the different requests. When an Activity or Fragment is being destroyed, this class will sever all references back to the Activity or Fragment, allowing the class to
- * become garbage collected.
+ * HashMaps are used to maintain mappings between the different requests. When
+ * an Activity or Fragment is being destroyed, this class will sever all
+ * references back to the Activity or Fragment, allowing the class to become
+ * garbage collected.
  * 
- * Finally, this class is responsible for ensuring that all calls back to listeners in the ImageLoader occur on the UI thread. This prevents race conditions in the ImageLoader and simplifies loading the bitmaps back to
+ * Finally, this class is responsible for ensuring that all calls back to
+ * listeners in the ImageLoader occur on the UI thread. This prevents race
+ * conditions in the ImageLoader and simplifies loading the bitmaps back to
  * image views.
  */
 class LifecycleReferenceManager implements ReferenceManager {
@@ -63,6 +68,7 @@ class LifecycleReferenceManager implements ReferenceManager {
 	 */
 	@Override
 	public void getBitmap(Object key, CacheRequest cacheRequest, ImageManagerListener imageManagerListener) {
+
 		String uri = cacheRequest.getUri();
 
 		if (GeneralUtils.isStringBlank(uri)) {
@@ -78,9 +84,8 @@ class LifecycleReferenceManager implements ReferenceManager {
 		} else {
 			cacheListener = generateRegisteredListener(key, uri, imageManagerListener);
 		}
-		ImageResponse imageResponse = mImageCacher.getBitmap(cacheRequest, cacheListener);
-		if (!isPrecacheRequest)
-			returnImageIfValid(imageManagerListener, imageResponse);
+
+		mImageCacher.queueCacheRequest(cacheRequest, cacheListener);
 	}
 
 	@Override
@@ -112,13 +117,7 @@ class LifecycleReferenceManager implements ReferenceManager {
 		};
 	}
 
-	private void returnImageIfValid(ImageManagerListener listener, ImageResponse imageResponse) {
-		if (imageResponse.getImageResponseStatus() == ImageResponseStatus.SUCCESS && mListenerHelper.unregisterListener(listener) != null) {
-			listener.onImageReceived(imageResponse);
-		}
-	}
-
-	class ImageManagerCacheListener extends ImageCacherListener {
+	class ImageManagerCacheListener implements ImageCacherListener {
 		@Override
 		public void onImageAvailable(final ImageResponse imageResponse) {
 			mUiThreadHandler.post(new Runnable() {
